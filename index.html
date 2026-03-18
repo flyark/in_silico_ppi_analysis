@@ -18,7 +18,18 @@
             padding: 2rem 2rem 1.5rem;
         }
         .header h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.3rem; }
-        .header p { font-size: 0.9rem; opacity: 0.85; }
+        .header p { font-size: 0.9rem; opacity: 0.85; margin-bottom: 0.6rem; }
+        .header-links { display: flex; gap: 1.2rem; flex-wrap: wrap; }
+        .header-links a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.6rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .header-links a:hover { background: rgba(255,255,255,0.15); color: white; }
         .container { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
 
         /* ── Cards ── */
@@ -305,6 +316,12 @@
     <div class="container">
         <h1>FlyPredictome → ChimeraX</h1>
         <p>Generate ChimeraX visualization scripts from FlyPredictome interaction data</p>
+        <div class="header-links">
+            <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">FlyPredictome</a>
+            <a href="https://github.com/flyark/AFM-LIS" target="_blank">AFM-LIS</a>
+            <a href="https://github.com/flyark/flypredictome-chimerax" target="_blank">GitHub</a>
+            <a href="https://www.cgl.ucsf.edu/chimerax/" target="_blank">ChimeraX</a>
+        </div>
     </div>
 </div>
 
@@ -672,14 +689,18 @@ function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 // ── CORS proxy fetch ──
 const CORS_PROXIES = [
     url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
 ];
 
 async function fetchViaProxy(url) {
     for (const makeProxy of CORS_PROXIES) {
         try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
             const proxyUrl = makeProxy(url);
-            const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+            const resp = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(timeout);
             if (resp.ok) {
                 const text = await resp.text();
                 if (text.includes('rank_table')) return text;
