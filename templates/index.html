@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlyPredictome → ChimeraX</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2471A3, #1a5276);
+            color: white;
+            padding: 2rem 2rem 1.5rem;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* ── Input Section ── */
+        .input-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+        .input-section label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #555;
+
+            letter-spacing: 0.03em;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+
+        .url-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.2rem;
+        }
+        .url-row input[type="text"] {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .url-row input[type="text"]:focus {
+            outline: none;
+            border-color: #2471A3;
+        }
+        .url-row select {
+            padding: 0.7rem 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            min-width: 80px;
+        }
+
+        .btn-generate {
+            background: #2471A3;
+            color: white;
+            border: none;
+            padding: 0.7rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-generate:hover { background: #1a5276; }
+        .btn-generate:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        /* ── Color Options ── */
+        .color-section {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .color-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .color-group h3 {
+            font-size: 0.8rem;
+            color: #888;
+
+            letter-spacing: 0.05em;
+            margin-bottom: 0.6rem;
+        }
+        .color-pair {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+        }
+        .color-pair input[type="color"] {
+            width: 36px;
+            height: 36px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 2px;
+        }
+        .color-pair .color-label {
+            font-size: 0.9rem;
+        }
+        .color-pair .color-hex {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .color-def {
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        /* ── Loading ── */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+        .loading.active { display: block; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #2471A3;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Results ── */
+        .results {
+            display: none;
+        }
+        .results.active { display: block; }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 1rem;
+        }
+        .result-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #1a5276;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .metric {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .metric .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2471A3;
+        }
+        .metric .label {
+            font-size: 0.75rem;
+            color: #888;
+
+            margin-top: 0.2rem;
+        }
+
+        .interface-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .interface-table th {
+            text-align: left;
+            padding: 0.5rem 0.8rem;
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .interface-table td {
+            padding: 0.5rem 0.8rem;
+            border-top: 1px solid #eee;
+        }
+
+        /* ── Script Preview ── */
+        .script-preview {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre;
+            margin-bottom: 1rem;
+        }
+        .script-preview .comment { color: #6c7086; }
+        .script-preview .command { color: #89b4fa; }
+        .script-preview .color-val { color: #f9e2af; }
+
+        /* ── Download Buttons ── */
+        .download-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .btn-download {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+        .btn-download.cxc {
+            background: #2471A3;
+            color: white;
+            border-color: #2471A3;
+        }
+        .btn-download.cxc:hover { background: #1a5276; border-color: #1a5276; }
+        .btn-download.pdb {
+            background: white;
+            color: #E67E22;
+            border-color: #E67E22;
+        }
+        .btn-download.pdb:hover { background: #fef5ec; }
+        .btn-download.zip {
+            background: white;
+            color: #555;
+            border-color: #ccc;
+        }
+        .btn-download.zip:hover { background: #f5f5f5; }
+
+        /* ── Rank Table ── */
+        .rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .rank-table th {
+            text-align: left;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #666;
+        }
+        .rank-table td {
+            padding: 0.5rem;
+            border-top: 1px solid #eee;
+        }
+        .rank-table tr.selected { background: #eaf2f8; }
+
+        /* ── Error ── */
+        .error-msg {
+            display: none;
+            background: #fdeaea;
+            color: #c0392b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .error-msg.active { display: block; }
+
+        /* ── Color preview strip ── */
+        .color-preview-strip {
+            display: flex;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .color-preview-strip div {
+            flex: 1;
+            transition: background 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="container">
+        <h1>FlyPredictome → ChimeraX</h1>
+        <p>Generate ChimeraX visualization scripts from FlyPredictome interaction data</p>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Input -->
+    <div class="input-section">
+        <label>FlyPredictome URL</label>
+        <div class="url-row">
+            <input type="text" id="url-input"
+                   placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/..."
+                   value="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0003345/FBgn0034970/SET_576/">
+            <select id="rank-select">
+                <option value="1">Rank 1</option>
+                <option value="2">Rank 2</option>
+                <option value="3">Rank 3</option>
+                <option value="4">Rank 4</option>
+                <option value="5">Rank 5</option>
+            </select>
+            <button class="btn-generate" id="btn-generate" onclick="generate()">Generate</button>
+        </div>
+
+        <label>Color Scheme</label>
+        <div class="color-section">
+            <div class="color-group">
+                <h3>Chain A (Protein 1)</h3>
+                <div class="color-pair">
+                    <input type="color" id="color-lir-a" value="#b3d4e8">
+                    <div>
+                        <div class="color-label">LIR — confident domain <span class="color-def">(PAE &le; 12)</span></div>
+                        <div class="color-hex" id="hex-lir-a">#b3d4e8</div>
+                    </div>
+                </div>
+                <div class="color-pair">
+                    <input type="color" id="color-clir-a" value="#2471A3">
+                    <div>
+                        <div class="color-label">cLIR — confident interface <span class="color-def">(PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</span></div>
+                        <div class="color-hex" id="hex-clir-a">#2471A3</div>
+                    </div>
+                </div>
+            </div>
+            <div class="color-group">
+                <h3>Chain B (Protein 2)</h3>
+                <div class="color-pair">
+                    <input type="color" id="color-lir-b" value="#f5cba7">
+                    <div>
+                        <div class="color-label">LIR — confident domain <span class="color-def">(PAE &le; 12)</span></div>
+                        <div class="color-hex" id="hex-lir-b">#f5cba7</div>
+                    </div>
+                </div>
+                <div class="color-pair">
+                    <input type="color" id="color-clir-b" value="#E67E22">
+                    <div>
+                        <div class="color-label">cLIR — confident interface <span class="color-def">(PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</span></div>
+                        <div class="color-hex" id="hex-clir-b">#E67E22</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="color-preview-strip" id="color-strip">
+            <div style="background: #b3d4e8"></div>
+            <div style="background: #2471A3"></div>
+            <div style="background: #E67E22"></div>
+            <div style="background: #f5cba7"></div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Fetching data from FlyPredictome...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+
+        <div class="result-card">
+            <h2 id="result-title"></h2>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <div class="value" id="m-ilis"></div>
+                    <div class="label">iLIS</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="m-iptm"></div>
+                    <div class="label">ipTM</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="m-clir-a"></div>
+                    <div class="label">cLIR (A)</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="m-clir-b"></div>
+                    <div class="label">cLIR (B)</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="m-lir-a"></div>
+                    <div class="label">LIR (A)</div>
+                </div>
+                <div class="metric">
+                    <div class="value" id="m-lir-b"></div>
+                    <div class="label">LIR (B)</div>
+                </div>
+            </div>
+
+            <table class="interface-table">
+                <thead>
+                    <tr><th>Chain</th><th>Symbol</th><th>Length</th><th>LIR</th><th>cLIR</th></tr>
+                </thead>
+                <tbody id="interface-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- Script Preview -->
+        <div class="result-card">
+            <h2>ChimeraX Script</h2>
+            <div class="script-preview" id="script-preview"></div>
+            <div class="download-row">
+                <a class="btn-download cxc" id="dl-cxc">↓ Download .cxc</a>
+                <a class="btn-download pdb" id="dl-pdb">↓ Download .pdb</a>
+                <a class="btn-download zip" id="dl-zip">↓ Download All (.zip)</a>
+            </div>
+        </div>
+
+        <!-- All Ranks -->
+        <div class="result-card">
+            <h2>All Ranks</h2>
+            <table class="rank-table">
+                <thead>
+                    <tr><th>Rank</th><th>Symbol 1</th><th>Symbol 2</th><th>iLIS</th><th>ipTM</th><th>cLIR (A)</th><th>cLIR (B)</th></tr>
+                </thead>
+                <tbody id="ranks-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Sync color pickers with hex display and preview strip
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('input', () => {
+        const id = input.id.replace('color-', 'hex-');
+        document.getElementById(id).textContent = input.value;
+        updateColorStrip();
+    });
+});
+
+function updateColorStrip() {
+    const strip = document.getElementById('color-strip');
+    const colors = [
+        document.getElementById('color-lir-a').value,
+        document.getElementById('color-clir-a').value,
+        document.getElementById('color-clir-b').value,
+        document.getElementById('color-lir-b').value,
+    ];
+    strip.children[0].style.background = colors[0];
+    strip.children[1].style.background = colors[1];
+    strip.children[2].style.background = colors[2];
+    strip.children[3].style.background = colors[3];
+}
+
+// Syntax highlight CXC script
+function highlightCxc(text) {
+    return text.split('\n').map(line => {
+        if (line.startsWith('#')) {
+            return `<span class="comment">${escHtml(line)}</span>`;
+        }
+        // Highlight color hex codes
+        line = escHtml(line).replace(/(#[0-9A-Fa-f]{6})/g, '<span class="color-val">$1</span>');
+        // Highlight commands (first word)
+        const m = line.match(/^(\w+)/);
+        if (m) {
+            line = `<span class="command">${m[1]}</span>` + line.slice(m[1].length);
+        }
+        return line;
+    }).join('\n');
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function generate() {
+    const url = document.getElementById('url-input').value.trim();
+    const rank = document.getElementById('rank-select').value;
+
+    if (!url) {
+        showError('Please enter a FlyPredictome URL');
+        return;
+    }
+
+    // Collect colors
+    const colors = {
+        lir_a: document.getElementById('color-lir-a').value,
+        lir_b: document.getElementById('color-lir-b').value,
+        clir_a: document.getElementById('color-clir-a').value,
+        clir_b: document.getElementById('color-clir-b').value,
+    };
+
+    // UI state
+    document.getElementById('loading').classList.add('active');
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('error-msg').classList.remove('active');
+    document.getElementById('btn-generate').disabled = true;
+
+    try {
+        const resp = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, rank: parseInt(rank), colors }),
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || data.error) {
+            showError(data.error || 'Unknown error');
+            return;
+        }
+
+        // Populate results
+        const s1 = data.symbol_1, s2 = data.symbol_2;
+        document.getElementById('result-title').textContent = `${s1} — ${s2}`;
+        document.getElementById('m-ilis').textContent = data.iLIS?.toFixed(3) ?? 'N/A';
+        document.getElementById('m-iptm').textContent = data.ipTM?.toFixed(2) ?? 'N/A';
+        document.getElementById('m-clir-a').textContent = data.cLIR_A_count;
+        document.getElementById('m-clir-b').textContent = data.cLIR_B_count;
+        document.getElementById('m-lir-a').textContent = data.LIR_A_count;
+        document.getElementById('m-lir-b').textContent = data.LIR_B_count;
+
+        // Interface table
+        document.getElementById('interface-tbody').innerHTML = `
+            <tr><td>A</td><td>${s1}</td><td>${data.protein_len_A ?? '?'}</td><td>${data.LIR_A_count}</td><td>${data.cLIR_A_count}</td></tr>
+            <tr><td>B</td><td>${s2}</td><td>${data.protein_len_B ?? '?'}</td><td>${data.LIR_B_count}</td><td>${data.cLIR_B_count}</td></tr>
+        `;
+
+        // Script preview
+        document.getElementById('script-preview').innerHTML = highlightCxc(data.cxc_script);
+
+        // Download links
+        document.getElementById('dl-cxc').href = `/api/download/${s1}_${s2}/${data.cxc_filename}`;
+        document.getElementById('dl-pdb').href = `/api/download/${s1}_${s2}/${data.pdb_filename}`;
+        document.getElementById('dl-zip').href = `/api/download-zip/${s1}/${s2}`;
+
+        // All ranks table
+        const ranksTbody = document.getElementById('ranks-tbody');
+        ranksTbody.innerHTML = data.all_ranks.map(r => `
+            <tr class="${r.rank == rank ? 'selected' : ''}">
+                <td>${r.rank}</td><td>${r.symbol_1}</td><td>${r.symbol_2}</td>
+                <td>${r.iLIS}</td><td>${r.ipTM}</td>
+                <td>${r.cLIR_A}</td><td>${r.cLIR_B}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('results').classList.add('active');
+
+    } catch (e) {
+        showError('Network error: ' + e.message);
+    } finally {
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('btn-generate').disabled = false;
+    }
+}
+
+function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.classList.add('active');
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('btn-generate').disabled = false;
+}
+
+// Enter key triggers generate
+document.getElementById('url-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') generate();
+});
+</script>
+
+</body>
+</html>
