@@ -39,9 +39,7 @@
 
         .mock-maps { display: flex; gap: 0.4rem; margin-top: 0.8rem; }
         .mock-map { width: 80px; height: 80px; border-radius: 4px; border: 1px solid #ddd; position: relative; overflow: hidden; }
-        .mock-map .pae { background: linear-gradient(135deg, #2471A3 30%, #e74c3c 70%); width: 100%; height: 100%; }
-        .mock-map .lis { background: linear-gradient(135deg, #2471A3 20%, white 80%); width: 100%; height: 100%; }
-        .mock-map .clis { background: linear-gradient(135deg, #27ae60 15%, white 85%); width: 100%; height: 100%; }
+        .mock-map canvas { width: 100%; height: 100%; }
         .mock-map-label { font-size: 0.6rem; color: #888; text-align: center; margin-top: 0.2rem; }
 
         .mock-script { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 0.8rem; font-family: monospace; font-size: 0.72rem; line-height: 1.5; margin-top: 0.8rem; max-height: 120px; overflow: hidden; }
@@ -95,10 +93,10 @@
             <div class="step-badge">1</div>
             <div class="step-content">
                 <h3>Go to FlyPredictome and find your protein pair</h3>
-                <p>Visit <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">flyrnai.org/tools/fly_predictome</a>, search for a protein pair, and open the <code>famdb_details</code> result page.</p>
+                <p>Visit <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">flyrnai.org/tools/fly_predictome</a>, search for a protein pair, and open the <code>prediction</code> result page.</p>
                 <p>Copy the page URL from your browser's address bar.</p>
                 <div class="mock-ui">
-                    <div class="mock-url">https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Akt1/foxo/SET_47/</div>
+                    <div class="mock-url">https://www.flyrnai.org/tools/fly_predictome/web/prediction/Akt1/foxo/SET_47/</div>
                 </div>
             </div>
         </div>
@@ -110,7 +108,7 @@
                 <p>Open <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>, paste the URL, choose a rank (1–5), and click <strong>Generate</strong>. The tool fetches data automatically (may take a few seconds).</p>
                 <div class="mock-ui highlight">
                     <div class="mock-label">Paste URL here</div>
-                    <div class="mock-url">https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Akt1/foxo/SET_47/</div>
+                    <div class="mock-url">https://www.flyrnai.org/tools/fly_predictome/web/prediction/Akt1/foxo/SET_47/</div>
                     <span class="mock-btn">Generate</span>
                 </div>
             </div>
@@ -210,9 +208,10 @@
                     <li><strong>cLIS Maps</strong> — contact-filtered scores (Greens)</li>
                 </ul>
                 <div class="mock-maps">
-                    <div><div class="mock-map"><div class="pae"></div></div><div class="mock-map-label">PAE</div></div>
-                    <div><div class="mock-map"><div class="lis"></div></div><div class="mock-map-label">LIS</div></div>
-                    <div><div class="mock-map"><div class="clis"></div></div><div class="mock-map-label">cLIS</div></div>
+                    <div><div class="mock-map"><canvas id="mock-pae" width="160" height="160"></canvas></div><div class="mock-map-label">PAE (bwr)</div></div>
+                    <div><div class="mock-map"><canvas id="mock-lis" width="160" height="160"></canvas></div><div class="mock-map-label">LIS (Blues)</div></div>
+                    <div><div class="mock-map"><canvas id="mock-clis" width="160" height="160"></canvas></div><div class="mock-map-label">cLIS (Greens)</div></div>
+                    <div><div class="mock-map"><canvas id="mock-score" width="160" height="160"></canvas></div><div class="mock-map-label">Score Matrix</div></div>
                 </div>
             </div>
         </div>
@@ -252,6 +251,64 @@
                 </div>
                 <div class="tip">For multi-chain complexes, use "Download All Chains .cxc" to see the full complex with each chain in a different color. Uses ChimeraX's <code>color bychain</code> command.</div>
             </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- METRICS -->
+    <!-- ================================================================ -->
+    <div class="tool-section">
+        <h2 class="tool-title">AFM-LIS Metrics</h2>
+
+        <div style="margin-bottom:1.5rem;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                <tr style="background:#f8f9fa;"><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Metric</th><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Full Name</th><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Definition</th></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIR</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Residues</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Residues in the confident interaction region (PAE &le; 12 &Aring;)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIR</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIR</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Residues in direct physical contact (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIA</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Area</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Count of residue pairs within PAE cutoff (regardless of distance)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIA</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIA</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Count of residue pairs within PAE cutoff AND within contact distance</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Score</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Average of inversely scaled PAE (0&ndash;1, higher is better) within LIA</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIS</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Average of inversely scaled PAE within cLIA (contact-filtered)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>iLIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">integrated LIS</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">&radic;(LIS &times; cLIS) &mdash; geometric mean capturing both rigid and transient interactions</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>ipTM</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">interface predicted TM-score</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">AlphaFold's global interface structural confidence metric</td></tr>
+            </table>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            <p style="font-size:0.9rem; color:#555; line-height:1.6;">
+                <strong>PAE transformation:</strong> Raw PAE values (0&ndash;30 &Aring;) are linearly scaled to confidence scores: PAE = 0 &rarr; score = 1 (highest confidence), PAE = cutoff &rarr; score = 0, PAE &gt; cutoff &rarr; 0. Default PAE cutoff is 12 &Aring;.
+            </p>
+            <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
+                <strong>Contact map:</strong> Built from C&beta; atom distances (C&alpha; for glycine). Two residues are in contact if their C&beta;&ndash;C&beta; distance &le; 8 &Aring;. For nucleic acids, phosphorus (P) atoms are used with a 4 &Aring; distance adjustment.
+            </p>
+            <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
+                <strong>Symmetrization:</strong> Results for chain pairs (A&rarr;B) and (B&rarr;A) are averaged. LIR/cLIR residue sets are the union across all models.
+            </p>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- REFERENCES -->
+    <!-- ================================================================ -->
+    <div class="tool-section">
+        <h2 class="tool-title">References</h2>
+        <div style="font-size:0.9rem; color:#555; line-height:1.8;">
+            <p><strong>AFM-LIS</strong></p>
+            <ul style="padding-left:1.2rem; margin-bottom:1rem;">
+                <li><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">Kim et al. 2024</a> &mdash; Enhanced Protein-Protein Interaction Discovery via AlphaFold-Multimer</li>
+                <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al. 2025</a> &mdash; A Structure-Guided Kinase&ndash;Transcription Factor Interactome Atlas</li>
+                <li><a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS GitHub</a> &mdash; Code and documentation</li>
+            </ul>
+            <p><strong>AlphaFold</strong></p>
+            <ul style="padding-left:1.2rem; margin-bottom:1rem;">
+                <li><a href="https://doi.org/10.1038/s41586-024-07487-w" target="_blank" style="color:#2471A3;">Abramson et al. 2024</a> &mdash; Accurate structure prediction of biomolecular interactions with AlphaFold 3. <em>Nature</em> 630, 493&ndash;500.</li>
+                <li><a href="https://doi.org/10.1038/s41586-021-03819-2" target="_blank" style="color:#2471A3;">Jumper et al. 2021</a> &mdash; Highly accurate protein structure prediction with AlphaFold. <em>Nature</em> 596, 583&ndash;589.</li>
+                <li><a href="https://doi.org/10.1101/2021.10.04.463034" target="_blank" style="color:#2471A3;">Evans et al. 2022</a> &mdash; Protein complex prediction with AlphaFold-Multimer. <em>bioRxiv</em>.</li>
+            </ul>
+            <p><strong>ChimeraX</strong></p>
+            <ul style="padding-left:1.2rem;">
+                <li><a href="https://doi.org/10.1002/pro.3943" target="_blank" style="color:#2471A3;">Pettersen et al. 2021</a> &mdash; UCSF ChimeraX: Structure visualization for researchers, educators, and developers. <em>Protein Science</em> 30, 70&ndash;82.</li>
+            </ul>
         </div>
     </div>
 
@@ -298,5 +355,108 @@
     <a href="https://github.com/flyark/chimerax_visualization_lis" style="color:#2471A3; text-decoration:none;">GitHub</a>
 </div>
 
+<script>
+// Draw mock map examples
+function bwr(t) {
+    if (t < 0.5) { const s = t/0.5; return [Math.round(s*255), Math.round(s*255), 255]; }
+    const s = (t-0.5)/0.5; return [255, Math.round((1-s)*255), Math.round((1-s)*255)];
+}
+function blues(t) { return [Math.round(255*(1-t)), Math.round(255*(1-t*0.6)), 255]; }
+function greens(t) { return [Math.round(255*(1-t)), Math.round(255*(1-t*0.3)), Math.round(255*(1-t))]; }
+function oranges(t) { return [255, Math.round(255-t*128), Math.round(255-t*220)]; }
+function purples(t) { return [Math.round(255-t*128), Math.round(255-t*180), 255]; }
+
+function drawMockMap(id, colorFn, pattern) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const s = c.width;
+    const img = ctx.createImageData(s, s);
+    const half = s / 2;
+    for (let y = 0; y < s; y++) {
+        for (let x = 0; x < s; x++) {
+            let v;
+            if (pattern === 'pae') {
+                // Diagonal blocks low PAE, off-diagonal high
+                const inBlockA = x < half && y < half;
+                const inBlockB = x >= half && y >= half;
+                const onDiag = Math.abs(x - y) < 8;
+                const interBlock = (x < half && y >= half) || (x >= half && y < half);
+                if (onDiag) v = 0.02;
+                else if (inBlockA || inBlockB) v = 0.1 + Math.random() * 0.2;
+                else v = 0.6 + Math.random() * 0.3;
+            } else if (pattern === 'lis') {
+                const inBlockA = x < half && y < half;
+                const inBlockB = x >= half && y >= half;
+                const onDiag = Math.abs(x - y) < 8;
+                if (onDiag) v = 0.9;
+                else if (inBlockA || inBlockB) v = 0.3 + Math.random() * 0.4;
+                else v = Math.random() * 0.05;
+            } else if (pattern === 'clis') {
+                const onDiag = Math.abs(x - y) < 6;
+                const nearBoundary = Math.abs(x - half) < 15 && Math.abs(y - half) < 15;
+                if (onDiag) v = 0.5 + Math.random() * 0.3;
+                else if (nearBoundary && Math.random() > 0.6) v = 0.3 + Math.random() * 0.4;
+                else v = 0;
+            }
+            const [r, g, b] = colorFn(v);
+            const idx = (y * s + x) * 4;
+            img.data[idx] = r; img.data[idx+1] = g; img.data[idx+2] = b; img.data[idx+3] = 255;
+        }
+    }
+    ctx.putImageData(img, 0, 0);
+    // Boundary line
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, s, s);
+    ctx.beginPath(); ctx.moveTo(half, 0); ctx.lineTo(half, s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, half); ctx.lineTo(s, half); ctx.stroke();
+    // Labels
+    ctx.fillStyle = '#333'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('A', half/2, s-4); ctx.fillText('B', half+half/2, s-4);
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+    ctx.fillText('A', half/2-half/2+10, half/2); ctx.fillText('B', half/2-half/2+10, half+half/2);
+}
+
+function drawMockScore(id) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const s = c.width;
+    const m = 20, gs = s - m;
+    const cell = gs / 2;
+    ctx.fillStyle = 'white'; ctx.fillRect(0, 0, s, s);
+    // Cells: lower-left=iLIS(orange), upper-right=ipTM(purple), diagonal=gray
+    const vals = [[0, 0.48], [0.35, 0]]; // [iLIS lower-left, ipTM upper-right]
+    for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+            let r, g, b;
+            if (i === j) { r=240;g=240;b=240; }
+            else if (i > j) { [r,g,b] = oranges(vals[i][j]); }
+            else { [r,g,b] = purples(vals[i][j]); }
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(m + j*cell, i*cell, cell, cell);
+            if (i !== j) {
+                ctx.fillStyle = vals[i][j] > 0.5 ? 'white' : '#333';
+                ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(vals[i][j].toFixed(3), m + j*cell + cell/2, i*cell + cell/2);
+            }
+        }
+    }
+    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+    for (let i = 0; i <= 2; i++) {
+        ctx.beginPath(); ctx.moveTo(m, i*cell); ctx.lineTo(m+2*cell, i*cell); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(m+i*cell, 0); ctx.lineTo(m+i*cell, 2*cell); ctx.stroke();
+    }
+    ctx.fillStyle = '#333'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('A', m+cell/2, 2*cell+14); ctx.fillText('B', m+cell+cell/2, 2*cell+14);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('A', m-4, cell/2); ctx.fillText('B', m-4, cell+cell/2);
+}
+
+drawMockMap('mock-pae', v => bwr(v), 'pae');
+drawMockMap('mock-lis', v => blues(v), 'lis');
+drawMockMap('mock-clis', v => greens(v), 'clis');
+drawMockScore('mock-score');
+</script>
 </body>
 </html>
