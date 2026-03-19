@@ -6,8 +6,8 @@ Two standalone web tools — **no installation required** (runs entirely in the 
 
 | Tool | Input | Link |
 |------|-------|------|
-| **FlyPredictome → ChimeraX** | FlyPredictome URL | [Open tool](https://flyark.github.io/chimerax_visualization_lis/) |
-| **AlphaFold3 → ChimeraX** | AF3 zip file | [Open tool](https://flyark.github.io/chimerax_visualization_lis/af3.html) |
+| **FlyPredictome → ChimeraX** | FlyPredictome URL | [Open tool](https://flyark.github.io/chimerax_visualization_lis/chimerax_visualization_flypredictome.html) |
+| **AlphaFold3 → ChimeraX** | AF3 zip file | [Open tool](https://flyark.github.io/chimerax_visualization_lis/chimerax_visualization_af3.html) |
 
 ## FlyPredictome → ChimeraX
 
