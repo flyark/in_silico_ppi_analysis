@@ -543,10 +543,12 @@
             <div class="help-col">
                 <h4>Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank">AFM-LIS</a>)</h4>
                 <table class="help-table">
-                    <tr><td><strong>LIR</strong></td><td>Local Interaction Region — confident domain (PAE &le; 12)</td></tr>
-                    <tr><td><strong>cLIR</strong></td><td>contact LIR — confident interface (PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</td></tr>
-                    <tr><td><strong>iLIS</strong></td><td>integrated Local Interaction Score</td></tr>
-                    <tr><td><strong>ipTM</strong></td><td>interface predicted TM-score</td></tr>
+                    <tr><td><strong>LIR</strong></td><td>Local Interaction Residues — residues in the confident interaction region (PAE &le; 12 &Aring;)</td></tr>
+                    <tr><td><strong>cLIR</strong></td><td>contact-filtered LIR — residues in direct physical contact (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
+                    <tr><td><strong>LIS</strong></td><td>Local Interaction Score — normalized PAE confidence across the interface (0–1)</td></tr>
+                    <tr><td><strong>cLIS</strong></td><td>contact-filtered LIS — LIS restricted to direct physical contacts</td></tr>
+                    <tr><td><strong>iLIS</strong></td><td>integrated LIS — geometric mean of LIS and cLIS; captures both rigid and transient interactions</td></tr>
+                    <tr><td><strong>ipTM</strong></td><td>interface predicted TM-score — AlphaFold-Multimer's global interface confidence</td></tr>
                 </table>
                 <h4 style="margin-top: 0.8rem">References</h4>
                 <ul class="ref-list">
