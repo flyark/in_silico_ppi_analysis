@@ -63,8 +63,8 @@
 <body>
 
 <div class="header">
-    <h1>ChimeraX Visualization for AFM-LIS — Guide</h1>
-    <p>Step-by-step instructions for both tools</p>
+    <h1>AFM-LIS &rarr; ChimeraX — Guide</h1>
+    <p>Analyze AlphaFold-predicted protein interactions and generate ChimeraX visualization scripts</p>
     <div class="header-links">
         <a href="index.html">Home</a>
         <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>
@@ -210,10 +210,10 @@
                 </ul>
                 <div class="mock-maps">
                     <div><div class="mock-map"><canvas id="mock-pae" width="180" height="180"></canvas></div><div class="mock-map-label">PAE (bwr)</div></div>
-                    <div><div class="mock-map"><canvas id="mock-lis" width="180" height="180"></canvas></div><div class="mock-map-label">LIS (Blues)</div></div>
-                    <div><div class="mock-map"><canvas id="mock-clis" width="180" height="180"></canvas></div><div class="mock-map-label">cLIS (Greens)</div></div>
                     <div><div class="mock-map"><canvas id="mock-score" width="180" height="180"></canvas></div><div class="mock-map-label">Score Matrix</div></div>
                     <div><div class="mock-map"><canvas id="mock-rescount" width="180" height="180"></canvas></div><div class="mock-map-label">Residue Count Matrix</div></div>
+                    <div><div class="mock-map"><canvas id="mock-lis" width="180" height="180"></canvas></div><div class="mock-map-label">LIS (Blues)</div></div>
+                    <div><div class="mock-map"><canvas id="mock-clis" width="180" height="180"></canvas></div><div class="mock-map-label">cLIS (Greens)</div></div>
                 </div>
             </div>
         </div>
@@ -252,6 +252,27 @@
                     <span style="font-weight:600; color:#2471A3;">Same folder → Open .cxc</span>
                 </div>
                 <div class="tip">For multi-chain complexes, use "Download All Chains .cxc" to see the full complex with each chain in a different color. Uses ChimeraX's <code>color bychain</code> command.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- COLOR SCHEMES -->
+    <!-- ================================================================ -->
+    <div class="tool-section">
+        <h2 class="tool-title">Color Scheme Guide</h2>
+        <div class="step">
+            <div class="step-badge" style="background:#E67E22;">&#127912;</div>
+            <div class="step-content">
+                <h3>Default: Blue / Orange gradient</h3>
+                <p>LIR regions shown in light colors, cLIR (contact interface) in dark colors.</p>
+                <div style="display:flex; gap:1rem; margin-top:0.5rem; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain A — LIR</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#2471A3; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain A — cLIR</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#f5cba7; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain B — LIR</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#E67E22; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain B — cLIR</span></div>
+                </div>
+                <p style="margin-top:0.5rem;">Other presets available: Purple/Gold, Teal/Coral, Slate/Rose, solid colors, ChimeraX defaults, and auto-assigned multi-chain (tab10 palette).</p>
             </div>
         </div>
     </div>
@@ -318,39 +339,6 @@
         </div>
     </div>
 
-    <!-- ================================================================ -->
-    <!-- COLOR SCHEMES -->
-    <!-- ================================================================ -->
-    <div class="tool-section">
-        <h2 class="tool-title">Color Scheme Guide</h2>
-
-        <div class="step">
-            <div class="step-badge" style="background:#E67E22;">🎨</div>
-            <div class="step-content">
-                <h3>Default: Blue / Orange gradient</h3>
-                <p>LIR regions shown in light colors, cLIR (contact interface) in dark colors.</p>
-                <div style="display:flex; gap:1rem; margin-top:0.5rem; flex-wrap:wrap;">
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                        <div style="width:24px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc;"></div>
-                        <span style="font-size:0.85rem;">Chain A — LIR</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                        <div style="width:24px; height:24px; background:#2471A3; border-radius:4px;"></div>
-                        <span style="font-size:0.85rem;">Chain A — cLIR</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                        <div style="width:24px; height:24px; background:#f5cba7; border-radius:4px; border:1px solid #ccc;"></div>
-                        <span style="font-size:0.85rem;">Chain B — LIR</span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                        <div style="width:24px; height:24px; background:#E67E22; border-radius:4px;"></div>
-                        <span style="font-size:0.85rem;">Chain B — cLIR</span>
-                    </div>
-                </div>
-                <p style="margin-top:0.5rem;">Other presets available: Purple/Gold, Teal/Coral, Slate/Rose, solid colors, ChimeraX defaults, and auto-assigned multi-chain (tab10 palette).</p>
-            </div>
-        </div>
-    </div>
 
 </div>
 
