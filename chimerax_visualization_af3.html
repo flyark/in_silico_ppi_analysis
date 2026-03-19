@@ -135,6 +135,10 @@
             <div class="drop-zone-filename" id="file-name"></div>
         </div>
         <input type="file" id="file-input" accept=".zip" style="display:none">
+        <div style="text-align:center; margin-top:0.5rem; font-size:0.85rem; color:#888;">
+            or <a href="#" id="folder-browse-link" style="color:#2471A3;">select a folder</a> (Chrome/Edge only)
+        </div>
+        <input type="file" id="folder-input" webkitdirectory style="display:none">
         <div id="prediction-selector" style="display:none; margin-top:0.8rem;">
             <label>Multiple predictions found — select one:</label>
             <select id="prediction-select" style="padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem; width:100%; margin-top:0.3rem;"></select>
@@ -396,6 +400,13 @@ dropZone.addEventListener('drop', e => {
 });
 fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
+// Folder selection
+const folderInput = document.getElementById('folder-input');
+document.getElementById('folder-browse-link').addEventListener('click', e => { e.preventDefault(); folderInput.click(); });
+folderInput.addEventListener('change', e => {
+    if (e.target.files.length) handleFolder(e.target.files);
+});
+
 function handleFile(file) {
     if (!file.name.endsWith('.zip')) { setStatus('Please select a .zip file', 'error'); return; }
     af3File = file;
@@ -403,6 +414,27 @@ function handleFile(file) {
     document.getElementById('file-name').textContent = file.name;
     document.getElementById('btn-process').disabled = false;
     setStatus('');
+}
+
+async function handleFolder(fileList) {
+    // Build a virtual JSZip from folder files
+    const zip = new JSZip();
+    const folderName = fileList[0]?.webkitRelativePath?.split('/')[0] || 'folder';
+    for (const file of fileList) {
+        const path = file.webkitRelativePath || file.name;
+        // Skip __MACOSX, msas, templates
+        if (path.includes('__MACOSX') || path.includes('/msas/') || path.includes('/templates/')) continue;
+        const content = await file.arrayBuffer();
+        zip.file(path, content);
+    }
+    af3File = { name: folderName + '.zip' }; // fake file object for naming
+    af3LoadedZip = zip;
+    dropZone.classList.add('has-file');
+    document.getElementById('file-name').textContent = `${folderName}/ (${fileList.length} files)`;
+    document.getElementById('btn-process').disabled = false;
+    setStatus('');
+    // Set flag so processFile uses the pre-loaded zip
+    af3File._preloadedZip = zip;
 }
 
 function setStatus(msg, type = '') {
@@ -511,7 +543,7 @@ async function processFile() {
 
     try {
         setStatus('Reading zip file...', 'loading');
-        const zip = await JSZip.loadAsync(af3File);
+        const zip = af3File._preloadedZip || await JSZip.loadAsync(af3File);
 
         setStatus('Discovering model files...', 'loading');
         af3LoadedZip = zip;
