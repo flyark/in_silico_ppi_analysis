@@ -128,7 +128,7 @@
 
     <!-- Step 1: Upload -->
     <div class="card">
-        <div class="step-header"><span class="step-num">1</span> Upload AlphaFold3 Output <span style="font-weight:400; font-size:0.8rem; color:#888;">(all analysis runs locally in your browser — no data is uploaded to any server)</span></div>
+        <div class="step-header"><span class="step-num">1</span> Upload AlphaFold3 Output &nbsp;<span style="font-weight:400; font-size:0.8rem; color:#888;">(all analysis runs locally in your browser — no data is uploaded to any server)</span></div>
         <div class="drop-zone" id="drop-zone">
             <div class="drop-zone-icon">&#128230;</div>
             <div class="drop-zone-text">Drop AF3 zip file here or click to browse</div>
@@ -807,6 +807,7 @@ function analyzeModel(fdText, scText, cifText, paeCutoff, cbCutoff) {
             pairs[`${chainNames[i]},${chainNames[j]}`] = {
                 ci: chainNames[i], cj: chainNames[j],
                 LIS: lis, cLIS: clis, iLIS: ilis, ipTM: iptm,
+                LIA: lisCount, cLIA: clisCount,
                 lirI, lirJ, clirI, clirJ,
                 lenI: sizes[i], lenJ: sizes[j],
             };
@@ -883,6 +884,8 @@ function averageModels(allPairs) {
             LIS: vals.reduce((s, v) => s + v.LIS, 0) / n,
             cLIS: vals.reduce((s, v) => s + v.cLIS, 0) / n,
             ipTM: vals.reduce((s, v) => s + v.ipTM, 0) / n,
+            LIA: vals.reduce((s, v) => s + (v.LIA || 0), 0) / n,
+            cLIA: vals.reduce((s, v) => s + (v.cLIA || 0), 0) / n,
             lenI: vals[0].lenI, lenJ: vals[0].lenJ,
             lirI: new Set(vals.flatMap(v => [...v.lirI])),
             lirJ: new Set(vals.flatMap(v => [...v.lirJ])),
@@ -912,6 +915,8 @@ function symmetrizePairsFromComma(pairs) {
                 LIS: (val.LIS + rv.LIS) / 2,
                 cLIS: (val.cLIS + rv.cLIS) / 2,
                 ipTM: (val.ipTM + rv.ipTM) / 2,
+                LIA: ((val.LIA || 0) + (rv.LIA || 0)) / 2,
+                cLIA: ((val.cLIA || 0) + (rv.cLIA || 0)) / 2,
                 lenI: val.lenI, lenJ: val.lenJ,
                 lirI: val.lirI, lirJ: rv.lirI,
                 clirI: val.clirI, clirJ: rv.clirI,
@@ -1606,8 +1611,8 @@ function downloadCSV() {
         for (const [key, v] of Object.entries(sym)) {
             rows.push([
                 jobName, `model_${mi}`, v.ci, v.cj,
-                v.iLIS.toFixed(6), v.LIS.toFixed(6), '', v.lirI.size + v.lirJ.size,
-                v.cLIS.toFixed(6), '', v.clirI.size + v.clirJ.size, v.ipTM.toFixed(6),
+                v.iLIS.toFixed(6), v.LIS.toFixed(6), Math.round(v.LIA || 0), v.lirI.size + v.lirJ.size,
+                v.cLIS.toFixed(6), Math.round(v.cLIA || 0), v.clirI.size + v.clirJ.size, v.ipTM.toFixed(6),
                 `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,
