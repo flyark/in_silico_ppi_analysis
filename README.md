@@ -4,7 +4,7 @@ Generate [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/) visualization scrip
 
 <img src="images/upd1_dome_example.png" alt="Example: upd1-dome interaction visualized in ChimeraX" width="600">
 
-> **Example:** upd1–dome interaction (iLIS: 0.529, ipTM: 0.57). Chain A (upd1) in blue, Chain B (dome) in orange. LIR regions shown as ribbons, cLIR highlighted in darker colors.
+> **Example:** upd1–dome interaction (iLIS: 0.529, ipTM: 0.57). Chain A (upd1) in blue, Chain B (dome) in orange. Light colors show LIR regions (confident interaction domain, PAE ≤ 12 Å). Dark colors highlight cLIR residues (direct physical contacts, PAE ≤ 12 Å & Cβ ≤ 8 Å). Non-interacting regions are hidden.
 
 Two standalone web tools — **no installation required** (runs entirely in the browser):
 
