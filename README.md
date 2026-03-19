@@ -88,14 +88,14 @@ For command-line usage or batch processing (requires Python + numpy + scipy):
 
 ```bash
 # FlyPredictome
-python flypredictome_agent.py "https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Egfr/spi/SET_69/" --rank 1
+python python/flypredictome_agent.py "https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Egfr/spi/SET_69/" --rank 1
 
 # AlphaFold3
-python af3_agent.py /path/to/af3_prediction.zip --chain-pair A,B
+python python/af3_agent.py /path/to/af3_prediction.zip --chain-pair A,B
 
 # Flask web app (local server)
 pip install flask
-python app.py  # → http://127.0.0.1:5000
+python python/app.py  # → http://127.0.0.1:5000
 ```
 
 ## References
