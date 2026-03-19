@@ -273,10 +273,6 @@ def generate_cxc_with_colors(
     lines.append("view")
     lines.append("lighting soft depthCue true")
     lines.append("")
-    lines.append(f"# ── Save figure ──")
-    lines.append(f"save {symbol_1}_{symbol_2}.png transparentBackground true")
-    lines.append("")
-
     # Legend
     lines.append("# ── Color Legend ──")
     lines.append(f"# LIR  = Local Interaction Region (PAE <= 12)")
