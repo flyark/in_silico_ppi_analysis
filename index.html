@@ -11,11 +11,11 @@
         .header h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
         .header p { opacity: 0.85; font-size: 0.95rem; }
         .container { max-width: 800px; margin: 2rem auto; padding: 0 1.5rem; flex: 1; }
-        .tool-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; display: flex; gap: 1.5rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; }
+        .tool-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; display: flex; gap: 1.5rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; width: 100%; }
         .tool-card:hover { border-color: #2471A3; box-shadow: 0 4px 16px rgba(36,113,163,0.15); }
         .tool-icon { font-size: 2.5rem; flex-shrink: 0; }
         .tool-info h2 { font-size: 1.2rem; color: #1a5276; margin-bottom: 0.3rem; }
-        .tool-info p { font-size: 0.9rem; color: #666; line-height: 1.5; }
+        .tool-info p { font-size: 0.9rem; color: #666; line-height: 1.5; min-height: 3rem; }
         .links { text-align: center; margin: 1rem 0; }
         .links a { color: #2471A3; text-decoration: none; font-size: 0.9rem; margin: 0 0.8rem; }
         .links a:hover { text-decoration: underline; }
@@ -33,7 +33,7 @@
         <div class="tool-icon">&#129712;</div>
         <div class="tool-info">
             <h2>FlyPredictome &rarr; ChimeraX</h2>
-            <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script with the PDB structure.</p>
+            <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script. Supports all FlyPredictome prediction pairs.</p>
         </div>
     </a>
     <a class="tool-card" href="chimerax_visualization_af3.html">
