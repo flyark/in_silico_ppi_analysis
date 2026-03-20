@@ -179,12 +179,6 @@
 
     <!-- Results -->
     <div class="results" id="results">
-        <!-- Confidence Scores -->
-        <div class="card result-card" id="confidence-card" style="display:none;">
-            <h2>Confidence Scores</h2>
-            <div class="metrics-grid" id="confidence-metrics"></div>
-        </div>
-
         <!-- PAE Maps -->
         <div class="card result-card">
             <h2>PAE Maps</h2>
@@ -256,7 +250,7 @@
             <div id="seq-viewer" style="font-family:'SF Mono','Fira Code',monospace; overflow-x:auto;"></div>
         </div>
 
-        <!-- Interface Contact Map -->
+        <!-- Interface Contact Map (2-chain linear) -->
         <div class="card result-card" id="contact-map-card" style="display:none;">
             <h2>Interface Contact Map</h2>
             <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
@@ -265,13 +259,24 @@
             <canvas id="contact-canvas"></canvas>
         </div>
 
+        <!-- Chain Interaction Map (multi-chain) -->
+        <div class="card result-card" id="chord-card" style="display:none;">
+            <h2>Chain Interaction Map</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Arcs represent chains. Lines connect cLIR residue pairs in physical contact across all chain pairs.
+            </div>
+            <div style="text-align:center;">
+                <canvas id="chord-canvas"></canvas>
+            </div>
+        </div>
+
         <!-- Chain Pair Table -->
         <div class="card result-card">
             <h2 id="result-title">Chain Pair Summary</h2>
             <div class="info-box">Click a row to generate the ChimeraX script.</div>
             <input type="hidden" id="seed-select" value="0">
             <table class="data-table" id="pairs-table">
-                <thead><tr><th>Rank/Model</th><th>Pair</th><th>iLIS</th><th>ipTM</th><th>LIS</th><th>cLIS</th><th>cLIR (i)</th><th>cLIR (j)</th></tr></thead>
+                <thead><tr><th>Rank/Model</th><th>Pair</th><th>iLIS</th><th>ipSAE</th><th>ipTM</th><th>LIS</th><th>cLIS</th><th>cLIR (i)</th><th>cLIR (j)</th></tr></thead>
                 <tbody id="pairs-tbody"></tbody>
             </table>
             <div style="margin-top:0.5rem;">
@@ -438,6 +443,7 @@ let uniState = {
     avgResults: null,
     chainNames: null,
     chainSizes: null,
+    chainTypes: null,
     nTotal: 0,
     structureContents: {},  // idx -> text
     structureFilenames: {}, // idx -> filename
@@ -1347,6 +1353,8 @@ function parseCifCoords(cifText) {
                 residues.set(key, { chain, resnum, x, y, z, hasP: false });
             } else if (atomName === 'P' && !residues.has(key)) {
                 residues.set(key, { chain, resnum, x, y, z, hasP: true });
+            } else if (groupPDB === 'HETATM' && ION_NAMES.has(compId) && !residues.has(`${chain}:1`)) {
+                residues.set(`${chain}:1`, { chain, resnum: 1, x, y, z, hasP: false });
             }
         }
     }
@@ -1372,6 +1380,8 @@ function parsePdbCoords(pdbText) {
             residues.set(key, { chain, resnum, x, y, z, hasP: false });
         } else if (atomName === 'P' && !residues.has(key)) {
             residues.set(key, { chain, resnum, x, y, z, hasP: true });
+        } else if (line.startsWith('HETATM') && ION_NAMES.has(compId) && !residues.has(`${chain}:1`)) {
+            residues.set(`${chain}:1`, { chain, resnum: 1, x, y, z, hasP: false });
         }
     }
     return [...residues.values()];
@@ -1401,6 +1411,7 @@ function getChainsFromCif(cifText) {
     // Use label_asym_id for chain ordering
     const chainOrder = [];
     const chainCounts = new Map();
+    const chainTypes = new Map();
     const lines = cifText.split('\n');
     let inAtomSite = false;
     const colNames = [];
@@ -1417,21 +1428,39 @@ function getChainsFromCif(cifText) {
             const parts = line.trim().split(/\s+/);
             if (parts.length < colNames.length) continue;
             const getCol = (name) => parts[colNames.indexOf(name)] || '';
-            if (getCol('group_PDB') !== 'ATOM') continue;
-            if (getCol('label_atom_id') !== 'CA' && getCol('label_atom_id') !== 'P') continue;
+            const groupPDB = getCol('group_PDB');
+            const atomName = getCol('label_atom_id');
+            const compId = getCol('label_comp_id');
             const chain = getCol('label_asym_id');
             const resSeq = getCol('label_seq_id');
-            const rkey = `${chain}:${resSeq}`;
-            if (seenResidues.has(rkey)) continue;
-            seenResidues.add(rkey);
-            if (!chainCounts.has(chain)) {
-                chainOrder.push(chain);
-                chainCounts.set(chain, 0);
+
+            let counted = false;
+            if (groupPDB === 'ATOM' && (atomName === 'CA' || atomName === 'P')) {
+                const rkey = `${chain}:${resSeq}`;
+                if (!seenResidues.has(rkey)) {
+                    seenResidues.add(rkey);
+                    counted = true;
+                    if (atomName === 'P') chainTypes.set(chain, compId.startsWith('D') ? 'dna' : 'rna');
+                    else if (!chainTypes.has(chain)) chainTypes.set(chain, 'protein');
+                }
+            } else if (groupPDB === 'HETATM' && ION_NAMES.has(compId)) {
+                const rkey = `${chain}:ion`;
+                if (!seenResidues.has(rkey)) {
+                    seenResidues.add(rkey);
+                    counted = true;
+                    chainTypes.set(chain, 'ion');
+                }
             }
-            chainCounts.set(chain, chainCounts.get(chain) + 1);
+            if (counted) {
+                if (!chainCounts.has(chain)) {
+                    chainOrder.push(chain);
+                    chainCounts.set(chain, 0);
+                }
+                chainCounts.set(chain, chainCounts.get(chain) + 1);
+            }
         }
     }
-    return { names: chainOrder, sizes: chainOrder.map(c => chainCounts.get(c)) };
+    return { names: chainOrder, sizes: chainOrder.map(c => chainCounts.get(c)), types: chainOrder.map(c => chainTypes.get(c) || 'protein') };
 }
 
 function getChainsFromPdb(pdbText) {
@@ -1459,6 +1488,72 @@ function getChainsFromPdb(pdbText) {
 // ============================================================================
 // CONTACT MAP
 // ============================================================================
+
+// ipSAE calculation (Dunbrack et al. 2025)
+// Uses PAE matrix directly with TM-score-like sigmoid transform
+function calcIpSAE(pae, si, ei, sj, ej, paeCutoff) {
+    const lenI = ei - si, lenJ = ej - sj;
+    if (lenI === 0 || lenJ === 0) return 0;
+
+    function calcD0(L) {
+        return L > 27 ? Math.max(1.0, 1.24 * Math.pow(L - 15, 1/3) - 1.8) : 1.0;
+    }
+    function ptmFunc(x, d0) {
+        return 1.0 / (1 + (x / d0) * (x / d0));
+    }
+
+    // ipSAE(I→J): for each residue i in chain I, score against chain J
+    let maxScoreIJ = 0;
+    for (let ri = si; ri < ei; ri++) {
+        // Count residues in J with good PAE
+        let goodCount = 0;
+        let scoreSum = 0;
+        for (let rj = sj; rj < ej; rj++) {
+            const v = (pae[ri]?.[rj] ?? 31) ;
+            if (v < paeCutoff) {
+                goodCount++;
+                const d0 = calcD0(goodCount); // adaptive d0
+                scoreSum += ptmFunc(v, d0);
+            }
+        }
+        if (goodCount > 0) {
+            // Recalculate with final d0 based on total good count
+            const d0 = calcD0(goodCount);
+            let finalScore = 0;
+            for (let rj = sj; rj < ej; rj++) {
+                const v = (pae[ri]?.[rj] ?? 31);
+                if (v < paeCutoff) {
+                    finalScore += ptmFunc(v, d0);
+                }
+            }
+            finalScore /= goodCount;
+            if (finalScore > maxScoreIJ) maxScoreIJ = finalScore;
+        }
+    }
+
+    // ipSAE(J→I): reverse direction
+    let maxScoreJI = 0;
+    for (let rj = sj; rj < ej; rj++) {
+        let goodCount = 0;
+        for (let ri = si; ri < ei; ri++) {
+            if ((pae[rj]?.[ri] ?? 31) < paeCutoff) goodCount++;
+        }
+        if (goodCount > 0) {
+            const d0 = calcD0(goodCount);
+            let finalScore = 0;
+            for (let ri = si; ri < ei; ri++) {
+                const v = (pae[rj]?.[ri] ?? 31);
+                if (v < paeCutoff) {
+                    finalScore += ptmFunc(v, d0);
+                }
+            }
+            finalScore /= goodCount;
+            if (finalScore > maxScoreJI) maxScoreJI = finalScore;
+        }
+    }
+
+    return (maxScoreIJ + maxScoreJI) / 2;
+}
 
 function computeContactMap(coords, threshold) {
     const n = coords.length;
@@ -1531,6 +1626,7 @@ async function processFiles() {
         uniState.structureFilenames = {};
         uniState.chainNames = null;
         uniState.chainSizes = null;
+        uniState.chainTypes = null;
         uniState.nTotal = 0;
         uniState.multiChainColors = null;
 
@@ -1562,7 +1658,7 @@ async function processFiles() {
             const scores = extractConfidenceScores(model.confidencePath, uniState.platform);
             // Also merge from full confidence file if separate (Tamarind AF3)
             if (model.confidencePathFull && model.confidencePathFull !== model.confidencePath) {
-                const fullScores = extractConfidenceScores(model.confidencePathFull, uniState.platform);
+                const fullScores = extractConfidenceScores(model.confidencePathFull, uniState.platform) || {};
                 for (const [k, v] of Object.entries(fullScores)) {
                     if (scores[k] === undefined) scores[k] = v;
                 }
@@ -1582,16 +1678,21 @@ async function processFiles() {
             }
 
             // Build chain boundaries
-            let chainNames, sizes, nTotal;
+            let chainNames, sizes, nTotal, types;
             if (chainIds) {
                 const chainMap = new Map();
                 for (const c of chainIds) chainMap.set(c, (chainMap.get(c) || 0) + 1);
                 chainNames = [...chainMap.keys()];
                 sizes = [...chainMap.values()];
                 nTotal = chainIds.length;
+                // Use structure-derived types, fallback to size-based heuristic
+                const structTypes = {};
+                if (chainInfo.types) chainInfo.names.forEach((n, i) => { structTypes[n] = chainInfo.types[i]; });
+                types = chainNames.map(n => structTypes[n] || (sizes[chainNames.indexOf(n)] === 1 ? 'ion' : 'protein'));
             } else {
                 chainNames = chainInfo.names;
                 sizes = chainInfo.sizes;
+                types = chainInfo.types || chainNames.map(() => 'protein');
                 nTotal = sizes.reduce((a, b) => a + b, 0);
             }
 
@@ -1666,9 +1767,13 @@ async function processFiles() {
                     const ilis = Math.sqrt(lis * clis);
                     const iptm = (iptmMatrix && iptmMatrix[i] && iptmMatrix[i][j] != null) ? iptmMatrix[i][j] : globalIptm;
 
+                    // ipSAE calculation (Dunbrack method)
+                    let ipsae = 0;
+                    try { ipsae = calcIpSAE(pae, si, Math.min(ei, pae.length), sj, Math.min(ej, pae.length), paeCutoff); } catch(e) { }
+
                     pairs[`${chainNames[i]},${chainNames[j]}`] = {
                         ci: chainNames[i], cj: chainNames[j],
-                        LIS: lis, cLIS: clis, iLIS: ilis, ipTM: iptm,
+                        LIS: lis, cLIS: clis, iLIS: ilis, ipTM: iptm, ipSAE: ipsae,
                         LIA: lisCount, cLIA: clisCount,
                         lirI, lirJ, clirI, clirJ,
                         lenI: sizes[i], lenJ: sizes[j],
@@ -1729,6 +1834,7 @@ async function processFiles() {
             if (!uniState.chainNames) uniState.chainNames = chainNames;
             uniState.nTotal = nTotal;
             uniState.chainSizes = sizes;
+            if (!uniState.chainTypes) uniState.chainTypes = types;
 
             uniState.modelData.push({
                 pae, lisMap, clisMap, ilisGrid, iptmGrid, lirGrid, clirGrid, nTotal, idx,
@@ -1743,7 +1849,8 @@ async function processFiles() {
         uniState.avgResults = uniState.results;
 
         // Show confidence scores
-        displayConfidenceScores(globalConfidenceScores);
+        // Store confidence scores for CSV export
+        uniState.confidenceScores = globalConfidenceScores;
 
         setStatus(`Done! Processed ${modelIndices.length} model(s) from ${platformLabel(uniState.platform)}.`, 'success');
         const displayName = selectedPred + ' (' + platformLabel(uniState.platform) + ')';
@@ -1774,6 +1881,7 @@ function averageModels(allPairs) {
             LIS: vals.reduce((s, v) => s + v.LIS, 0) / n,
             cLIS: vals.reduce((s, v) => s + v.cLIS, 0) / n,
             ipTM: vals.reduce((s, v) => s + v.ipTM, 0) / n,
+            ipSAE: vals.reduce((s, v) => s + (v.ipSAE || 0), 0) / n,
             LIA: vals.reduce((s, v) => s + (v.LIA || 0), 0) / n,
             cLIA: vals.reduce((s, v) => s + (v.cLIA || 0), 0) / n,
             lenI: vals[0].lenI, lenJ: vals[0].lenJ,
@@ -1803,6 +1911,7 @@ function symmetrizePairsFromComma(pairs) {
                 LIS: (val.LIS + rv.LIS) / 2,
                 cLIS: (val.cLIS + rv.cLIS) / 2,
                 ipTM: (val.ipTM + rv.ipTM) / 2,
+                ipSAE: Math.max(val.ipSAE || 0, rv.ipSAE || 0),
                 LIA: ((val.LIA || 0) + (rv.LIA || 0)) / 2,
                 cLIA: ((val.cLIA || 0) + (rv.cLIA || 0)) / 2,
                 lenI: val.lenI, lenJ: val.lenJ,
@@ -1876,7 +1985,7 @@ function displayResults(results, jobName) {
                 tr.style.color = '#777';
                 tr.style.fontSize = '0.8rem';
                 tr.onclick = () => selectRow(key, String(mi), tr);
-                tr.innerHTML = `<td>${uniState.modelData[mi]?.label || 'model_' + mi}</td><td>${mv.ci} \u2014 ${mv.cj}</td><td>${mv.iLIS.toFixed(3)}</td><td>${mv.ipTM.toFixed(2)}</td><td>${mv.LIS.toFixed(3)}</td><td>${mv.cLIS.toFixed(3)}</td><td>${mv.clirI.size}</td><td>${mv.clirJ.size}</td>`;
+                tr.innerHTML = `<td>${uniState.modelData[mi]?.label || 'model_' + mi}</td><td>${mv.ci} \u2014 ${mv.cj}</td><td>${mv.iLIS.toFixed(3)}</td><td>${(mv.ipSAE||0).toFixed(3)}</td><td>${mv.ipTM.toFixed(2)}</td><td>${mv.LIS.toFixed(3)}</td><td>${mv.cLIS.toFixed(3)}</td><td>${mv.clirI.size}</td><td>${mv.clirJ.size}</td>`;
                 tbody.appendChild(tr);
             }
             // Average row
@@ -1886,14 +1995,14 @@ function displayResults(results, jobName) {
             avgTr.style.background = '#f0f7fc';
             avgTr.style.fontWeight = '600';
             avgTr.onclick = () => selectRow(key, 'avg', avgTr);
-            avgTr.innerHTML = `<td>Average</td><td>${avg.ci} \u2014 ${avg.cj}</td><td>${avg.iLIS.toFixed(3)}</td><td>${avg.ipTM.toFixed(2)}</td><td>${avg.LIS.toFixed(3)}</td><td>${avg.cLIS.toFixed(3)}</td><td>${avg.clirI.size}</td><td>${avg.clirJ.size}</td>`;
+            avgTr.innerHTML = `<td>Average</td><td>${avg.ci} \u2014 ${avg.cj}</td><td>${avg.iLIS.toFixed(3)}</td><td>${(avg.ipSAE||0).toFixed(3)}</td><td>${avg.ipTM.toFixed(2)}</td><td>${avg.LIS.toFixed(3)}</td><td>${avg.cLIS.toFixed(3)}</td><td>${avg.clirI.size}</td><td>${avg.clirJ.size}</td>`;
             tbody.appendChild(avgTr);
         } else {
             // Single model row
             const tr = document.createElement('tr');
             tr.className = 'clickable';
             tr.onclick = () => selectRow(key, '0', tr);
-            tr.innerHTML = `<td>${uniState.modelData[0]?.label || '0'}</td><td>${avg.ci} \u2014 ${avg.cj}</td><td>${avg.iLIS.toFixed(3)}</td><td>${avg.ipTM.toFixed(2)}</td><td>${avg.LIS.toFixed(3)}</td><td>${avg.cLIS.toFixed(3)}</td><td>${avg.clirI.size}</td><td>${avg.clirJ.size}</td>`;
+            tr.innerHTML = `<td>${uniState.modelData[0]?.label || '0'}</td><td>${avg.ci} \u2014 ${avg.cj}</td><td>${avg.iLIS.toFixed(3)}</td><td>${(avg.ipSAE||0).toFixed(3)}</td><td>${avg.ipTM.toFixed(2)}</td><td>${avg.LIS.toFixed(3)}</td><td>${avg.cLIS.toFixed(3)}</td><td>${avg.clirI.size}</td><td>${avg.clirJ.size}</td>`;
             tbody.appendChild(tr);
         }
     }
@@ -1936,6 +2045,7 @@ function selectPair(key) {
 
     buildSequenceViewer(key);
     buildContactMap(key);
+    buildChordDiagram();
 
     const colors = getColorsForPair(v.ci, v.cj);
     const seedVal = document.getElementById('seed-select').value;
@@ -2531,7 +2641,8 @@ function drawColorbar(canvasId, colorFn, vmin, vmax) {
 function downloadCSV() {
     if (!uniState.modelPairs || !uniState.avgResults || !uniState.chainNames) return;
     const jobName = document.getElementById('result-title')?.textContent || 'prediction';
-    const header = 'folder_name,platform,model_number,protein_1,protein_2,iLIS,LIS,LIA,LIR,cLIS,cLIA,cLIR,iptm,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const cs = uniState.confidenceScores || {};
+    const header = 'name,model,chain_A,chain_B,iLIS,ipSAE,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const rows = [header];
     const platform = platformLabel(uniState.platform);
 
@@ -2539,9 +2650,12 @@ function downloadCSV() {
         const sym = symmetrizePairs(uniState.modelPairs[mi]);
         for (const [key, v] of Object.entries(sym)) {
             rows.push([
-                jobName, platform, `model_${mi}`, v.ci, v.cj,
-                v.iLIS.toFixed(6), v.LIS.toFixed(6), Math.round(v.LIA || 0), v.lirI.size + v.lirJ.size,
-                v.cLIS.toFixed(6), Math.round(v.cLIA || 0), v.clirI.size + v.clirJ.size, v.ipTM.toFixed(6),
+                jobName, `model_${mi}`, v.ci, v.cj,
+                v.iLIS.toFixed(6), (v.ipSAE||0).toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+                v.ipTM.toFixed(6),
+                cs.pLDDT != null ? cs.pLDDT.toFixed(1) : '', cs.pTM != null ? cs.pTM.toFixed(3) : '',
+                v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
+                v.lenI, v.lenJ,
                 `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,
@@ -2552,9 +2666,12 @@ function downloadCSV() {
     if (uniState.modelPairs.length > 1) {
         for (const [key, v] of Object.entries(uniState.avgResults)) {
             rows.push([
-                jobName, platform, 'average', v.ci, v.cj,
-                v.iLIS.toFixed(6), v.LIS.toFixed(6), '', v.lirI.size + v.lirJ.size,
-                v.cLIS.toFixed(6), '', v.clirI.size + v.clirJ.size, v.ipTM.toFixed(6),
+                jobName, 'average', v.ci, v.cj,
+                v.iLIS.toFixed(6), (v.ipSAE||0).toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+                v.ipTM.toFixed(6),
+                cs.pLDDT != null ? cs.pLDDT.toFixed(1) : '', cs.pTM != null ? cs.pTM.toFixed(3) : '',
+                v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
+                v.lenI, v.lenJ,
                 `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,
@@ -2635,6 +2752,8 @@ function downloadAllChainsCxc() {
 // SEQUENCE VIEWER
 // ============================================================================
 const AA3TO1 = {ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLN:'Q',GLU:'E',GLY:'G',HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',THR:'T',TRP:'W',TYR:'Y',VAL:'V'};
+const NT3TO1 = {DA:'A',DC:'C',DG:'G',DT:'T',A:'A',C:'C',G:'G',U:'U'};
+const ION_NAMES = new Set(['ZN','CA','MG','MN','FE','CU','NA','K','CL','NI','CO','CD']);
 
 function parseCifSequence(cifText) {
     const chains = new Map();
@@ -2652,16 +2771,38 @@ function parseCifSequence(cifText) {
             const parts = line.trim().split(/\s+/);
             if (parts.length < colNames.length) continue;
             const getCol = (name) => parts[colNames.indexOf(name)] || '';
-            if (getCol('group_PDB') !== 'ATOM') continue;
-            if (getCol('label_atom_id') !== 'CA') continue;
-            const chain = getCol('label_asym_id');
-            const resSeq = parseInt(getCol('label_seq_id'));
+            const groupPDB = getCol('group_PDB');
+            const atomName = getCol('label_atom_id');
             const resName = getCol('label_comp_id');
-            if (isNaN(resSeq)) continue;
-            if (!chains.has(chain)) chains.set(chain, []);
-            const arr = chains.get(chain);
-            if (!arr.find(r => r.resnum === resSeq)) {
-                arr.push({ resnum: resSeq, aa: AA3TO1[resName] || 'X' });
+            const chain = getCol('label_asym_id');
+            const resSeqStr = getCol('label_seq_id');
+            const resSeq = parseInt(resSeqStr);
+
+            // Protein: CA atoms
+            if (groupPDB === 'ATOM' && atomName === 'CA' && AA3TO1[resName]) {
+                if (isNaN(resSeq)) continue;
+                if (!chains.has(chain)) chains.set(chain, []);
+                const arr = chains.get(chain);
+                if (!arr.find(r => r.resnum === resSeq)) {
+                    arr.push({ resnum: resSeq, aa: AA3TO1[resName], type: 'protein' });
+                }
+            }
+            // DNA/RNA: P atoms
+            else if (groupPDB === 'ATOM' && atomName === 'P' && NT3TO1[resName]) {
+                if (isNaN(resSeq)) continue;
+                if (!chains.has(chain)) chains.set(chain, []);
+                const arr = chains.get(chain);
+                if (!arr.find(r => r.resnum === resSeq)) {
+                    arr.push({ resnum: resSeq, aa: NT3TO1[resName], type: resName.startsWith('D') ? 'dna' : 'rna' });
+                }
+            }
+            // Ions: HETATM with known ion names
+            else if (groupPDB === 'HETATM' && ION_NAMES.has(resName)) {
+                if (!chains.has(chain)) chains.set(chain, []);
+                const arr = chains.get(chain);
+                if (arr.length === 0) {
+                    arr.push({ resnum: 1, aa: resName, type: 'ion' });
+                }
             }
         }
     }
@@ -2671,17 +2812,35 @@ function parseCifSequence(cifText) {
 function parsePdbSequence(pdbText) {
     const chains = new Map();
     for (const line of pdbText.split('\n')) {
-        if (!line.startsWith('ATOM')) continue;
+        const isAtom = line.startsWith('ATOM');
+        const isHet = line.startsWith('HETATM');
+        if (!isAtom && !isHet) continue;
+        if (line.length < 54) continue;
         const atomName = line.substring(12, 16).trim();
-        if (atomName !== 'CA') continue;
+        const resName = line.substring(17, 20).trim();
         const chain = line.substring(21, 22).trim() || 'A';
         const resnum = parseInt(line.substring(22, 26).trim());
-        const resName = line.substring(17, 20).trim();
-        if (isNaN(resnum)) continue;
-        if (!chains.has(chain)) chains.set(chain, []);
-        const arr = chains.get(chain);
-        if (!arr.find(r => r.resnum === resnum)) {
-            arr.push({ resnum, aa: AA3TO1[resName] || 'X' });
+
+        if (isAtom && atomName === 'CA' && AA3TO1[resName]) {
+            if (isNaN(resnum)) continue;
+            if (!chains.has(chain)) chains.set(chain, []);
+            const arr = chains.get(chain);
+            if (!arr.find(r => r.resnum === resnum)) {
+                arr.push({ resnum, aa: AA3TO1[resName], type: 'protein' });
+            }
+        } else if (isAtom && atomName === 'P' && NT3TO1[resName]) {
+            if (isNaN(resnum)) continue;
+            if (!chains.has(chain)) chains.set(chain, []);
+            const arr = chains.get(chain);
+            if (!arr.find(r => r.resnum === resnum)) {
+                arr.push({ resnum, aa: NT3TO1[resName], type: resName.startsWith('D') ? 'dna' : 'rna' });
+            }
+        } else if (isHet && ION_NAMES.has(resName)) {
+            if (!chains.has(chain)) chains.set(chain, []);
+            const arr = chains.get(chain);
+            if (arr.length === 0) {
+                arr.push({ resnum: isNaN(resnum) ? 1 : resnum, aa: resName, type: 'ion' });
+            }
         }
     }
     return chains;
@@ -2718,8 +2877,10 @@ function buildSequenceViewer(pairKey) {
     const allCLIR = {};
     for (const name of uniState.chainNames) { allLIR[name] = new Set(); allCLIR[name] = new Set(); }
 
-    if (uniState.avgResults) {
-        for (const [key, pv] of Object.entries(uniState.avgResults)) {
+    // Use current results (changes per selected model/rank)
+    const currentResults = uniState.results || uniState.avgResults;
+    if (currentResults) {
+        for (const [key, pv] of Object.entries(currentResults)) {
             if (pv.lirI) for (const r of pv.lirI) allLIR[pv.ci]?.add(r);
             if (pv.lirJ) for (const r of pv.lirJ) allLIR[pv.cj]?.add(r);
             if (pv.clirI) for (const r of pv.clirI) allCLIR[pv.ci]?.add(r);
@@ -2753,10 +2914,39 @@ function buildSequenceViewer(pairKey) {
 
     for (const cc of chainConfigs) {
         if (cc.seq.length === 0) continue;
+        const seqType = cc.seq[0]?.type;
+        const isSelected = selectedChains.includes(cc.name);
+
+        // Ion chains: show as a simple inline label with interaction color
+        if (seqType === 'ion') {
+            const rawIon = cc.seq[0]?.aa || '?';
+            const ionName = rawIon.charAt(0) + rawIon.slice(1).toLowerCase();
+            const hasClir = cc.clir && cc.clir.size > 0;
+            const hasLir = cc.lir && cc.lir.size > 0;
+            const label = document.createElement('div');
+            label.className = 'seq-chain-label';
+            label.textContent = `Chain ${cc.name}` + (isSelected ? ` \u2014 selected pair` : '');
+            container.appendChild(label);
+            const row = document.createElement('div');
+            row.className = 'seq-row';
+            const ionEl = document.createElement('span');
+            ionEl.style.cssText = 'display:inline-block; padding:1px 6px; border-radius:3px; font-weight:bold; font-size:0.85rem;';
+            if (hasClir) {
+                ionEl.style.background = cc.clirColor;
+                ionEl.style.color = '#fff';
+            } else if (hasLir) {
+                ionEl.style.background = lightenColor(cc.clirColor.replace('#',''), 0.4);
+            }
+            ionEl.textContent = ionName;
+            row.appendChild(ionEl);
+            container.appendChild(row);
+            continue;
+        }
+
         const label = document.createElement('div');
         label.className = 'seq-chain-label';
-        const isSelected = selectedChains.includes(cc.name);
-        label.textContent = `Chain ${cc.name} (${cc.seq.length} residues)` + (isSelected ? ` \u2014 selected pair` : '');
+        const unitLabel = seqType === 'dna' || seqType === 'rna' ? `${cc.seq.length} nt` : `${cc.seq.length} residues`;
+        label.textContent = `Chain ${cc.name} (${unitLabel})` + (isSelected ? ` \u2014 selected pair` : '');
         container.appendChild(label);
 
         const perRow = 80;
@@ -2953,7 +3143,7 @@ function buildContactMap(pairKey) {
     for (const c of contacts) {
         const ax = xA(c.resA), bx = xB(c.resB);
         const t = maxDist > minDist ? 1 - (c.dist - minDist) / (maxDist - minDist) : 1;
-        const alpha = 0.03 + t * 0.12;
+        const alpha = 0.08 + t * 0.2;
         const midY = (barY_A + barH + barY_B) / 2;
         ctx.beginPath();
         ctx.moveTo(ax, barY_A + barH);
@@ -2969,6 +3159,197 @@ function buildContactMap(pairKey) {
     // Label
     ctx.fillStyle = '#888'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText(`${contacts.length} cLIR contact pairs`, width / 2, barY_B + barH + 18);
+
+    ctx.restore();
+}
+
+function buildChordDiagram() {
+    const card = document.getElementById('chord-card');
+    const canvas = document.getElementById('chord-canvas');
+    if (!card || !canvas) return;
+
+    const chainNames = uniState.chainNames || [];
+    const chainSizes = uniState.chainSizes || [];
+    const nc = chainNames.length;
+    if (nc < 2) { card.style.display = 'none'; return; }
+
+    // Get structure coordinates
+    const seedVal = document.getElementById('seed-select')?.value || '0';
+    const useIdx = seedVal === 'avg' ? Object.keys(uniState.structureContents)[0] : seedVal;
+    const structText = uniState.structureContents[useIdx] || uniState.structureContents[Object.keys(uniState.structureContents)[0]];
+    if (!structText) { card.style.display = 'none'; return; }
+
+    const coords = parseStructureCoords(structText, uniState.structureFormat);
+    const chainCoordMap = new Map();
+    for (const c of coords) {
+        if (!chainCoordMap.has(c.chain)) chainCoordMap.set(c.chain, new Map());
+        chainCoordMap.get(c.chain).set(c.resnum, c);
+    }
+
+    // Get chain sequences (for ion names)
+    const chainSeqs = uniState.structureFormat === 'pdb' ? parsePdbSequence(structText) : parseCifSequence(structText);
+
+    // Get current results (all pairs)
+    const results = uniState.results || uniState.avgResults;
+    if (!results) { card.style.display = 'none'; return; }
+
+    card.style.display = '';
+
+    const S = 2;
+    const size = 350;
+    const cxC = size / 2, cyC = size / 2;
+    const outerR = size / 2 - 30;
+    const innerR = outerR - 18;
+    const chordR = innerR - 4;
+
+    canvas.width = size * S;
+    canvas.height = size * S;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(S, S);
+
+    // Arc sizing proportional to chain length
+    const totalRes = chainSizes.reduce((a, b) => a + b, 0);
+    const gapAngle = 0.04;
+    const totalGap = gapAngle * nc;
+    const availAngle = 2 * Math.PI - totalGap;
+
+    const chainTypes = uniState.chainTypes || chainNames.map(() => 'protein');
+    const arcs = [];
+    let angle = -Math.PI / 2;
+    for (let i = 0; i < nc; i++) {
+        const sweep = (chainSizes[i] / totalRes) * availAngle;
+        let displayName = chainNames[i];
+        if (chainTypes[i] === 'ion') {
+            const seq = chainSeqs.get(chainNames[i]);
+            if (seq && seq.length > 0) {
+                const raw = seq[0].aa;
+                displayName = raw.charAt(0) + raw.slice(1).toLowerCase();
+            }
+        }
+        arcs.push({ start: angle, end: angle + sweep, mid: angle + sweep / 2, name: chainNames[i], displayName, size: chainSizes[i], idx: i, type: chainTypes[i] || 'protein' });
+        angle += sweep + gapAngle;
+    }
+
+    // Get chain colors — use color pickers for 2-chain, multi-chain palette for >2
+    const chainColors = {};
+    if (nc === 2) {
+        chainColors[chainNames[0]] = document.getElementById('color-clir-a')?.value || '#2471A3';
+        chainColors[chainNames[1]] = document.getElementById('color-clir-b')?.value || '#E67E22';
+    } else {
+        setupMultiChainColors();
+        for (const name of chainNames) {
+            chainColors[name] = (uniState.multiChainColors && uniState.multiChainColors[name]) || '#888';
+        }
+    }
+
+    // Draw outer arcs
+    for (const arc of arcs) {
+        ctx.beginPath();
+        ctx.arc(cxC, cyC, outerR, arc.start, arc.end);
+        ctx.arc(cxC, cyC, innerR, arc.end, arc.start, true);
+        ctx.closePath();
+        ctx.fillStyle = chainColors[arc.name] || '#888';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Label (rotated along arc, matching subdomain interaction map style)
+        const labelAngle = arc.mid;
+        const labelR = outerR + 14;
+        const lx = cxC + Math.cos(labelAngle) * labelR;
+        const ly = cyC + Math.sin(labelAngle) * labelR;
+        ctx.save();
+        ctx.translate(lx, ly);
+        let textAngle = labelAngle + Math.PI / 2;
+        const normA = ((textAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+        if (normA > Math.PI/2 && normA < 3*Math.PI/2) textAngle += Math.PI;
+        ctx.rotate(textAngle);
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(arc.type === 'ion' ? arc.displayName : arc.name, 0, 0);
+        ctx.restore();
+
+        // Secondary label (chain letter for ions, size for others)
+        const sizeLabel = arc.type === 'ion' ? `(${arc.name})` : `${arc.size}`;
+        const rangeR = outerR + 24;
+        const rx = cxC + Math.cos(labelAngle) * rangeR;
+        const ry = cyC + Math.sin(labelAngle) * rangeR;
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(textAngle);
+        ctx.fillStyle = '#888';
+        ctx.font = '7px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(sizeLabel, 0, 0);
+        ctx.restore();
+    }
+
+    // Helper: residue to angle
+    function resToAngle(chainName, resnum) {
+        const arcIdx = chainNames.indexOf(chainName);
+        if (arcIdx < 0) return 0;
+        const arc = arcs[arcIdx];
+        const frac = (resnum - 1) / Math.max(1, chainSizes[arcIdx] - 1);
+        return arc.start + frac * (arc.end - arc.start);
+    }
+
+    // Draw residue-level contact lines for all pairs
+    const contactDist = 10;
+    for (const [key, v] of Object.entries(results)) {
+        // Use cLIR if available, fall back to LIR for ion pairs
+        const idxI = chainNames.indexOf(v.ci), idxJ = chainNames.indexOf(v.cj);
+        const typeI = chainTypes[idxI], typeJ = chainTypes[idxJ];
+        const isIonPair = typeI === 'ion' || typeJ === 'ion';
+        const setI = (v.clirI && v.clirI.size > 0) ? v.clirI : isIonPair ? (v.lirI || new Set()) : new Set();
+        const setJ = (v.clirJ && v.clirJ.size > 0) ? v.clirJ : isIonPair ? (v.lirJ || new Set()) : new Set();
+        if (setI.size === 0 || setJ.size === 0) continue;
+        const coordsI = chainCoordMap.get(v.ci);
+        const coordsJ = chainCoordMap.get(v.cj);
+        if (!coordsI || !coordsJ) continue;
+
+        const colI = chainColors[v.ci] || '#888';
+        const colJ = chainColors[v.cj] || '#888';
+
+        for (const resA of setI) {
+            const cA = coordsI.get(resA);
+            if (!cA) continue;
+            for (const resB of setJ) {
+                const cB = coordsJ.get(resB);
+                if (!cB) continue;
+                const dx = cA.x - cB.x, dy = cA.y - cB.y, dz = cA.z - cB.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                if (dist >= contactDist) continue;
+
+                const angA = resToAngle(v.ci, resA);
+                const angB = resToAngle(v.cj, resB);
+                const xA = cxC + Math.cos(angA) * chordR;
+                const yA = cyC + Math.sin(angA) * chordR;
+                const xB = cxC + Math.cos(angB) * chordR;
+                const yB = cyC + Math.sin(angB) * chordR;
+
+                const t = 1 - dist / contactDist;
+                const alpha = 0.08 + t * 0.2;
+
+                ctx.beginPath();
+                ctx.moveTo(xA, yA);
+                ctx.quadraticCurveTo(cxC, cyC, xB, yB);
+                const grad = ctx.createLinearGradient(xA, yA, xB, yB);
+                grad.addColorStop(0, hexToRgba(colI, alpha));
+                grad.addColorStop(1, hexToRgba(colJ, alpha));
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
+        }
+    }
 
     ctx.restore();
 }

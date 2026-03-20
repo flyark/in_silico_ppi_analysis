@@ -446,9 +446,20 @@
         <div class="card result-card" id="connection-diagram-card" style="display:none;">
             <h2>Interface Contact Map</h2>
             <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
-                Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Thicker lines = closer contact.
+                Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Per-rank structures fetched automatically.
             </div>
             <canvas id="connection-canvas"></canvas>
+        </div>
+
+        <!-- Chain Interaction Map (circular) -->
+        <div class="card result-card" id="chord-card" style="display:none;">
+            <h2>Chain Interaction Map</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Arcs represent chains (proportional to length). Lines connect cLIR residue pairs in physical contact.
+            </div>
+            <div style="text-align:center;">
+                <canvas id="chord-canvas"></canvas>
+            </div>
         </div>
 
         <!-- Script -->
@@ -831,6 +842,8 @@ let cxcColorMode = '';       // ChimeraX color command preset
 let flyParsed = null;      // parsed table data
 let flyChainSeqs = null;   // parsed PDB sequences
 let flyPdbText = null;     // raw PDB text for connection diagram
+let flyPdbPerRank = {};    // cached PDB text per rank
+let flyBaseUrl = '';       // base FlyPredictome URL for per-rank fetching
 let flyCurrentRank = 1;    // currently selected rank
 
 // ── CORS proxy fetch ──
@@ -906,7 +919,12 @@ async function generate() {
         return;
     }
 
-    // Fetch PDB for sequence viewer
+    // Store base URL for per-rank PDB fetching
+    // Pattern: famdb_details/X/Y/SET_N/ → famdb_details_with_rank/X/Y/SET_N/{rank}
+    flyBaseUrl = urlInput || '';
+    flyPdbPerRank = {};
+
+    // Fetch PDB for sequence viewer (rank 1)
     flyChainSeqs = null;
     flyPdbText = null;
     if (flyParsed.pdbUrl) {
@@ -915,6 +933,7 @@ async function generate() {
             if (pdbText && pdbText.includes('ATOM')) {
                 flyChainSeqs = parsePdbSequence(pdbText);
                 flyPdbText = pdbText;
+                flyPdbPerRank[1] = pdbText; // cache rank 1
             }
         } catch (e) { console.warn('Could not fetch PDB for sequence:', e); }
     }
@@ -941,9 +960,31 @@ async function generate() {
     document.getElementById('results').classList.add('active');
 }
 
-function loadRank(rankNum) {
+async function loadRank(rankNum) {
     if (!flyParsed) return;
     flyCurrentRank = rankNum;
+
+    // Fetch per-rank PDB if not cached
+    if (!flyPdbPerRank[rankNum] && flyBaseUrl) {
+        try {
+            // Construct per-rank URL: famdb_details/X/Y/SET_N/ → famdb_details_with_rank/X/Y/SET_N/{rank}
+            const rankUrl = flyBaseUrl.replace('famdb_details/', 'famdb_details_with_rank/').replace(/\/$/, '') + '/' + rankNum;
+            const rankHtml = await fetchTextViaProxy(rankUrl);
+            if (rankHtml) {
+                const pdbMatch = rankHtml.match(/["']([^"']*colabfold-output[^"']*\.pdb)["']/);
+                if (pdbMatch) {
+                    let pdbUrl = pdbMatch[1];
+                    if (!pdbUrl.startsWith('http')) pdbUrl = 'https://www.flyrnai.org' + pdbUrl;
+                    const pdbText = await fetchTextViaProxy(pdbUrl);
+                    if (pdbText && pdbText.includes('ATOM')) {
+                        flyPdbPerRank[rankNum] = pdbText;
+                    }
+                }
+            }
+        } catch (e) { console.warn('Could not fetch rank', rankNum, 'PDB:', e); }
+    }
+    // Use rank-specific PDB if available, else fall back to rank 1
+    flyPdbText = flyPdbPerRank[rankNum] || flyPdbPerRank[1] || flyPdbText;
 
     const target = flyParsed.rows.find(r => parseInt(r['Rank']) === rankNum) || flyParsed.rows[0];
     const sym1 = target['Symbol 1'] || '?';
@@ -993,6 +1034,9 @@ function loadRank(rankNum) {
 
     // Interaction connection diagram (needs PDB coordinates)
     buildConnectionDiagram(target, sym1, sym2, colors, flyPdbText);
+
+    // Chain Interaction Map (circular chord diagram)
+    buildChordDiagram(target, sym1, sym2, colors, flyPdbText);
 }
 
 function hexToRgba(hex, alpha) {
@@ -1211,7 +1255,7 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
         const ax = xA(c.resA);
         const bx = xB(c.resB);
         const t = maxDist > minDist ? 1 - (c.dist - minDist) / (maxDist - minDist) : 1;
-        const alpha = 0.03 + t * 0.12; // much lighter
+        const alpha = 0.08 + t * 0.2;
 
         ctx.beginPath();
         ctx.moveTo(ax, barY_A + barH);
@@ -1233,6 +1277,157 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillText(`${contacts.length} cLIR contact pairs (C\u03B2 < ${contactDist} \u00C5)`, width / 2, barY_B + barH + 18);
+
+    ctx.restore();
+}
+
+function buildChordDiagram(row, sym1, sym2, colors, pdbText) {
+    const card = document.getElementById('chord-card');
+    const canvas = document.getElementById('chord-canvas');
+    if (!card || !canvas || !pdbText) { if (card) card.style.display = 'none'; return; }
+
+    const cLIR_A = row._cLIR_A, cLIR_B = row._cLIR_B;
+    const lenA = parseInt(row['Len A'] || row['protein_1_size']) || 0;
+    const lenB = parseInt(row['Len B'] || row['protein_2_size']) || 0;
+    if (lenA === 0 || lenB === 0 || cLIR_A.size === 0 || cLIR_B.size === 0) {
+        card.style.display = 'none'; return;
+    }
+
+    const coordChains = parsePdbCbCoords(pdbText);
+    const coordA = coordChains.get('A');
+    const coordB = coordChains.get('B');
+    if (!coordA || !coordB) { card.style.display = 'none'; return; }
+
+    // Find cLIR-cLIR contact pairs (Cβ < 10 Å)
+    const contactDist = 10;
+    const contacts = [];
+    for (const resA of cLIR_A) {
+        const cA = coordA.get(resA);
+        if (!cA) continue;
+        for (const resB of cLIR_B) {
+            const cB = coordB.get(resB);
+            if (!cB) continue;
+            const dx = cA.x - cB.x, dy = cA.y - cB.y, dz = cA.z - cB.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < contactDist) contacts.push({ resA, resB, dist });
+        }
+    }
+    if (contacts.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    const S = 2;
+    const size = 350;
+    canvas.width = size * S; canvas.height = size * S;
+    canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(S, S);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 30, innerR = outerR - 18, chordR = innerR - 4;
+    const gap = 0.04; // radians gap between chains
+    const totalLen = lenA + lenB;
+    const totalAngle = 2 * Math.PI - 2 * gap;
+    const angleA = (lenA / totalLen) * totalAngle;
+    const angleB = (lenB / totalLen) * totalAngle;
+
+    // Chain A: starts at top (−π/2), goes clockwise
+    const startA = -Math.PI / 2;
+    const endA = startA + angleA;
+    const startB = endA + gap;
+    const endB = startB + angleB;
+
+    const colA = colors.clir_a || '#2471A3';
+    const colB = colors.clir_b || '#E67E22';
+
+    // Helper: residue → angle on arc
+    const resAngleA = (res) => startA + ((res - 1) / Math.max(1, lenA - 1)) * angleA;
+    const resAngleB = (res) => startB + ((res - 1) / Math.max(1, lenB - 1)) * angleB;
+
+    // Helper: angle → point on inner circle
+    const pt = (angle, r) => ({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+
+    // Draw contact lines first (behind arcs)
+    const minDist = Math.min(...contacts.map(c => c.dist));
+    const maxDist = Math.max(...contacts.map(c => c.dist));
+    for (const c of contacts) {
+        const aA = resAngleA(c.resA);
+        const aB = resAngleB(c.resB);
+        const pA = pt(aA, chordR);
+        const pB = pt(aB, chordR);
+        const t = maxDist > minDist ? 1 - (c.dist - minDist) / (maxDist - minDist) : 1;
+        const alpha = 0.08 + t * 0.2;
+        const grad = ctx.createLinearGradient(pA.x, pA.y, pB.x, pB.y);
+        grad.addColorStop(0, hexToRgba(colA, alpha));
+        grad.addColorStop(1, hexToRgba(colB, alpha));
+        ctx.beginPath();
+        ctx.moveTo(pA.x, pA.y);
+        ctx.quadraticCurveTo(cx, cy, pB.x, pB.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+    }
+
+    // Draw Chain A arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, startA, endA);
+    ctx.arc(cx, cy, innerR, endA, startA, true);
+    ctx.closePath();
+    ctx.fillStyle = colA;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw Chain B arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, startB, endB);
+    ctx.arc(cx, cy, innerR, endB, startB, true);
+    ctx.closePath();
+    ctx.fillStyle = colB;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Labels — rotated along arc (matching subdomain interaction map style)
+    const chainArcs = [
+        { mid: (startA + endA) / 2, name: `${sym1} (A)`, size: lenA },
+        { mid: (startB + endB) / 2, name: `${sym2} (B)`, size: lenB }
+    ];
+    for (const arc of chainArcs) {
+        const labelAngle = arc.mid;
+        const labelR = outerR + 14;
+        const lx = cx + Math.cos(labelAngle) * labelR;
+        const ly = cy + Math.sin(labelAngle) * labelR;
+        ctx.save();
+        ctx.translate(lx, ly);
+        let textAngle = labelAngle + Math.PI / 2;
+        const normA = ((textAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+        if (normA > Math.PI/2 && normA < 3*Math.PI/2) textAngle += Math.PI;
+        ctx.rotate(textAngle);
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(arc.name, 0, 0);
+        ctx.restore();
+
+        // Residue count label (smaller, below name)
+        const rangeR = outerR + 24;
+        const rx = cx + Math.cos(labelAngle) * rangeR;
+        const ry = cy + Math.sin(labelAngle) * rangeR;
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(textAngle);
+        ctx.fillStyle = '#888';
+        ctx.font = '7px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${arc.size}`, 0, 0);
+        ctx.restore();
+    }
 
     ctx.restore();
 }
@@ -1326,12 +1521,16 @@ function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
 
 function downloadFlyCSV() {
     if (!flyParsed || flyParsed.rows.length === 0) return;
-    const header = 'Rank,Symbol_1,Symbol_2,iLIS,ipTM,LIR_A,LIR_B,cLIR_A,cLIR_B,Len_A,Len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const header = 'name,model,chain_A,chain_B,iLIS,ipSAE,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const rows = [header];
     for (const r of flyParsed.rows) {
+        const sym1 = r['Symbol 1'] || '';
+        const sym2 = r['Symbol 2'] || '';
         rows.push([
-            r['Rank'] || '', r['Symbol 1'] || '', r['Symbol 2'] || '',
-            r['iLIS'] || '', r['ipTM'] || '',
+            `${sym1}_${sym2}`, r['Rank'] || '', sym1, sym2,
+            r['iLIS'] != null ? parseFloat(r['iLIS']).toFixed(6) : '', '',
+            '', '',
+            r['ipTM'] != null ? parseFloat(r['ipTM']).toFixed(6) : '', '', '',
             r._LIR_A.size, r._LIR_B.size, r._cLIR_A.size, r._cLIR_B.size,
             r['Len A'] || '', r['Len B'] || '',
             `"[${[...r._LIR_A].sort((a,b)=>a-b).join(', ')}]"`,

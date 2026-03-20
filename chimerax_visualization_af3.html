@@ -1687,7 +1687,7 @@ function drawAllMaps() {
 function downloadCSV() {
     if (!af3ModelPairs || !af3AvgResults || !af3ChainNames) return;
     const jobName = document.getElementById('result-title')?.textContent || 'af3';
-    const header = 'folder_name,model_number,protein_1,protein_2,iLIS,LIS,LIA,LIR,cLIS,cLIA,cLIR,iptm,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const header = 'name,model,chain_A,chain_B,iLIS,ipSAE,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const rows = [header];
 
     // Per-model rows (symmetrized)
@@ -1696,8 +1696,10 @@ function downloadCSV() {
         for (const [key, v] of Object.entries(sym)) {
             rows.push([
                 jobName, `model_${mi}`, v.ci, v.cj,
-                v.iLIS.toFixed(6), v.LIS.toFixed(6), Math.round(v.LIA || 0), v.lirI.size + v.lirJ.size,
-                v.cLIS.toFixed(6), Math.round(v.cLIA || 0), v.clirI.size + v.clirJ.size, v.ipTM.toFixed(6),
+                v.iLIS.toFixed(6), '', v.LIS.toFixed(6), v.cLIS.toFixed(6),
+                v.ipTM.toFixed(6), '', '',
+                v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
+                v.lenI, v.lenJ,
                 `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
                 `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,
@@ -1709,8 +1711,10 @@ function downloadCSV() {
     for (const [key, v] of Object.entries(af3AvgResults)) {
         rows.push([
             jobName, 'average', v.ci, v.cj,
-            v.iLIS.toFixed(6), v.LIS.toFixed(6), '', v.lirI.size + v.lirJ.size,
-            v.cLIS.toFixed(6), '', v.clirI.size + v.clirJ.size, v.ipTM.toFixed(6),
+            v.iLIS.toFixed(6), '', v.LIS.toFixed(6), v.cLIS.toFixed(6),
+            v.ipTM.toFixed(6), '', '',
+            v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
+            v.lenI, v.lenJ,
             `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
             `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
             `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,

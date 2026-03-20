@@ -220,12 +220,6 @@
             </div>
         </div>
 
-        <!-- Chord Diagram (appears after Calculate) -->
-        <div id="chord-diagram-container" style="display:none; margin-top:1rem; text-align:center;">
-            <div class="map-label">Domain Interaction Chord Diagram</div>
-            <canvas id="chord-canvas"></canvas>
-        </div>
-
         <!-- Maps: PAE, LIS, cLIS in a row -->
         <div id="monomer-maps-flex" style="display:flex; gap:0.4rem; justify-content:center; overflow:hidden; margin-top:1rem;"></div>
     </div>
@@ -235,6 +229,17 @@
 
     <!-- Results -->
     <div class="results" id="results">
+        <!-- Subdomain Interaction Map (chord diagram) -->
+        <div class="card result-card" id="chord-diagram-container" style="display:none;">
+            <h2>Subdomain Interaction Map</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Arcs represent subdomains (proportional to length). Lines connect cLIR residue pairs in physical contact.
+            </div>
+            <div style="text-align:center;">
+                <canvas id="chord-canvas"></canvas>
+            </div>
+        </div>
+
         <!-- Sequence Viewer -->
         <div class="card result-card" id="seq-viewer-card" style="display:none;">
             <h2>Sequence Viewer</h2>
@@ -249,7 +254,7 @@
             <h2 id="result-title">Region Pair Summary</h2>
             <div class="metrics-grid" id="pair-metrics"></div>
             <table class="data-table" id="pairs-table">
-                <thead><tr><th>Region Pair</th><th>iLIS</th><th>LIS</th><th>cLIS</th><th>LIR(i)</th><th>LIR(j)</th><th>cLIR(i)</th><th>cLIR(j)</th></tr></thead>
+                <thead><tr><th>Region Pair</th><th>iLIS</th><th>ipSAE</th><th>LIS</th><th>cLIS</th><th>LIR(i)</th><th>LIR(j)</th><th>cLIR(i)</th><th>cLIR(j)</th></tr></thead>
                 <tbody id="pairs-tbody"></tbody>
             </table>
             <div style="margin-top:0.5rem;">
@@ -1115,6 +1120,42 @@ function calculate() {
     displayResults(validRegions);
 }
 
+// ============================================================================
+// ipSAE CALCULATION
+// ============================================================================
+function calcIpSAE(pae, si, ei, sj, ej, paeCutoff) {
+    const lenI = ei - si, lenJ = ej - sj;
+    if (lenI === 0 || lenJ === 0) return 0;
+    function calcD0(L) { return L > 27 ? Math.max(1.0, 1.24 * Math.pow(L - 15, 1/3) - 1.8) : 1.0; }
+    function ptmFunc(x, d0) { return 1.0 / (1 + (x / d0) * (x / d0)); }
+
+    let maxScoreIJ = 0;
+    for (let ri = si; ri < ei; ri++) {
+        let goodCount = 0;
+        for (let rj = sj; rj < ej; rj++) { if ((pae[ri]?.[rj] ?? 31) < paeCutoff) goodCount++; }
+        if (goodCount > 0) {
+            const d0 = calcD0(goodCount);
+            let score = 0;
+            for (let rj = sj; rj < ej; rj++) { const v = pae[ri]?.[rj] ?? 31; if (v < paeCutoff) score += ptmFunc(v, d0); }
+            score /= goodCount;
+            if (score > maxScoreIJ) maxScoreIJ = score;
+        }
+    }
+    let maxScoreJI = 0;
+    for (let rj = sj; rj < ej; rj++) {
+        let goodCount = 0;
+        for (let ri = si; ri < ei; ri++) { if ((pae[rj]?.[ri] ?? 31) < paeCutoff) goodCount++; }
+        if (goodCount > 0) {
+            const d0 = calcD0(goodCount);
+            let score = 0;
+            for (let ri = si; ri < ei; ri++) { const v = pae[rj]?.[ri] ?? 31; if (v < paeCutoff) score += ptmFunc(v, d0); }
+            score /= goodCount;
+            if (score > maxScoreJI) maxScoreJI = score;
+        }
+    }
+    return (maxScoreIJ + maxScoreJI) / 2;
+}
+
 function calcRegionPair(ri, rj, paeCutoff, cbCutoff, coordMap, boundaryMargin) {
     const margin = boundaryMargin || 0;
     let lisSum = 0, lisCount = 0;
@@ -1164,10 +1205,11 @@ function calcRegionPair(ri, rj, paeCutoff, cbCutoff, coordMap, boundaryMargin) {
     const lis = lisCount > 0 ? lisSum / lisCount : 0;
     const clis = clisCount > 0 ? clisSum / clisCount : 0;
     const ilis = Math.sqrt(lis * clis);
+    const ipSAE = calcIpSAE(monPae, ri.start - 1, ri.end, rj.start - 1, rj.end, paeCutoff);
 
     return {
         ri, rj,
-        iLIS: ilis, LIS: lis, cLIS: clis,
+        iLIS: ilis, ipSAE, LIS: lis, cLIS: clis,
         lirI, lirJ, clirI, clirJ,
         lenI: ri.end - ri.start + 1,
         lenJ: rj.end - rj.start + 1,
@@ -1314,7 +1356,7 @@ function displayResults(validRegions) {
     for (const v of monPairResults) {
         if (v.iLIS === 0) continue; // skip non-interacting pairs
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${v.ri.name} (${v.ri.start}-${v.ri.end}) &mdash; ${v.rj.name} (${v.rj.start}-${v.rj.end})</td><td>${v.iLIS.toFixed(3)}</td><td>${v.LIS.toFixed(3)}</td><td>${v.cLIS.toFixed(3)}</td><td>${v.lirI.size}</td><td>${v.lirJ.size}</td><td>${v.clirI.size}</td><td>${v.clirJ.size}</td>`;
+        tr.innerHTML = `<td>${v.ri.name} (${v.ri.start}-${v.ri.end}) &mdash; ${v.rj.name} (${v.rj.start}-${v.rj.end})</td><td>${v.iLIS.toFixed(3)}</td><td>${v.ipSAE.toFixed(3)}</td><td>${v.LIS.toFixed(3)}</td><td>${v.cLIS.toFixed(3)}</td><td>${v.lirI.size}</td><td>${v.lirJ.size}</td><td>${v.clirI.size}</td><td>${v.clirJ.size}</td>`;
         tbody.appendChild(tr);
     }
 
@@ -1474,13 +1516,15 @@ function generateAndShowScript(validRegions) {
 
 function downloadCSV() {
     if (!monPairResults.length) return;
-    const header = 'uniprot_id,region_i,region_i_range,region_j,region_j_range,iLIS,LIS,cLIS,LIR_i,LIR_j,cLIR_i,cLIR_j,LIR_indices_i,LIR_indices_j,cLIR_indices_i,cLIR_indices_j';
+    const header = 'name,model,chain_A,chain_B,iLIS,ipSAE,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const rows = [header];
     for (const v of monPairResults) {
         rows.push([
-            monUniprotId, v.ri.name, `${v.ri.start}-${v.ri.end}`, v.rj.name, `${v.rj.start}-${v.rj.end}`,
-            v.iLIS.toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+            monUniprotId, 'monomer', v.ri.name, v.rj.name,
+            v.iLIS.toFixed(6), v.ipSAE.toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+            '', '', '',
             v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
+            v.lenI, v.lenJ,
             `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
             `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
             `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,
@@ -1919,11 +1963,9 @@ function drawChordDiagram(validRegions) {
         const ly = cy + Math.sin(labelAngle) * labelR;
         ctx.save();
         ctx.translate(lx, ly);
-        // Rotate text to follow the arc
         let textAngle = labelAngle + Math.PI / 2;
-        if (labelAngle > Math.PI / 2 && labelAngle < 3 * Math.PI / 2) {
-            textAngle += Math.PI;
-        }
+        const normA = ((textAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+        if (normA > Math.PI/2 && normA < 3*Math.PI/2) textAngle += Math.PI;
         ctx.rotate(textAngle);
         ctx.fillStyle = '#333';
         ctx.font = 'bold 9px sans-serif';
@@ -1961,7 +2003,24 @@ function drawChordDiagram(validRegions) {
         }
     }
 
-    // Draw chords (thicker = higher iLIS)
+    // Helper: map a residue number to an angle on the circle
+    function resToAngle(resnum) {
+        for (const arc of arcs) {
+            const r = arc.region;
+            if (resnum >= r.start && resnum <= r.end) {
+                const frac = (resnum - r.start) / Math.max(1, r.end - r.start);
+                return arc.start + frac * (arc.end - arc.start);
+            }
+        }
+        return 0;
+    }
+
+    // Build coordinate map for contact detection
+    const coordMap = new Map();
+    for (const c of monCoords) coordMap.set(c.resnum, c);
+    const cbCutoff = parseFloat(document.getElementById('cb-cutoff')?.value) || 8;
+
+    // Draw residue-level contact lines for each interacting pair
     for (const v of monPairResults) {
         if (v.iLIS <= 0) continue;
         const i = validRegions.indexOf(v.ri);
@@ -1969,52 +2028,40 @@ function drawChordDiagram(validRegions) {
         if (i < 0 || j < 0) continue;
 
         const arcI = arcs[i], arcJ = arcs[j];
-        const t = maxIlis > 0 ? v.iLIS / maxIlis : 0;
 
-        // Chord endpoints on the inner circle
-        const x1s = cx + Math.cos(arcI.start + 0.02) * chordR;
-        const y1s = cy + Math.sin(arcI.start + 0.02) * chordR;
-        const x1e = cx + Math.cos(arcI.end - 0.02) * chordR;
-        const y1e = cy + Math.sin(arcI.end - 0.02) * chordR;
-        const x2s = cx + Math.cos(arcJ.start + 0.02) * chordR;
-        const y2s = cy + Math.sin(arcJ.start + 0.02) * chordR;
-        const x2e = cx + Math.cos(arcJ.end - 0.02) * chordR;
-        const y2e = cy + Math.sin(arcJ.end - 0.02) * chordR;
+        // Find actual cLIR-cLIR contacts
+        for (const resA of v.clirI) {
+            const cA = coordMap.get(resA);
+            if (!cA) continue;
+            for (const resB of v.clirJ) {
+                const cB = coordMap.get(resB);
+                if (!cB) continue;
+                const dx = cA.x - cB.x, dy = cA.y - cB.y, dz = cA.z - cB.z;
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                if (dist >= cbCutoff * 1.5) continue; // slightly wider than cutoff for visibility
 
-        // Draw filled chord
-        ctx.beginPath();
-        ctx.moveTo(x1s, y1s);
-        ctx.quadraticCurveTo(cx, cy, x2s, y2s);
-        ctx.arc(cx, cy, chordR, arcJ.start + 0.02, arcJ.end - 0.02);
-        ctx.quadraticCurveTo(cx, cy, x1e, y1e);
-        ctx.arc(cx, cy, chordR, arcI.end - 0.02, arcI.start + 0.02, true);
-        ctx.closePath();
+                const angA = resToAngle(resA);
+                const angB = resToAngle(resB);
+                const xA = cx + Math.cos(angA) * chordR;
+                const yA = cy + Math.sin(angA) * chordR;
+                const xB = cx + Math.cos(angB) * chordR;
+                const yB = cy + Math.sin(angB) * chordR;
 
-        // Gradient from source domain color to target domain color
-        const alpha = 0.15 + t * 0.55;
-        const grad = ctx.createLinearGradient(
-            cx + Math.cos(arcI.mid) * chordR * 0.5,
-            cy + Math.sin(arcI.mid) * chordR * 0.5,
-            cx + Math.cos(arcJ.mid) * chordR * 0.5,
-            cy + Math.sin(arcJ.mid) * chordR * 0.5
-        );
-        grad.addColorStop(0, hexToRgba(arcI.region.color, alpha));
-        grad.addColorStop(1, hexToRgba(arcJ.region.color, alpha));
-        ctx.fillStyle = grad;
-        ctx.fill();
+                const t = 1 - dist / (cbCutoff * 1.5);
+                const alpha = 0.08 + t * 0.2;
 
-        // iLIS label at center of chord
-        if (v.iLIS > 0.05) {
-            const midAngle = (arcI.mid + arcJ.mid) / 2;
-            const labelDist = chordR * 0.4;
-            const tx = cx + Math.cos(midAngle) * labelDist;
-            const ty = cy + Math.sin(midAngle) * labelDist;
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 8px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(v.iLIS.toFixed(2), tx, ty);
+                ctx.beginPath();
+                ctx.moveTo(xA, yA);
+                ctx.quadraticCurveTo(cx, cy, xB, yB);
+                const grad = ctx.createLinearGradient(xA, yA, xB, yB);
+                grad.addColorStop(0, hexToRgba(arcI.region.color, alpha));
+                grad.addColorStop(1, hexToRgba(arcJ.region.color, alpha));
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+            }
         }
+
     }
 
     ctx.restore();

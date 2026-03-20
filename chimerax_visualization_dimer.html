@@ -210,11 +210,31 @@
             <div id="seq-viewer" style="font-family:'SF Mono','Fira Code',monospace; overflow-x:auto;"></div>
         </div>
 
+        <!-- Interface Contact Map -->
+        <div class="card result-card" id="contact-map-card" style="display:none;">
+            <h2>Interface Contact Map</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Color gradient from chain A to chain B.
+            </div>
+            <canvas id="contact-canvas"></canvas>
+        </div>
+
+        <!-- Chain Interaction Map (circular) -->
+        <div class="card result-card" id="chord-card" style="display:none;">
+            <h2>Chain Interaction Map</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Arcs represent chains (proportional to length). Lines connect cLIR residue pairs in physical contact.
+            </div>
+            <div style="text-align:center;">
+                <canvas id="chord-canvas"></canvas>
+            </div>
+        </div>
+
         <!-- Chain Pair Table -->
         <div class="card result-card">
             <h2>Chain Pair Details</h2>
             <table class="data-table" id="pairs-table">
-                <thead><tr><th>Pair</th><th>iLIS</th><th>LIS</th><th>cLIS</th><th>LIR (A)</th><th>LIR (B)</th><th>cLIR (A)</th><th>cLIR (B)</th></tr></thead>
+                <thead><tr><th>Pair</th><th>iLIS</th><th>ipSAE</th><th>LIS</th><th>cLIS</th><th>LIR (A)</th><th>LIR (B)</th><th>cLIR (A)</th><th>cLIR (B)</th></tr></thead>
                 <tbody id="pairs-tbody"></tbody>
             </table>
             <div style="margin-top:0.5rem;">
@@ -718,6 +738,284 @@ function parseCifSequence(cifText) {
     return chains; // Map<string, [{resnum, aa}]>
 }
 
+function hexToRgba(hex, alpha) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function buildDimerContactMap() {
+    const v = dimerPairResult;
+    const card = document.getElementById('contact-map-card');
+    const canvas = document.getElementById('contact-canvas');
+    if (!v || !card || !canvas || !dimerCifText) { if (card) card.style.display = 'none'; return; }
+
+    if (v.clirI.size === 0 || v.clirJ.size === 0) { card.style.display = 'none'; return; }
+
+    // Parse Cβ coordinates from CIF
+    const coords = parseCifCoords(dimerCifText);
+    const chainCoordMap = new Map();
+    for (const c of coords) {
+        if (!chainCoordMap.has(c.chain)) chainCoordMap.set(c.chain, new Map());
+        chainCoordMap.get(c.chain).set(c.resnum, c);
+    }
+
+    const coordA = chainCoordMap.get(v.ci);
+    const coordB = chainCoordMap.get(v.cj);
+    if (!coordA || !coordB) { card.style.display = 'none'; return; }
+
+    // Find contact pairs
+    const contactDist = 10;
+    const contacts = [];
+    for (const resA of v.clirI) {
+        const cA = coordA.get(resA);
+        if (!cA) continue;
+        for (const resB of v.clirJ) {
+            const cB = coordB.get(resB);
+            if (!cB) continue;
+            const dx = cA.x - cB.x, dy = cA.y - cB.y, dz = cA.z - cB.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < contactDist) contacts.push({ resA, resB, dist });
+        }
+    }
+
+    if (contacts.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    const colors = {
+        lir_a: document.getElementById('color-lir-a')?.value || '#b3d4e8',
+        clir_a: document.getElementById('color-clir-a')?.value || '#2471A3',
+        lir_b: document.getElementById('color-lir-b')?.value || '#f5cba7',
+        clir_b: document.getElementById('color-clir-b')?.value || '#E67E22',
+    };
+
+    const S = 2;
+    const width = 900, height = 280;
+    const barH = 14;
+    const barY_A = 45, barY_B = height - 55;
+    const barLeft = 60, barRight = width - 20;
+    const barW = barRight - barLeft;
+
+    canvas.width = width * S;
+    canvas.height = height * S;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(S, S);
+
+    const xA = (res) => barLeft + ((res - 1) / Math.max(1, v.lenI - 1)) * barW;
+    const xB = (res) => barLeft + ((res - 1) / Math.max(1, v.lenJ - 1)) * barW;
+
+    // Chain A bar
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(barLeft, barY_A, barW, barH);
+    for (const res of v.lirI) { ctx.fillStyle = colors.lir_a; ctx.fillRect(xA(res)-0.5, barY_A, 1.5, barH); }
+    for (const res of v.clirI) { ctx.fillStyle = colors.clir_a; ctx.fillRect(xA(res)-0.5, barY_A, 1.5, barH); }
+    ctx.strokeStyle = '#999'; ctx.lineWidth = 0.5; ctx.strokeRect(barLeft, barY_A, barW, barH);
+
+    // Chain B bar
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(barLeft, barY_B, barW, barH);
+    for (const res of v.lirJ) { ctx.fillStyle = colors.lir_b; ctx.fillRect(xB(res)-0.5, barY_B, 1.5, barH); }
+    for (const res of v.clirJ) { ctx.fillStyle = colors.clir_b; ctx.fillRect(xB(res)-0.5, barY_B, 1.5, barH); }
+    ctx.strokeStyle = '#999'; ctx.lineWidth = 0.5; ctx.strokeRect(barLeft, barY_B, barW, barH);
+
+    // Labels
+    ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.clir_a; ctx.fillText(`Chain ${v.ci}`, barLeft - 5, barY_A + barH/2);
+    ctx.fillStyle = colors.clir_b; ctx.fillText(`Chain ${v.cj}`, barLeft - 5, barY_B + barH/2);
+
+    // Ticks
+    ctx.fillStyle = '#888'; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (const t of [1, Math.round(v.lenI/2), v.lenI]) ctx.fillText(t, xA(t), barY_A + barH + 3);
+    ctx.textBaseline = 'bottom';
+    for (const t of [1, Math.round(v.lenJ/2), v.lenJ]) ctx.fillText(t, xB(t), barY_B - 3);
+
+    // Connection lines
+    const minDist = Math.min(...contacts.map(c => c.dist));
+    const maxDist = Math.max(...contacts.map(c => c.dist));
+    for (const c of contacts) {
+        const ax = xA(c.resA), bx = xB(c.resB);
+        const t = maxDist > minDist ? 1 - (c.dist - minDist) / (maxDist - minDist) : 1;
+        const alpha = 0.08 + t * 0.2;
+        const midY = (barY_A + barH + barY_B) / 2;
+        ctx.beginPath();
+        ctx.moveTo(ax, barY_A + barH);
+        ctx.bezierCurveTo(ax, midY, bx, midY, bx, barY_B);
+        const grad = ctx.createLinearGradient(0, barY_A + barH, 0, barY_B);
+        grad.addColorStop(0, hexToRgba(colors.clir_a, alpha));
+        grad.addColorStop(1, hexToRgba(colors.clir_b, alpha));
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    ctx.fillStyle = '#888'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(`${contacts.length} cLIR contact pairs`, width/2, barY_B + barH + 18);
+    ctx.restore();
+}
+
+function buildChordDiagram() {
+    const v = dimerPairResult;
+    const card = document.getElementById('chord-card');
+    const canvas = document.getElementById('chord-canvas');
+    if (!v || !card || !canvas || !dimerCifText) { if (card) card.style.display = 'none'; return; }
+
+    if (v.clirI.size === 0 || v.clirJ.size === 0) { card.style.display = 'none'; return; }
+
+    const colors = {
+        clir_a: document.getElementById('color-clir-a')?.value || '#2471A3',
+        clir_b: document.getElementById('color-clir-b')?.value || '#E67E22',
+    };
+    const colA = colors.clir_a;
+    const colB = colors.clir_b;
+
+    const lenA = v.lenI, lenB = v.lenJ;
+
+    // Parse Cβ coordinates
+    const coords = parseCifCoords(dimerCifText);
+    const chainCoordMap = new Map();
+    for (const c of coords) {
+        if (!chainCoordMap.has(c.chain)) chainCoordMap.set(c.chain, new Map());
+        chainCoordMap.get(c.chain).set(c.resnum, c);
+    }
+    const coordA = chainCoordMap.get(v.ci);
+    const coordB = chainCoordMap.get(v.cj);
+    if (!coordA || !coordB) { card.style.display = 'none'; return; }
+
+    // Find cLIR-cLIR contact pairs (Cβ < 10 Å)
+    const contactDist = 10;
+    const contacts = [];
+    for (const resA of v.clirI) {
+        const cA = coordA.get(resA);
+        if (!cA) continue;
+        for (const resB of v.clirJ) {
+            const cB = coordB.get(resB);
+            if (!cB) continue;
+            const dx = cA.x - cB.x, dy = cA.y - cB.y, dz = cA.z - cB.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < contactDist) contacts.push({ resA, resB, dist });
+        }
+    }
+    if (contacts.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    const S = 2;
+    const size = 350;
+    canvas.width = size * S; canvas.height = size * S;
+    canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(S, S);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 30, innerR = outerR - 18, chordR = innerR - 4;
+    const gap = 0.04;
+    const totalLen = lenA + lenB;
+    const totalAngle = 2 * Math.PI - 2 * gap;
+    const angleA = (lenA / totalLen) * totalAngle;
+    const angleB = (lenB / totalLen) * totalAngle;
+
+    const startA = -Math.PI / 2;
+    const endA = startA + angleA;
+    const startB = endA + gap;
+    const endB = startB + angleB;
+
+    const resAngleA = (res) => startA + ((res - 1) / Math.max(1, lenA - 1)) * angleA;
+    const resAngleB = (res) => startB + ((res - 1) / Math.max(1, lenB - 1)) * angleB;
+    const pt = (angle, r) => ({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+
+    // Draw contact lines first (behind arcs)
+    const minDist = Math.min(...contacts.map(c => c.dist));
+    const maxDist = Math.max(...contacts.map(c => c.dist));
+    for (const c of contacts) {
+        const aA = resAngleA(c.resA);
+        const aB = resAngleB(c.resB);
+        const pA = pt(aA, chordR);
+        const pB = pt(aB, chordR);
+        const t = maxDist > minDist ? 1 - (c.dist - minDist) / (maxDist - minDist) : 1;
+        const alpha = 0.08 + t * 0.2;
+        const grad = ctx.createLinearGradient(pA.x, pA.y, pB.x, pB.y);
+        grad.addColorStop(0, hexToRgba(colA, alpha));
+        grad.addColorStop(1, hexToRgba(colB, alpha));
+        ctx.beginPath();
+        ctx.moveTo(pA.x, pA.y);
+        ctx.quadraticCurveTo(cx, cy, pB.x, pB.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+    }
+
+    // Draw Chain A arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, startA, endA);
+    ctx.arc(cx, cy, innerR, endA, startA, true);
+    ctx.closePath();
+    ctx.fillStyle = colA;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw Chain B arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, startB, endB);
+    ctx.arc(cx, cy, innerR, endB, startB, true);
+    ctx.closePath();
+    ctx.fillStyle = colB;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Labels — rotated along arc (matching subdomain interaction map style)
+    const chainArcs = [
+        { mid: (startA + endA) / 2, name: v.ci, size: lenA },
+        { mid: (startB + endB) / 2, name: v.cj, size: lenB }
+    ];
+    for (const arc of chainArcs) {
+        const labelAngle = arc.mid;
+        const labelR = outerR + 14;
+        const lx = cx + Math.cos(labelAngle) * labelR;
+        const ly = cy + Math.sin(labelAngle) * labelR;
+        ctx.save();
+        ctx.translate(lx, ly);
+        let textAngle = labelAngle + Math.PI / 2;
+        const normA = ((textAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+        if (normA > Math.PI/2 && normA < 3*Math.PI/2) textAngle += Math.PI;
+        ctx.rotate(textAngle);
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(arc.name, 0, 0);
+        ctx.restore();
+
+        // Residue count label (smaller, below name)
+        const rangeR = outerR + 24;
+        const rx = cx + Math.cos(labelAngle) * rangeR;
+        const ry = cy + Math.sin(labelAngle) * rangeR;
+        ctx.save();
+        ctx.translate(rx, ry);
+        ctx.rotate(textAngle);
+        ctx.fillStyle = '#888';
+        ctx.font = '7px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${arc.size}`, 0, 0);
+        ctx.restore();
+    }
+
+    ctx.restore();
+}
+
 function lightenColor(hex, amount) {
     hex = hex.replace('#', '');
     if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
@@ -854,6 +1152,42 @@ function parseCifCoords(cifText) {
 }
 
 // ============================================================================
+// ipSAE CALCULATION
+// ============================================================================
+function calcIpSAE(pae, si, ei, sj, ej, paeCutoff) {
+    const lenI = ei - si, lenJ = ej - sj;
+    if (lenI === 0 || lenJ === 0) return 0;
+    function calcD0(L) { return L > 27 ? Math.max(1.0, 1.24 * Math.pow(L - 15, 1/3) - 1.8) : 1.0; }
+    function ptmFunc(x, d0) { return 1.0 / (1 + (x / d0) * (x / d0)); }
+
+    let maxScoreIJ = 0;
+    for (let ri = si; ri < ei; ri++) {
+        let goodCount = 0;
+        for (let rj = sj; rj < ej; rj++) { if ((pae[ri]?.[rj] ?? 31) < paeCutoff) goodCount++; }
+        if (goodCount > 0) {
+            const d0 = calcD0(goodCount);
+            let score = 0;
+            for (let rj = sj; rj < ej; rj++) { const v = pae[ri]?.[rj] ?? 31; if (v < paeCutoff) score += ptmFunc(v, d0); }
+            score /= goodCount;
+            if (score > maxScoreIJ) maxScoreIJ = score;
+        }
+    }
+    let maxScoreJI = 0;
+    for (let rj = sj; rj < ej; rj++) {
+        let goodCount = 0;
+        for (let ri = si; ri < ei; ri++) { if ((pae[rj]?.[ri] ?? 31) < paeCutoff) goodCount++; }
+        if (goodCount > 0) {
+            const d0 = calcD0(goodCount);
+            let score = 0;
+            for (let ri = si; ri < ei; ri++) { const v = pae[rj]?.[ri] ?? 31; if (v < paeCutoff) score += ptmFunc(v, d0); }
+            score /= goodCount;
+            if (score > maxScoreJI) maxScoreJI = score;
+        }
+    }
+    return (maxScoreIJ + maxScoreJI) / 2;
+}
+
+// ============================================================================
 // CONTACT MAP
 // ============================================================================
 function computeContactMap(coords, threshold) {
@@ -979,6 +1313,7 @@ function processDimer() {
 
     const abResult = computePairMetrics(paeMatrix, contact, nUse, offA, lenA, offB, lenB, paeCutoff);
     const iLIS = Math.sqrt(abResult.lis * abResult.clis);
+    const ipSAE = calcIpSAE(paeMatrix, offA, offA + lenA, offB, offB + lenB, paeCutoff);
 
     // Metrics from AlphaFold DB API
     const ipTM = selectedDimer.complexPredictionAccuracy_ipTM || 0;
@@ -987,7 +1322,7 @@ function processDimer() {
 
     dimerPairResult = {
         ci: chainNames[0], cj: chainNames[1],
-        iLIS, LIS: abResult.lis, cLIS: abResult.clis, ipTM, pDockQ2, pLDDT,
+        iLIS, ipSAE, LIS: abResult.lis, cLIS: abResult.clis, ipTM, pDockQ2, pLDDT,
         lirI: abResult.lirI, lirJ: abResult.lirJ,
         clirI: abResult.clirI, clirJ: abResult.clirJ,
         lenI: lenA, lenJ: lenB,
@@ -1045,6 +1380,7 @@ function displayDimerResults() {
         <tr>
             <td>${v.ci} &mdash; ${v.cj}</td>
             <td>${v.iLIS.toFixed(3)}</td>
+            <td>${v.ipSAE.toFixed(3)}</td>
             <td>${v.LIS.toFixed(3)}</td>
             <td>${v.cLIS.toFixed(3)}</td>
             <td>${v.lirI.size} (of ${v.lenI})</td>
@@ -1059,6 +1395,12 @@ function displayDimerResults() {
 
     // Sequence viewer
     buildDimerSequenceViewer();
+
+    // Interface contact map
+    buildDimerContactMap();
+
+    // Chain Interaction Map (circular chord diagram)
+    buildChordDiagram();
 
     // Generate script
     generateAndDisplayScript();
@@ -1547,14 +1889,12 @@ function downloadCSV() {
     const v = dimerPairResult;
     const complexName = selectedDimer.complexName || selectedDimer.modelEntityId || 'dimer';
 
-    const ipSAE = selectedDimer.complexPredictionAccuracy_ipSAE || 0;
     const afdbPlddt = selectedDimer.globalMetricValue || 0;
-    const afdbPdockq2 = selectedDimer.complexPredictionAccuracy_pDockQ2 || 0;
-    const header = 'complex_name,protein_1,protein_2,iLIS,LIS,cLIS,ipTM,ipSAE,pDockQ2,pLDDT,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const header = 'name,model,chain_A,chain_B,iLIS,ipSAE,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const row = [
-        `"${complexName}"`, v.ci, v.cj,
-        v.iLIS.toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
-        v.ipTM.toFixed(6), ipSAE.toFixed(6), afdbPdockq2.toFixed(6), afdbPlddt.toFixed(1),
+        `"${complexName}"`, 'dimer', v.ci, v.cj,
+        v.iLIS.toFixed(6), v.ipSAE.toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+        v.ipTM.toFixed(6), afdbPlddt.toFixed(1), '',
         v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
         v.lenI, v.lenJ,
         `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
