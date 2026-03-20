@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal Prediction Analysis</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
@@ -268,6 +269,18 @@
             </div>
         </div>
 
+        <!-- 3D Structure Viewer -->
+        <div class="card result-card" id="viewer3d-card" style="display:none;">
+            <h2>3D Structure Preview</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Interactive 3D preview matching ChimeraX script output. LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom, right-click to translate.
+            </div>
+            <div id="viewer3d-container" style="width:100%; height:500px; position:relative; border-radius:8px; overflow:hidden; border:1px solid #e0e0e0; background:#fff;"></div>
+            <div style="text-align:center; margin-top:0.3rem;">
+                <a id="viewer3d-png" style="display:inline-block; font-size:0.7rem; color:#2471A3; cursor:pointer; opacity:0.6;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'" onclick="if(viewer3d){const c=document.querySelector('#viewer3d-container canvas');if(c){const a=document.createElement('a');a.download='structure_3d.png';a.href=c.toDataURL('image/png');a.click();}}">PNG</a>
+            </div>
+        </div>
+
         <!-- Script -->
         <div class="card result-card" id="script-card">
             <div class="step-header">ChimeraX Script</div>
@@ -437,6 +450,7 @@ let uniState = {
     multiChainColors: null,
     cxcColorMode: '',
 };
+let viewer3d = null;
 
 // ============================================================================
 // NPZ PARSER
@@ -2024,6 +2038,101 @@ function selectRow(pairKey, modelIdx, trEl) {
     selectPair(pairKey);
 }
 
+// ============================================================================
+// 3D STRUCTURE VIEWER
+// ============================================================================
+
+function initViewer3d() {
+    if (viewer3d) return;
+    const container = document.getElementById('viewer3d-container');
+    if (!container) return;
+    viewer3d = $3Dmol.createViewer(container, {
+        backgroundColor: 'white',
+        antialias: true,
+    });
+}
+
+function setsToResiArray(positions) {
+    if (!positions || positions.size === 0) return null;
+    const sorted = [...positions].sort((a, b) => a - b);
+    const ranges = [];
+    let start = sorted[0], end = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === end + 1) { end = sorted[i]; }
+        else { ranges.push(start === end ? String(start) : `${start}-${end}`); start = end = sorted[i]; }
+    }
+    ranges.push(start === end ? String(start) : `${start}-${end}`);
+    return ranges;
+}
+
+function updateViewer3d(pairKey) {
+    const card = document.getElementById('viewer3d-card');
+    const v = uniState.results[pairKey];
+    if (!v) { if (card) card.style.display = 'none'; return; }
+
+    const seedVal = document.getElementById('seed-select').value;
+    const useIdx = seedVal === 'avg' ? Object.keys(uniState.structureContents)[0] : seedVal;
+    const structText = uniState.structureContents[useIdx] || uniState.structureContents[Object.keys(uniState.structureContents)[0]];
+    if (!structText) { if (card) card.style.display = 'none'; return; }
+
+    card.style.display = '';
+    initViewer3d();
+
+    const fmt = uniState.structureFormat === 'cif' ? 'mmcif' : 'pdb';
+
+    viewer3d.removeAllModels();
+    viewer3d.addModel(structText, fmt);
+    applyViewer3dColors(v);
+    viewer3d.zoomTo();
+    viewer3d.render();
+}
+
+function applyViewer3dColors(v) {
+    if (!viewer3d || !v) return;
+    const colors = getColorsForPair(v.ci, v.cj);
+    const mode = uniState.cxcColorMode;
+
+    // Start with everything hidden (matching CXC: hide atoms, hide cartoons)
+    viewer3d.setStyle({}, {});
+
+    // Build LIR sets with gap filling (matching CXC script behavior)
+    const lirIFilled = fillGaps(v.lirI);
+    const lirJFilled = fillGaps(v.lirJ);
+    const lirIResi = setsToResiArray(lirIFilled);
+    const lirJResi = setsToResiArray(lirJFilled);
+    const clirIResi = setsToResiArray(v.clirI);
+    const clirJResi = setsToResiArray(v.clirJ);
+
+    if (mode === 'plddt') {
+        // Show LIR regions colored by pLDDT (b-factor)
+        const plddt = function(atom) {
+            var b = atom.b;
+            if (b > 90) return '#0053D6';
+            if (b > 70) return '#65CBF3';
+            if (b > 50) return '#FFDB13';
+            return '#FF7D45';
+        };
+        if (lirIResi) viewer3d.setStyle({chain: v.ci, resi: lirIResi}, {cartoon: {colorfunc: plddt}});
+        if (lirJResi) viewer3d.setStyle({chain: v.cj, resi: lirJResi}, {cartoon: {colorfunc: plddt}});
+    } else if (mode === 'bychain') {
+        if (lirIResi) viewer3d.setStyle({chain: v.ci, resi: lirIResi}, {cartoon: {color: colors.clir_a}});
+        if (lirJResi) viewer3d.setStyle({chain: v.cj, resi: lirJResi}, {cartoon: {color: colors.clir_b}});
+    } else if (mode === 'bypolymer') {
+        if (lirIResi) viewer3d.setStyle({chain: v.ci, resi: lirIResi}, {cartoon: {colorscheme: 'chain'}});
+        if (lirJResi) viewer3d.setStyle({chain: v.cj, resi: lirJResi}, {cartoon: {colorscheme: 'chain'}});
+    } else {
+        // Gradient/solid: LIR in light color, cLIR overridden with dark color
+        if (lirIResi) viewer3d.setStyle({chain: v.ci, resi: lirIResi}, {cartoon: {color: colors.lir_a}});
+        if (lirJResi) viewer3d.setStyle({chain: v.cj, resi: lirJResi}, {cartoon: {color: colors.lir_b}});
+
+        // Override cLIR residues with darker color
+        if (clirIResi) viewer3d.setStyle({chain: v.ci, resi: clirIResi}, {cartoon: {color: colors.clir_a}});
+        if (clirJResi) viewer3d.setStyle({chain: v.cj, resi: clirJResi}, {cartoon: {color: colors.clir_b}});
+    }
+
+    viewer3d.render();
+}
+
 function selectPair(key) {
     const v = uniState.results[key];
     if (!v) return;
@@ -2031,6 +2140,7 @@ function selectPair(key) {
     buildSequenceViewer(key);
     buildContactMap(key);
     buildChordDiagram();
+    updateViewer3d(key);
 
     const colors = getColorsForPair(v.ci, v.cj);
     const seedVal = document.getElementById('seed-select').value;
