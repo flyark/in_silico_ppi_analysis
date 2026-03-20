@@ -167,15 +167,25 @@
         <div class="step">
             <div class="step-badge">1</div>
             <div class="step-content">
-                <h3>Get your AF3 prediction zip</h3>
-                <p>Run a prediction on <a href="https://alphafoldserver.com" target="_blank">AlphaFold Server</a> and download the results as a zip file. The zip should contain <code>*_full_data_*.json</code>, <code>*_summary_confidences_*.json</code>, and <code>*_model_*.cif</code> files.</p>
-                <div class="mock-ui">
+                <h3>Get your AF3 prediction</h3>
+                <p>Run a prediction on <a href="https://alphafoldserver.com" target="_blank">AlphaFold Server</a> and download the results. The output should contain <code>*_full_data_*.json</code> (PAE matrix), <code>*_summary_confidences_*.json</code> (ipTM), and <code>*_model_*.cif</code> (3D structure) for each of 5 models.</p>
+                <p style="margin-top:0.5rem;">You can use either:</p>
+                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
+                    <li><strong>Zip file</strong> &mdash; single prediction download or batch download (multiple predictions in one zip)</li>
+                    <li><strong>Unzipped folder</strong> &mdash; if you already extracted the zip locally (Chrome only)</li>
+                </ul>
+                <div class="mock-ui" style="margin-top:0.5rem;">
                     <div style="font-family:monospace; font-size:0.8rem; color:#555;">
+                        <strong>Single prediction:</strong><br>
                         fold_my_prediction.zip<br>
-                        ├── ..._full_data_0.json &nbsp;← PAE matrix<br>
-                        ├── ..._summary_confidences_0.json &nbsp;← ipTM<br>
-                        ├── ..._model_0.cif &nbsp;← 3D structure<br>
-                        └── (× 5 models)
+                        ├── ..._full_data_{0-4}.json<br>
+                        ├── ..._summary_confidences_{0-4}.json<br>
+                        └── ..._model_{0-4}.cif<br><br>
+                        <strong>Batch download (multiple predictions):</strong><br>
+                        folds_2026_03_19.zip<br>
+                        ├── prediction_A/ &nbsp;← select from dropdown<br>
+                        ├── prediction_B/<br>
+                        └── prediction_C/
                     </div>
                 </div>
             </div>
@@ -184,17 +194,15 @@
         <div class="step">
             <div class="step-badge">2</div>
             <div class="step-content">
-                <h3>Drop the zip file and click Process</h3>
-                <p>Open <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>, drag-and-drop your zip file (or click to browse), then click <strong>Process</strong>. Processing takes several seconds per model.</p>
-                <div class="mock-ui highlight">
-                    <div class="mock-label">Drop zip here</div>
-                    <div class="mock-drop">
-                        📦 fold_my_prediction.zip<br>
-                        <span style="font-size:0.8rem;">5 models found</span>
-                    </div>
-                    <div style="margin-top:0.5rem;"><span class="mock-btn">Process</span></div>
-                </div>
-                <div class="tip">Optionally adjust PAE cutoff (default: 12 Å) and Cβ cutoff (default: 8 Å) before processing.</div>
+                <h3>Upload and click Process</h3>
+                <p>Open <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>. You can:</p>
+                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
+                    <li>Drag-and-drop a zip file onto the drop zone</li>
+                    <li>Click <strong>Select Zip File</strong> to browse for a zip</li>
+                    <li>Click <strong>Select Folder</strong> to select an unzipped prediction folder (Chrome only)</li>
+                </ul>
+                <p style="margin-top:0.3rem;">For batch downloads with multiple predictions, a dropdown will appear to select which prediction to analyze. Then click <strong>Process</strong>.</p>
+                <div class="tip">Optionally adjust PAE cutoff (default: 12 &Aring;) and C&beta; cutoff (default: 8 &Aring;) before processing. All analysis runs locally in your browser &mdash; no data is uploaded to any server.</div>
             </div>
         </div>
 
@@ -240,11 +248,12 @@
             <div class="step-badge">5</div>
             <div class="step-content">
                 <h3>Download and open in ChimeraX</h3>
-                <p>Three download options:</p>
+                <p>Download options:</p>
                 <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li><strong>Download .cxc</strong> — script for the selected chain pair</li>
-                    <li><strong>Download .cif</strong> — structure file for the selected model</li>
-                    <li><strong>Download All Chains .cxc</strong> — single script showing all chains, colored by chain</li>
+                    <li><strong>Download .cxc</strong> &mdash; ChimeraX script for the selected chain pair and model</li>
+                    <li><strong>Download .cif</strong> &mdash; structure file for the selected model</li>
+                    <li><strong>Download All Chains .cxc</strong> &mdash; single script showing all chains with LIR regions, colored by chain</li>
+                    <li><strong>Download CSV</strong> &mdash; full metrics table (iLIS, LIS, cLIS, LIR/cLIR indices) for all models and chain pairs</li>
                 </ul>
                 <div class="output-flow">
                     <span class="output-file cxc">chainA_chainB_interface.cxc</span>
