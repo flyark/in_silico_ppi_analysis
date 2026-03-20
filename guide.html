@@ -58,19 +58,34 @@
         .prereq h4 { color: #1a5276; margin-bottom: 0.5rem; }
         .prereq ul { padding-left: 1.2rem; font-size: 0.9rem; color: #555; line-height: 1.8; }
         .prereq a { color: #2471A3; }
+
+        .subsection { background: white; border-radius: 12px; padding: 1.2rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .subsection h3 { font-size: 1.05rem; color: #1a5276; margin-bottom: 0.6rem; }
+        .subsection p { font-size: 0.9rem; color: #555; line-height: 1.6; margin-bottom: 0.5rem; }
+
+        .quick-steps { counter-reset: qs; list-style: none; padding-left: 0; margin-top: 0.3rem; }
+        .quick-steps li { counter-increment: qs; position: relative; padding-left: 2.2rem; font-size: 0.88rem; color: #555; line-height: 1.7; margin-bottom: 0.4rem; }
+        .quick-steps li::before { content: counter(qs); position: absolute; left: 0; width: 22px; height: 22px; border-radius: 50%; background: #2471A3; color: white; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; top: 0.15rem; }
+        .quick-steps li a { color: #2471A3; text-decoration: none; }
+        .quick-steps li a:hover { text-decoration: underline; }
+
+        .features-list { padding-left: 1.2rem; font-size: 0.88rem; color: #555; line-height: 1.8; margin-top: 0.3rem; }
+        .features-list li { margin-bottom: 0.2rem; }
+        .features-list ul { padding-left: 1.2rem; margin-top: 0.2rem; margin-bottom: 0.2rem; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div class="container" style="padding:0;">
-        <h1>ChimeraX Visualization for LIS — Guide</h1>
+        <h1>ChimeraX Visualization for LIS &mdash; Guide</h1>
         <p>Analyze AlphaFold-predicted protein interactions and generate ChimeraX visualization scripts</p>
         <div class="header-links">
             <a href="index.html">Home</a>
             <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>
             <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>
-            <a href="https://github.com/flyark/chimerax_visualization_lis">GitHub</a>
+            <a href="chimerax_visualization_dimer.html">AFDB Dimer-ChimeraX</a>
+            <a href="chimerax_visualization_monomer.html">AFDB Monomer-ChimeraX</a>
         </div>
     </div>
 </div>
@@ -82,188 +97,161 @@
         <ul>
             <li>Install <a href="https://www.cgl.ucsf.edu/chimerax/download.html" target="_blank">UCSF ChimeraX</a> (free for academic use)</li>
             <li>A modern web browser (tested in Google Chrome; folder selection requires Chrome)</li>
-            <li>No Python or other software needed — all analysis runs locally in your browser (no data is uploaded to any server)</li>
+            <li>No Python or other software needed &mdash; all analysis runs locally in your browser (no data is uploaded to any server)</li>
         </ul>
     </div>
 
     <!-- ================================================================ -->
-    <!-- FLYPREDICTOME -->
+    <!-- TOOL 1: FLYPREDICTOME -->
     <!-- ================================================================ -->
     <div class="tool-section">
-        <h2 class="tool-title">FlyPredictome → ChimeraX</h2>
+        <h2 class="tool-title">1. FlyPredictome &rarr; ChimeraX</h2>
 
-        <div class="step">
-            <div class="step-badge">1</div>
-            <div class="step-content">
-                <h3>Go to FlyPredictome and find your protein pair</h3>
-                <p>Visit <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">flyrnai.org/tools/fly_predictome</a>, search for a protein pair, and open the <code>prediction</code> result page.</p>
-                <p>Copy the page URL from your browser's address bar.</p>
-                <div class="mock-ui">
-                    <div class="mock-url">https://www.flyrnai.org/tools/fly_predictome/web/prediction/Akt1/foxo/SET_47/</div>
-                </div>
-            </div>
+        <div class="subsection">
+            <h3>Quick Start</h3>
+            <ol class="quick-steps">
+                <li>Go to <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">FlyPredictome</a>, search for a protein pair, and copy the prediction page URL</li>
+                <li>Open <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>, paste the URL, and click <strong>Generate</strong></li>
+                <li>Review the <strong>All Ranks</strong> table &mdash; click any row to switch between ranks 1&ndash;5</li>
+                <li>Explore metrics (iLIS, ipTM, LIR/cLIR counts), the sequence viewer, and the ChimeraX script preview</li>
+                <li>Download the <code>.cxc</code> script and <code>.pdb</code> structure file, place them in the same folder, then double-click the <code>.cxc</code> — ChimeraX will launch automatically</li>
+            </ol>
         </div>
 
-        <div class="step">
-            <div class="step-badge">2</div>
-            <div class="step-content">
-                <h3>Paste the URL and click Generate</h3>
-                <p>Open <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>, paste the URL, choose a rank (1–5), and click <strong>Generate</strong>. The tool fetches data automatically (may take a few seconds).</p>
-                <div class="mock-ui highlight">
-                    <div class="mock-label">Paste URL here</div>
-                    <div class="mock-url">https://www.flyrnai.org/tools/fly_predictome/web/prediction/Akt1/foxo/SET_47/</div>
-                    <span class="mock-btn">Generate</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="step">
-            <div class="step-badge">3</div>
-            <div class="step-content">
-                <h3>Review metrics and ChimeraX script</h3>
-                <p>The tool shows iLIS, ipTM, LIR/cLIR residue counts, and a syntax-highlighted ChimeraX command script.</p>
-                <div class="mock-ui">
-                    <div class="mock-results">
-                        <div class="mock-metric"><div class="val">0.463</div><div class="lbl">iLIS</div></div>
-                        <div class="mock-metric"><div class="val">0.55</div><div class="lbl">ipTM</div></div>
-                        <div class="mock-metric"><div class="val">42</div><div class="lbl">cLIR (A)</div></div>
-                    </div>
-                    <div class="mock-script">
-                        <span class="cmt"># ChimeraX: Akt1 — foxo</span><br>
-                        <span class="cmd">close</span><br>
-                        <span class="cmd">open</span> Akt1___foxo_unrelaxed_rank_001...pdb<br>
-                        <span class="cmd">set</span> bgColor white<br>
-                        <span class="cmd">color</span> #1/A #b3d4e8<br>
-                        <span class="cmd">color</span> #1/B #f5cba7<br>
-                        <span class="cmt"># ...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="step">
-            <div class="step-badge">4</div>
-            <div class="step-content">
-                <h3>Download files and open in ChimeraX</h3>
-                <p>Download both the <code>.cxc</code> script and <code>.pdb</code> structure file. Place them in the <strong>same folder</strong>, then double-click the <code>.cxc</code> file to open ChimeraX.</p>
-                <div class="output-flow">
-                    <span class="output-file cxc">Akt1_foxo_interface.cxc</span>
-                    <span class="arrow">+</span>
-                    <span class="output-file pdb">Akt1___foxo_unrelaxed_rank_001...pdb</span>
-                    <span class="arrow">→</span>
-                    <span style="font-weight:600; color:#2471A3;">Open .cxc in ChimeraX</span>
-                </div>
-                <div class="tip">Both files must be in the same folder. The .cxc script references the .pdb by filename.</div>
-            </div>
+        <div class="subsection">
+            <h3>Features</h3>
+            <ul class="features-list">
+                <li><strong>All Ranks table</strong> &mdash; shows iLIS, LIS, cLIS, ipTM, LIR/cLIR counts for all 5 ranked models; click any row to load that rank</li>
+                <li><strong>Sequence viewer</strong> &mdash; displays actual amino acid letters for each chain with LIR (light color) and cLIR (dark color) highlighting</li>
+                <li><strong>ChimeraX script</strong> &mdash; syntax-highlighted preview with color presets (Gradient, Solid, ChimeraX defaults); Swap A &harr; B button reverses chain colors</li>
+                <li><strong>Downloads</strong> &mdash; .cxc script, .pdb structure, and CSV of all ranks with full metrics</li>
+            </ul>
         </div>
     </div>
 
     <!-- ================================================================ -->
-    <!-- AF3 -->
+    <!-- TOOL 2: AF3 -->
     <!-- ================================================================ -->
     <div class="tool-section">
-        <h2 class="tool-title">AlphaFold3 → ChimeraX</h2>
+        <h2 class="tool-title">2. AlphaFold3 &rarr; ChimeraX</h2>
 
-        <div class="step">
-            <div class="step-badge">1</div>
-            <div class="step-content">
-                <h3>Get your AF3 prediction</h3>
-                <p>Run a prediction on <a href="https://alphafoldserver.com" target="_blank">AlphaFold Server</a> and download the results. The output should contain <code>*_full_data_*.json</code> (PAE matrix), <code>*_summary_confidences_*.json</code> (ipTM), and <code>*_model_*.cif</code> (3D structure) for each of 5 models.</p>
-                <p style="margin-top:0.5rem;">You can use either:</p>
-                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li><strong>Zip file</strong> &mdash; single prediction download or batch download (multiple predictions in one zip)</li>
-                    <li><strong>Unzipped folder</strong> &mdash; if you already extracted the zip locally (Chrome only)</li>
-                </ul>
-                <div class="mock-ui" style="margin-top:0.5rem;">
-                    <div style="font-family:monospace; font-size:0.8rem; color:#555;">
-                        <strong>Single prediction:</strong><br>
-                        fold_my_prediction.zip<br>
-                        ├── ..._full_data_{0-4}.json<br>
-                        ├── ..._summary_confidences_{0-4}.json<br>
-                        └── ..._model_{0-4}.cif<br><br>
-                        <strong>Batch download (multiple predictions):</strong><br>
-                        folds_2026_03_19.zip<br>
-                        ├── prediction_A/ &nbsp;← select from dropdown<br>
-                        ├── prediction_B/<br>
-                        └── prediction_C/
-                    </div>
-                </div>
-            </div>
+        <div class="subsection">
+            <h3>Quick Start</h3>
+            <ol class="quick-steps">
+                <li>Run a prediction on <a href="https://alphafoldserver.com" target="_blank">AlphaFold Server</a> and download the results zip (single or batch)</li>
+                <li>Open <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a> and upload the zip file (drag-and-drop or browse) or select an unzipped folder (tested on Chrome)</li>
+                <li>For batch downloads with multiple predictions, select which prediction to analyze from the dropdown</li>
+                <li>Optionally adjust PAE cutoff (default: 12 &Aring;) and C&beta; cutoff (default: 8 &Aring;), then click <strong>Process</strong></li>
+                <li>Explore PAE/LIS/cLIS maps, score matrix, and residue count matrix for each model</li>
+                <li>Click a row in the <strong>chain pair table</strong> to generate a ChimeraX script for that pair and model</li>
+                <li>Download the <code>.cxc</code> script and <code>.cif</code> structure, place them in the same folder, then double-click the <code>.cxc</code> — ChimeraX will launch automatically</li>
+            </ol>
         </div>
 
-        <div class="step">
-            <div class="step-badge">2</div>
-            <div class="step-content">
-                <h3>Upload and click Process</h3>
-                <p>Open <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>. You can:</p>
-                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li>Drag-and-drop a zip file onto the drop zone</li>
-                    <li>Click <strong>Select Zip File</strong> to browse for a zip</li>
-                    <li>Click <strong>Select Folder</strong> to select an unzipped prediction folder (Chrome only)</li>
-                </ul>
-                <p style="margin-top:0.3rem;">For batch downloads with multiple predictions, a dropdown will appear to select which prediction to analyze. Then click <strong>Process</strong>.</p>
-                <div class="tip">Optionally adjust PAE cutoff (default: 12 &Aring;) and C&beta; cutoff (default: 8 &Aring;) before processing. All analysis runs locally in your browser &mdash; no data is uploaded to any server.</div>
-            </div>
+        <div class="subsection">
+            <h3>Features</h3>
+            <ul class="features-list">
+                <li><strong>Input flexibility</strong> &mdash; accepts zip files (single or batch) or unzipped folders (tested on Chrome)</li>
+                <li><strong>PAE maps</strong> &mdash; blue-white-red (bwr) colormap showing predicted aligned error per residue pair</li>
+                <li><strong>LIS maps</strong> &mdash; Blues colormap showing per-residue interaction scores</li>
+                <li><strong>cLIS maps</strong> &mdash; Greens colormap showing contact-filtered interaction scores</li>
+                <li><strong>Score matrix</strong> &mdash; iLIS (Oranges, lower-left) / ipTM (Purples, upper-right) for all chain pairs</li>
+                <li><strong>Residue count matrix</strong> &mdash; LIR (Blues, lower-left) / cLIR (Greens, upper-right)</li>
+                <li><strong>Chain pair table</strong> &mdash; per-model and averaged metrics for all chain combinations; click any row to generate a ChimeraX script</li>
+                <li><strong>Sequence viewer</strong> &mdash; amino acid letters with LIR (light) and cLIR (dark) highlighting per chain</li>
+                <li><strong>ChimeraX script</strong> &mdash; color presets (Gradient, Solid, ChimeraX defaults, Multi-chain tab10); Swap A &harr; B button</li>
+                <li><strong>Downloads</strong> &mdash; .cxc (per-pair or all-chains), .cif structure, CSV with full metrics</li>
+            </ul>
+            <div class="tip">For multi-chain complexes, use "Download All Chains .cxc" to see the full complex with each chain in a different color using ChimeraX's <code>color bychain</code> command.</div>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TOOL 3: DIMER -->
+    <!-- ================================================================ -->
+    <div class="tool-section">
+        <h2 class="tool-title">3. AlphaFold Database Dimer &rarr; ChimeraX</h2>
+
+        <div class="subsection">
+            <h3>Quick Start</h3>
+            <ol class="quick-steps">
+                <li>Open <a href="chimerax_visualization_dimer.html">Dimer-ChimeraX</a> and enter a UniProt ID (e.g. <code>P69905</code>), a model entity ID (e.g. <code>AF-0000000066214167</code>), or a full AlphaFold DB URL</li>
+                <li>Click <strong>Search Dimers</strong> &mdash; a table of available dimer complexes appears with LIS, ipTM, and ipSAE scores</li>
+                <li>Click a dimer row in the table to load it &mdash; the tool fetches CIF and PAE data from AlphaFold DB automatically</li>
+                <li>Review PAE/LIS/cLIS maps, score matrix, sequence viewer, and metrics (iLIS, LIS, cLIS, ipTM, ipSAE)</li>
+                <li>Download the <code>.cxc</code> script and <code>.cif</code> structure, place them in the same folder, then double-click the <code>.cxc</code> — ChimeraX will launch automatically</li>
+            </ol>
         </div>
 
-        <div class="step">
-            <div class="step-badge">3</div>
-            <div class="step-content">
-                <h3>Explore PAE maps and score matrices</h3>
-                <p>The tool generates per-model visualizations:</p>
-                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li><strong>PAE Maps</strong> — blue (confident) to red (uncertain)</li>
-                    <li><strong>Score Matrix</strong> — iLIS (Oranges, lower-left) / ipTM (Purples, upper-right)</li>
-                    <li><strong>Residue Count Matrix</strong> — LIR (Blues) / cLIR (Greens)</li>
-                    <li><strong>LIS Maps</strong> — per-residue interaction scores (Blues)</li>
-                    <li><strong>cLIS Maps</strong> — contact-filtered scores (Greens)</li>
-                </ul>
-                <div class="mock-maps">
-                    <div><div class="mock-map"><canvas id="mock-pae" width="180" height="180"></canvas></div><div class="mock-map-label">PAE (bwr)</div></div>
-                    <div><div class="mock-map"><canvas id="mock-score" width="180" height="180"></canvas></div><div class="mock-map-label">Score Matrix</div></div>
-                    <div><div class="mock-map"><canvas id="mock-rescount" width="180" height="180"></canvas></div><div class="mock-map-label">Residue Count Matrix</div></div>
-                    <div><div class="mock-map"><canvas id="mock-lis" width="180" height="180"></canvas></div><div class="mock-map-label">LIS (Blues)</div></div>
-                    <div><div class="mock-map"><canvas id="mock-clis" width="180" height="180"></canvas></div><div class="mock-map-label">cLIS (Greens)</div></div>
-                </div>
-            </div>
+        <div class="subsection">
+            <h3>Features</h3>
+            <ul class="features-list">
+                <li><strong>Flexible input</strong> &mdash; accepts UniProt ID, AlphaFold model entity ID, or full AlphaFold DB URL</li>
+                <li><strong>Dimer search table</strong> &mdash; lists all available dimer predictions for a protein with complex name, type, gene names, LIS, ipTM, and ipSAE; click any row to select</li>
+                <li><strong>Auto-fetch from AlphaFold DB</strong> &mdash; CIF structure and PAE matrix are fetched directly from the database</li>
+                <li><strong>PAE/LIS/cLIS maps</strong> &mdash; same colormaps as the AF3 tool (bwr, Blues, Greens)</li>
+                <li><strong>Score matrix</strong> &mdash; iLIS (Oranges) / cLIR count (Greens)</li>
+                <li><strong>Sequence viewer</strong> &mdash; amino acid letters with LIR (light) and cLIR (dark) highlighting per chain</li>
+                <li><strong>ipSAE metric</strong> &mdash; interface predicted Squared Aligned Error from AlphaFold DB, shown alongside iLIS, LIS, cLIS, and ipTM</li>
+                <li><strong>ChimeraX script</strong> &mdash; color presets with Swap A &harr; B support</li>
+                <li><strong>Downloads</strong> &mdash; .cxc script, .cif structure, CSV with full metrics and LIR/cLIR indices</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TOOL 4: MONOMER -->
+    <!-- ================================================================ -->
+    <div class="tool-section">
+        <h2 class="tool-title">4. AlphaFold Database Monomer Domain LIS &rarr; ChimeraX <span style="font-size:0.7rem; color:#E67E22; vertical-align:super;">ALPHA</span></h2>
+
+        <div class="subsection">
+            <h3>Quick Start</h3>
+            <ol class="quick-steps">
+                <li>Open <a href="chimerax_visualization_monomer.html">Monomer-ChimeraX</a> and enter a UniProt ID (e.g. <code>P31749</code>) &mdash; autocomplete suggestions appear as you type</li>
+                <li>Click <strong>Fetch</strong> &mdash; the tool retrieves the PDB structure and PAE matrix from AlphaFold DB</li>
+                <li>Domains are <strong>auto-detected</strong> using pLDDT-based segmentation; adjust settings if needed (min length, merge LIS threshold, pLDDT cutoff)</li>
+                <li>Click <strong>Detect Domains</strong> to re-detect with new settings, or manually edit domain boundaries</li>
+                <li>Review PAE/LIS/cLIS maps, the iLIS/cLIR score matrix between domains, and the sequence viewer</li>
+                <li>Download the <code>.cxc</code> script and <code>.pdb</code> structure, place them in the same folder, then double-click the <code>.cxc</code> — ChimeraX will launch automatically</li>
+            </ol>
         </div>
 
-        <div class="step">
-            <div class="step-badge">4</div>
-            <div class="step-content">
-                <h3>Select a chain pair from the table</h3>
-                <p>The chain pair table shows per-model and averaged metrics for all chain combinations, sorted canonically (A-B, A-C, ...). Click any row to generate a ChimeraX script for that pair and model.</p>
-                <div class="mock-ui">
-                    <table style="width:100%; font-size:0.8rem; border-collapse:collapse;">
-                        <tr style="background:#f8f9fa; font-weight:600;"><td style="padding:0.3rem;">Model</td><td>Pair</td><td>iLIS</td><td>ipTM</td></tr>
-                        <tr style="color:#888;"><td style="padding:0.3rem;">model_0</td><td>A — B</td><td>0.654</td><td>0.57</td></tr>
-                        <tr style="color:#888;"><td style="padding:0.3rem;">model_1</td><td>A — B</td><td>0.648</td><td>0.56</td></tr>
-                        <tr style="background:#f0f7fc; font-weight:600;"><td style="padding:0.3rem;">Average</td><td>A — B</td><td>0.654</td><td>0.56</td></tr>
-                    </table>
-                </div>
-            </div>
+        <div class="subsection">
+            <h3>Features</h3>
+            <ul class="features-list">
+                <li><strong>Auto-fetch from AlphaFold Database</strong> &mdash; PDB structure and PAE matrix fetched directly by UniProt ID</li>
+                <li><strong>LIS/pLDDT-based domain detection</strong> &mdash; uses smoothed per-residue pLDDT scores and LIS between adjacent segments to automatically detect domain boundaries, with adjustable parameters:
+                    <ul>
+                        <li>Min region length (default: 15 residues)</li>
+                        <li>Merge LIS threshold (default: 0.35) &mdash; adjacent regions with high mutual LIS are merged (higher = less merging)</li>
+                        <li>pLDDT cutoff (default: 50) &mdash; residues below this are treated as disordered linkers</li>
+                    </ul>
+                </li>
+                <li><strong>Intramolecular iLIS</strong> &mdash; calculates iLIS between all detected domain pairs to quantify domain&ndash;domain interactions</li>
+                <li><strong>Score matrix</strong> &mdash; iLIS (Oranges, lower-left) / cLIR count (white-to-green, upper-right) between domains</li>
+                <li><strong>PAE/LIS/cLIS maps</strong> &mdash; same colormaps (bwr, Blues, Greens) with domain boundaries overlaid</li>
+                <li><strong>Sequence viewer</strong> &mdash; amino acid letters with LIR (light) and cLIR (dark) highlighting per domain pair</li>
+                <li><strong>ChimeraX script presets</strong> &mdash; domain-colored view (default), pLDDT coloring, color by chain, color by polymer</li>
+                <li><strong>Downloads</strong> &mdash; .cxc script, .pdb structure, CSV with domain pair metrics</li>
+            </ul>
         </div>
+    </div>
 
-        <div class="step">
-            <div class="step-badge">5</div>
-            <div class="step-content">
-                <h3>Download and open in ChimeraX</h3>
-                <p>Download options:</p>
-                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li><strong>Download .cxc</strong> &mdash; ChimeraX script for the selected chain pair and model</li>
-                    <li><strong>Download .cif</strong> &mdash; structure file for the selected model</li>
-                    <li><strong>Download All Chains .cxc</strong> &mdash; single script showing all chains with LIR regions, colored by chain</li>
-                    <li><strong>Download CSV</strong> &mdash; full metrics table (iLIS, LIS, cLIS, LIR/cLIR indices) for all models and chain pairs</li>
-                </ul>
-                <div class="output-flow">
-                    <span class="output-file cxc">chainA_chainB_interface.cxc</span>
-                    <span class="arrow">+</span>
-                    <span class="output-file cif">fold_..._model_0.cif</span>
-                    <span class="arrow">→</span>
-                    <span style="font-weight:600; color:#2471A3;">Same folder → Open .cxc</span>
-                </div>
-                <div class="tip">For multi-chain complexes, use "Download All Chains .cxc" to see the full complex with each chain in a different color. Uses ChimeraX's <code>color bychain</code> command.</div>
+    <!-- ================================================================ -->
+    <!-- SEQUENCE VIEWER -->
+    <!-- ================================================================ -->
+    <div class="tool-section">
+        <h2 class="tool-title">Sequence Viewer</h2>
+
+        <div class="subsection">
+            <p>All four tools include a <strong>sequence viewer</strong> that displays the actual amino acid sequence (one-letter codes) for each chain or domain. Residues are color-coded based on their interaction status:</p>
+            <div style="display:flex; gap:1.5rem; margin:0.8rem 0; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px;">A K L</div><span style="font-size:0.85rem;">LIR residues (light color)</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#2471A3; border-radius:4px; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px; color:white;">R D E</div><span style="font-size:0.85rem;">cLIR residues (dark color)</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#f0f0f0; border-radius:4px; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px; color:#999;">G P S</div><span style="font-size:0.85rem;">Non-interacting residues</span></div>
             </div>
+            <p>Residue numbering is shown at intervals. The viewer scrolls horizontally for long sequences.</p>
         </div>
     </div>
 
@@ -271,47 +259,59 @@
     <!-- COLOR SCHEMES -->
     <!-- ================================================================ -->
     <div class="tool-section">
-        <h2 class="tool-title">Color Scheme Guide</h2>
+        <h2 class="tool-title">Color Scheme Reference</h2>
 
-        <div class="step">
-            <div class="step-badge" style="background:#E67E22;">&#127912;</div>
-            <div class="step-content">
-                <h3>Default: Blue / Orange gradient</h3>
-                <p>LIR regions (confident interaction domain, PAE &le; 12 &Aring;) are shown in light colors. cLIR residues (direct contact interface, PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;) are highlighted in darker colors. Non-interacting regions are hidden.</p>
-                <div style="display:flex; gap:1rem; margin-top:0.5rem; flex-wrap:wrap;">
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain A &mdash; LIR (light blue)</span></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#2471A3; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain A &mdash; cLIR (dark blue)</span></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#f5cba7; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain B &mdash; LIR (light orange)</span></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#E67E22; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain B &mdash; cLIR (dark orange)</span></div>
-                </div>
-            </div>
+        <div class="subsection">
+            <h3>Map Colormaps</h3>
+            <p>All tools use consistent, fixed colormaps for maps and matrices. These are not affected by the ChimeraX color presets.</p>
+            <table style="width:100%; border-collapse:collapse; font-size:0.9rem; margin-top:0.5rem;">
+                <tr style="background:#f8f9fa;"><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Map</th><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Colormap</th><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Scale</th></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>PAE map</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><span style="color:#2471A3;">blue</span> &ndash; white &ndash; <span style="color:#c0392b;">red</span> (bwr)</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">0 &Aring; (confident) &rarr; 30 &Aring; (uncertain)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIS map</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">matplotlib <span style="color:#2471A3;">Blues</span></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">0 &rarr; 1 (higher = stronger interaction)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIS map</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">matplotlib <span style="color:#27ae60;">Greens</span></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">0 &rarr; 1 (higher = stronger contact-filtered interaction)</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>Score matrix (iLIS)</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">matplotlib <span style="color:#E67E22;">Oranges</span></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Lower-left triangle</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>Score matrix (cLIR / ipTM)</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">white &rarr; <span style="color:#27ae60;">green</span> (or <span style="color:#7D3C98;">Purples</span> for ipTM)</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Upper-right triangle</td></tr>
+            </table>
         </div>
 
-        <div class="step">
-            <div class="step-badge" style="background:#546e7a;">&#9881;</div>
-            <div class="step-content">
-                <h3>Preset categories</h3>
-                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li><strong>Gradient</strong> &mdash; light color for LIR, dark color for cLIR (e.g., Blue/Orange, Purple/Gold, Teal/Coral)</li>
-                    <li><strong>Solid</strong> &mdash; same color for both LIR and cLIR, useful when you don't need to distinguish the interface boundary</li>
-                    <li><strong>ChimeraX defaults</strong> &mdash; familiar colors for ChimeraX users (Cornflower/Tomato, SkyBlue/Gold, etc.)</li>
-                    <li><strong>Multi-chain (tab10)</strong> &mdash; auto-assigned distinct colors per chain, shown only for complexes with more than 2 chains</li>
-                </ul>
-                <p style="margin-top:0.3rem;"><strong>Swap A &harr; B</strong> button reverses chain colors without changing the color combination.</p>
+        <div class="subsection">
+            <h3>ChimeraX Script Colors</h3>
+            <p>The ChimeraX .cxc script uses chain colors that you can customize via presets. The default is a Blue/Orange gradient.</p>
+            <div style="display:flex; gap:1rem; margin-top:0.8rem; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain A &mdash; LIR (light blue)</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#2471A3; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain A &mdash; cLIR (dark blue)</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#f5cba7; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain B &mdash; LIR (light orange)</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#E67E22; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain B &mdash; cLIR (dark orange)</span></div>
             </div>
+            <ul class="features-list" style="margin-top:0.8rem;">
+                <li><strong>Gradient</strong> &mdash; light color for LIR, dark color for cLIR (e.g., Blue/Orange, Purple/Gold, Teal/Coral)</li>
+                <li><strong>Solid</strong> &mdash; same color for both LIR and cLIR</li>
+                <li><strong>ChimeraX defaults</strong> &mdash; familiar colors (Cornflower/Tomato, SkyBlue/Gold, etc.)</li>
+                <li><strong>Multi-chain (tab10)</strong> &mdash; auto-assigned distinct colors per chain, shown for complexes with more than 2 chains</li>
+                <li><strong>Swap A &harr; B</strong> button &mdash; reverses chain colors without changing the color combination</li>
+            </ul>
         </div>
 
-        <div class="step">
-            <div class="step-badge" style="background:#27ae60;">&#8635;</div>
-            <div class="step-content">
-                <h3>Applying color changes</h3>
-                <p>After selecting a new color scheme or adjusting individual colors:</p>
-                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
-                    <li><strong>FlyPredictome:</strong> Click <strong>Generate</strong> again to regenerate the .cxc script with updated colors</li>
-                    <li><strong>AlphaFold3:</strong> Click a chain pair row in the table again, or click <strong>Process</strong> to reprocess with updated colors and cutoffs</li>
-                </ul>
-                <p style="margin-top:0.3rem; font-size:0.85rem; color:#888;">The PAE/LIS/cLIS maps are not affected by color choices &mdash; they use fixed colorscales (bwr, Blues, Greens). Only the ChimeraX .cxc script uses the selected chain colors.</p>
-            </div>
+        <div class="subsection">
+            <h3>ChimeraX Command Presets (Monomer Tool)</h3>
+            <p>The Monomer tool provides additional ChimeraX script presets beyond the default domain-colored view:</p>
+            <ul class="features-list">
+                <li><strong>pLDDT coloring</strong> &mdash; colors residues by AlphaFold confidence: <span style="color:#0053D6; font-weight:600;">very high (&gt;90)</span>, <span style="color:#65CBF3; font-weight:600;">confident (70&ndash;90)</span>, <span style="color:#FFDB13; font-weight:600;">low (50&ndash;70)</span>, <span style="color:#FF7D45; font-weight:600;">very low (&lt;50)</span></li>
+                <li><strong>color bychain</strong> &mdash; standard ChimeraX chain coloring</li>
+                <li><strong>color bypolymer</strong> &mdash; standard ChimeraX polymer coloring</li>
+            </ul>
+        </div>
+
+        <div class="subsection">
+            <h3>Applying Color Changes</h3>
+            <p>After selecting a new color scheme or adjusting individual colors:</p>
+            <ul class="features-list">
+                <li><strong>FlyPredictome:</strong> Click <strong>Generate</strong> again to regenerate the .cxc script with updated colors</li>
+                <li><strong>AlphaFold3:</strong> Click a chain pair row in the table again, or click <strong>Process</strong> to reprocess</li>
+                <li><strong>Dimer:</strong> Click a dimer row to regenerate the script with the new color scheme</li>
+                <li><strong>Monomer:</strong> Select a ChimeraX preset (domain colors, pLDDT, bychain, bypolymer) to regenerate the script</li>
+            </ul>
+            <p style="margin-top:0.3rem; font-size:0.85rem; color:#888;">The PAE/LIS/cLIS maps are not affected by color choices &mdash; they use fixed colorscales (bwr, Blues, Greens). Only the ChimeraX .cxc script uses the selected chain colors.</p>
         </div>
     </div>
 
@@ -319,24 +319,28 @@
     <!-- METRICS -->
     <!-- ================================================================ -->
     <div class="tool-section">
-        <h2 class="tool-title">AFM-LIS Metrics</h2>
+        <h2 class="tool-title">AFM-LIS Metrics Reference</h2>
 
         <div style="margin-bottom:1.5rem;">
             <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
                 <tr style="background:#f8f9fa;"><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Metric</th><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Full Name</th><th style="text-align:left; padding:0.5rem 0.8rem; color:#1a5276;">Definition</th></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>iLIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">integrated LIS</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">&radic;(LIS &times; cLIS) &mdash; geometric mean of LIS and cLIS; balanced score combining confident domain and confident contact</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Score</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Average of inversely scaled PAE (0&ndash;1, higher is better) within LIA</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIS</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Average of inversely scaled PAE within cLIA (contact-filtered)</td></tr>
                 <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIR</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Residues</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Residues in the confident interaction region (PAE &le; 12 &Aring;)</td></tr>
                 <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIR</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIR</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Residues in direct physical contact (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
                 <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIA</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Area</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Confident interaction area (PAE &le; 12 &Aring;)</td></tr>
                 <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIA</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIA</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Confident interaction area within contact distance (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
-                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>LIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Local Interaction Score</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Average of inversely scaled PAE (0&ndash;1, higher is better) within LIA</td></tr>
-                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>cLIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">contact-filtered LIS</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">Average of inversely scaled PAE within cLIA (contact-filtered)</td></tr>
-                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>iLIS</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">integrated LIS</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">&radic;(LIS &times; cLIS) &mdash; geometric mean of LIS and cLIS for a balanced score (confident domain &amp; confident contact)</td></tr>
                 <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>ipTM</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">interface predicted TM-score</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">AlphaFold's global interface structural confidence metric</td></tr>
+                <tr><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;"><strong>ipSAE</strong></td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">interface predicted Squared Aligned Error</td><td style="padding:0.5rem 0.8rem; border-top:1px solid #eee;">AlphaFold DB confidence metric for dimer complexes</td></tr>
             </table>
         </div>
 
         <div style="margin-bottom:1rem;">
             <p style="font-size:0.9rem; color:#555; line-height:1.6;">
+                <strong>Default cutoffs:</strong> PAE &le; <strong>12 &Aring;</strong> (confident interaction) and C&beta; &le; <strong>8 &Aring;</strong> (direct contact). These can be adjusted before processing in the AF3 and Dimer tools.
+            </p>
+            <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
                 <strong>PAE transformation:</strong> Raw PAE values (0&ndash;30 &Aring;) are linearly scaled to confidence scores: PAE = 0 &rarr; score = 1 (highest confidence), PAE = cutoff &rarr; score = 0, PAE &gt; cutoff &rarr; 0. Default PAE cutoff is 12 &Aring;.
             </p>
             <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
@@ -363,13 +367,12 @@
             <p><strong>AFM-LIS</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">Kim et al. 2024</a> &mdash; Enhanced Protein-Protein Interaction Discovery via AlphaFold-Multimer</li>
-                <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al. 2025</a> &mdash; A Structure-Guided Kinase&ndash;Transcription Factor Interactome Atlas</li>
+                <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al. 2025</a> &mdash; <em>In silico</em> Kinase-TF atlas for human and fly</li>
                 <li><a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS GitHub</a> &mdash; Code and documentation for calculating integrated Local Interaction Score (iLIS)</li>
             </ul>
             <p><strong>AlphaFold</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://doi.org/10.1038/s41586-024-07487-w" target="_blank" style="color:#2471A3;">Abramson et al. 2024</a> &mdash; Accurate structure prediction of biomolecular interactions with AlphaFold 3. <em>Nature</em> 630, 493&ndash;500.</li>
-
                 <li><a href="https://doi.org/10.1101/2021.10.04.463034" target="_blank" style="color:#2471A3;">Evans et al. 2022</a> &mdash; Protein complex prediction with AlphaFold-Multimer. <em>bioRxiv</em>.</li>
             </ul>
             <p><strong>ChimeraX</strong></p>
@@ -378,183 +381,22 @@
             </ul>
             <p><strong>This Tool</strong></p>
             <ul style="padding-left:1.2rem;">
-                <li><a href="https://github.com/flyark/chimerax_visualization_lis" target="_blank" style="color:#2471A3;">chimerax_visualization_lis GitHub</a> &mdash; Source code for FlyPredictome-ChimeraX and AlphaFold3-ChimeraX tools</li>
+                <li><a href="https://github.com/flyark/chimerax_visualization_lis" target="_blank" style="color:#2471A3;">chimerax_visualization_lis GitHub</a> &mdash; Source code for all ChimeraX visualization tools</li>
             </ul>
         </div>
     </div>
 
-
 </div>
 
 <div style="text-align:center; padding:2rem; font-size:0.8rem; color:#999;">
-    Made by Ah-Ram Kim ·
-    <a href="chimerax_visualization_flypredictome.html" style="color:#2471A3; text-decoration:none;">FlyPredictome-ChimeraX</a> ·
-    <a href="chimerax_visualization_af3.html" style="color:#2471A3; text-decoration:none;">AlphaFold3-ChimeraX</a> ·
+    Made by Ah-Ram Kim &middot;
+    <a href="https://github.com/flyark/AFM-LIS" style="color:#2471A3; text-decoration:none;">AFM-LIS</a> &middot;
+    <a href="chimerax_visualization_flypredictome.html" style="color:#2471A3; text-decoration:none;">FlyPredictome-ChimeraX</a> &middot;
+    <a href="chimerax_visualization_af3.html" style="color:#2471A3; text-decoration:none;">AlphaFold3-ChimeraX</a> &middot;
+    <a href="chimerax_visualization_dimer.html" style="color:#2471A3; text-decoration:none;">AFDB Dimer-ChimeraX</a> &middot;
+    <a href="chimerax_visualization_monomer.html" style="color:#2471A3; text-decoration:none;">AFDB Monomer-ChimeraX</a> &middot;
     <a href="https://github.com/flyark/chimerax_visualization_lis" style="color:#2471A3; text-decoration:none;">GitHub</a>
 </div>
 
-<script>
-// Draw mock map examples
-function bwr(t) {
-    if (t < 0.5) { const s = t/0.5; return [Math.round(s*255), Math.round(s*255), 255]; }
-    const s = (t-0.5)/0.5; return [255, Math.round((1-s)*255), Math.round((1-s)*255)];
-}
-function blues(t) { return [Math.round(255*(1-t)), Math.round(255*(1-t*0.6)), 255]; }
-function greens(t) { return [Math.round(255*(1-t)), Math.round(255*(1-t*0.3)), Math.round(255*(1-t))]; }
-function oranges(t) { return [255, Math.round(255-t*128), Math.round(255-t*220)]; }
-function purples(t) { return [Math.round(255-t*128), Math.round(255-t*180), 255]; }
-
-function drawMockMap(id, colorFn, pattern) {
-    const c = document.getElementById(id);
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    const margin = 18;
-    const plotSize = c.width - margin;
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, c.width, c.height);
-    const img = ctx.createImageData(plotSize, plotSize);
-    const s = plotSize;
-    const half = s / 2;
-    for (let y = 0; y < s; y++) {
-        for (let x = 0; x < s; x++) {
-            let v;
-            if (pattern === 'pae') {
-                // bwr: 0=blue(confident), 0.5=white, 1=red(uncertain)
-                const inBlockA = x < half && y < half;
-                const inBlockB = x >= half && y >= half;
-                const onDiag = Math.abs(x - y) < 8;
-                // Show interaction: blue interface region in off-diagonal
-                const distFromDiag = Math.abs(x - y) / s;
-                const inInterface = (x > half*0.6 && x < half*1.2 && y > half*0.8 && y < half*1.4) ||
-                                   (y > half*0.6 && y < half*1.2 && x > half*0.8 && x < half*1.4);
-                if (onDiag) v = 0.03 + Math.random() * 0.05;
-                else if (inBlockA) v = 0.05 + distFromDiag * 0.3 + Math.random() * 0.1;
-                else if (inBlockB) v = 0.05 + distFromDiag * 0.3 + Math.random() * 0.1;
-                else if (inInterface) v = 0.1 + Math.random() * 0.2;
-                else v = 0.75 + Math.random() * 0.25;
-            } else if (pattern === 'lis') {
-                const inBlockA = x < half && y < half;
-                const inBlockB = x >= half && y >= half;
-                const onDiag = Math.abs(x - y) < 8;
-                // Interface region: where chains interact
-                const inInterface = (x > half*0.6 && x < half*1.2 && y > half*0.8 && y < half*1.4) ||
-                                   (y > half*0.6 && y < half*1.2 && x > half*0.8 && x < half*1.4);
-                if (onDiag) v = 0.85 + Math.random() * 0.1;
-                else if (inBlockA) v = 0.3 + Math.random() * 0.4;
-                else if (inBlockB) v = 0.25 + Math.random() * 0.35;
-                else if (inInterface) v = 0.4 + Math.random() * 0.4;
-                else v = 0;
-            } else if (pattern === 'clis') {
-                const onDiag = Math.abs(x - y) < 6;
-                // Sparse contact points at the interface
-                const inInterface = (x > half*0.7 && x < half*1.1 && y > half*0.9 && y < half*1.3) ||
-                                   (y > half*0.7 && y < half*1.1 && x > half*0.9 && x < half*1.3);
-                if (onDiag) v = 0.4 + Math.random() * 0.3;
-                else if (inInterface && Math.random() > 0.4) v = 0.3 + Math.random() * 0.5;
-                else v = 0;
-            }
-            const [r, g, b] = colorFn(v);
-            const idx = (y * s + x) * 4;
-            img.data[idx] = r; img.data[idx+1] = g; img.data[idx+2] = b; img.data[idx+3] = 255;
-        }
-    }
-    ctx.putImageData(img, margin, 0);
-    // Border and boundary
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 0.5;
-    ctx.strokeRect(margin, 0, s, s);
-    ctx.beginPath(); ctx.moveTo(margin + half, 0); ctx.lineTo(margin + half, s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(margin, half); ctx.lineTo(margin + s, half); ctx.stroke();
-    // Labels outside
-    ctx.fillStyle = '#333'; ctx.font = '11px sans-serif';
-    // Y-axis (left, outside)
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText('A', margin - 4, half / 2);
-    ctx.fillText('B', margin - 4, half + half / 2);
-    // X-axis (bottom, outside)
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText('A', margin + half / 2, s + 3);
-    ctx.fillText('B', margin + half + half / 2, s + 3);
-}
-
-function drawMockScore(id) {
-    const c = document.getElementById(id);
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    const s = c.width;
-    const m = 20, gs = s - m;
-    const cell = gs / 2;
-    ctx.fillStyle = 'white'; ctx.fillRect(0, 0, s, s);
-    // Cells: lower-left=iLIS(orange), upper-right=ipTM(purple), diagonal=gray
-    const vals = [[0, 0.48], [0.35, 0]]; // [iLIS lower-left, ipTM upper-right]
-    for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < 2; j++) {
-            let r, g, b;
-            if (i === j) { r=240;g=240;b=240; }
-            else if (i > j) { [r,g,b] = oranges(vals[i][j]); }
-            else { [r,g,b] = purples(vals[i][j]); }
-            ctx.fillStyle = `rgb(${r},${g},${b})`;
-            ctx.fillRect(m + j*cell, i*cell, cell, cell);
-            if (i !== j) {
-                ctx.fillStyle = vals[i][j] > 0.5 ? 'white' : '#333';
-                ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(vals[i][j].toFixed(3), m + j*cell + cell/2, i*cell + cell/2);
-            }
-        }
-    }
-    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
-    for (let i = 0; i <= 2; i++) {
-        ctx.beginPath(); ctx.moveTo(m, i*cell); ctx.lineTo(m+2*cell, i*cell); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(m+i*cell, 0); ctx.lineTo(m+i*cell, 2*cell); ctx.stroke();
-    }
-    ctx.fillStyle = '#333'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('A', m+cell/2, 2*cell+14); ctx.fillText('B', m+cell+cell/2, 2*cell+14);
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText('A', m-4, cell/2); ctx.fillText('B', m-4, cell+cell/2);
-}
-
-drawMockMap('mock-pae', v => bwr(v), 'pae');
-drawMockMap('mock-lis', v => blues(v), 'lis');
-drawMockMap('mock-clis', v => greens(v), 'clis');
-drawMockScore('mock-score');
-function drawMockResCount(id) {
-    const c = document.getElementById(id);
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    const s = c.width;
-    const m = 20, gs = s - m;
-    const cell = gs / 2;
-    ctx.fillStyle = 'white'; ctx.fillRect(0, 0, s, s);
-    // Lower-left=LIR(Blues), Upper-right=cLIR(Greens)
-    const lirVals = [[0, 0], [42, 0]];
-    const clirVals = [[0, 18], [0, 0]];
-    const maxLir = 42, maxClir = 18;
-    for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < 2; j++) {
-            let r, g, b, val;
-            if (i === j) { r=240;g=240;b=240; val=0; }
-            else if (i > j) { val = lirVals[i][j]; [r,g,b] = blues(val/maxLir); }
-            else { val = clirVals[i][j]; [r,g,b] = greens(val/maxClir); }
-            ctx.fillStyle = `rgb(${r},${g},${b})`;
-            ctx.fillRect(m + j*cell, i*cell, cell, cell);
-            if (i !== j) {
-                const t = i > j ? val/maxLir : val/maxClir;
-                ctx.fillStyle = t > 0.6 ? 'white' : '#333';
-                ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(val, m + j*cell + cell/2, i*cell + cell/2);
-            }
-        }
-    }
-    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
-    for (let i = 0; i <= 2; i++) {
-        ctx.beginPath(); ctx.moveTo(m, i*cell); ctx.lineTo(m+2*cell, i*cell); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(m+i*cell, 0); ctx.lineTo(m+i*cell, 2*cell); ctx.stroke();
-    }
-    ctx.fillStyle = '#333'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('A', m+cell/2, 2*cell+14); ctx.fillText('B', m+cell+cell/2, 2*cell+14);
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText('A', m-4, cell/2); ctx.fillText('B', m-4, cell+cell/2);
-}
-drawMockResCount('mock-rescount');
-</script>
 </body>
 </html>

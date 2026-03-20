@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dimer &rarr; ChimeraX</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
+
+        /* Header */
+        .header { background: linear-gradient(135deg, #2471A3, #1a5276); color: white; padding: 1.2rem 2rem 1rem; }
+        .header h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .header p { font-size: 0.9rem; opacity: 0.85; margin-bottom: 0.6rem; }
+        .header-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .header-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.85rem; padding: 0.25rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; transition: all 0.2s; }
+        .header-links a:hover { background: rgba(255,255,255,0.15); color: white; }
+
+        /* Layout */
+        .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
+        .card label { font-weight: 600; font-size: 0.85rem; color: #555; display: block; margin-bottom: 0.4rem; }
+        .step-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #2471A3; color: white; font-weight: 700; font-size: 0.85rem; margin-right: 0.5rem; }
+        .step-header { display: flex; align-items: center; margin-bottom: 0.8rem; font-weight: 600; font-size: 1rem; flex-wrap: wrap; }
+
+        /* Status */
+        .status { font-size: 0.85rem; color: #666; min-height: 1.5rem; margin-top: 0.8rem; }
+        .status.loading { color: #2471A3; }
+        .status.error { color: #c0392b; }
+        .status.success { color: #27ae60; }
+
+        /* Buttons */
+        .btn { padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: background 0.2s; }
+        .btn-primary { background: #2471A3; color: white; margin-top: 0.8rem; }
+        .btn-primary:hover { background: #1a5276; }
+        .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+        .btn-secondary { background: white; color: #2471A3; border: 2px solid #2471A3; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-secondary:hover { background: #eaf2f8; }
+        .btn-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; flex-wrap: wrap; }
+        .btn-download { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 2px solid; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
+        .btn-download.cxc { background: #2471A3; color: white; border-color: #2471A3; }
+        .btn-download.cxc:hover { background: #1a5276; }
+        .btn-download.cif { background: white; color: #E67E22; border-color: #E67E22; }
+        .btn-download.cif:hover { background: #fef5ec; }
+
+        /* Color scheme */
+        .color-section { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .color-group { flex: 1; min-width: 200px; }
+        .color-group h3 { font-size: 0.8rem; color: #888; margin-bottom: 0.6rem; }
+        .color-pair { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+        .color-pair input[type="color"] { width: 36px; height: 36px; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer; padding: 2px; }
+        .color-pair .color-label { font-size: 0.9rem; }
+        .color-pair .color-hex { font-family: monospace; font-size: 0.8rem; color: #888; }
+        .color-preview-strip { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+        .color-preview-strip div { flex: 1; transition: background 0.3s; }
+        .presets-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .preset-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 0.82rem; color: #666; transition: all 0.2s; background: white; }
+        .preset-chip:hover { border-color: #2471A3; color: #333; }
+        .preset-chip.active { border-color: #2471A3; background: #eaf2f8; color: #1a5276; font-weight: 600; }
+        .preset-strip { display: flex; width: 60px; height: 12px; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+        .preset-strip span { flex: 1; }
+
+        /* Results */
+        .results { display: none; }
+        .results.active { display: block; }
+        .result-card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1a5276; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
+        .metric { background: #f8f9fa; border-radius: 8px; padding: 0.8rem; text-align: center; }
+        .metric .value { font-size: 1.3rem; font-weight: 700; color: #2471A3; }
+        .metric .label { font-size: 0.75rem; color: #888; margin-top: 0.2rem; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+        .data-table th { text-align: left; padding: 0.5rem 0.8rem; background: #f8f9fa; font-weight: 600; font-size: 0.8rem; color: #666; }
+        .data-table td { padding: 0.5rem 0.8rem; border-top: 1px solid #eee; }
+        .data-table tr.selected { background: #eaf2f8; }
+        .data-table tr.clickable { cursor: pointer; }
+        .data-table tr.clickable:hover { background: #f0f7fc; }
+        .script-preview { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 1rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.5; max-height: 400px; overflow-y: auto; white-space: pre; margin-bottom: 1rem; }
+        .script-preview .comment { color: #6c7086; }
+        .script-preview .command { color: #89b4fa; }
+        .script-preview .color-val { color: #f9e2af; }
+        .download-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .error-msg { display: none; background: #fdeaea; color: #c0392b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .error-msg.active { display: block; }
+        .info-box { background: #eaf2f8; border-left: 4px solid #2471A3; padding: 0.8rem 1rem; border-radius: 0 8px 8px 0; font-size: 0.85rem; color: #1a5276; margin-bottom: 1rem; }
+
+        /* Map rows */
+        .map-row { display: flex; gap: 0.4rem; flex-wrap: nowrap; justify-content: center; margin-bottom: 0.8rem; }
+        .map-item { text-align: center; }
+        .map-item canvas { border-radius: 4px; display: block; }
+        .map-item .map-label { font-size: 0.75rem; color: #666; margin-bottom: 0.2rem; }
+        .colorbar-row { display: flex; flex-direction: column; align-items: center; margin-top: 0.5rem; }
+        .colorbar-row canvas { border-radius: 3px; }
+        .colorbar-labels { display: flex; justify-content: space-between; width: 300px; font-size: 0.72rem; color: #888; margin-top: 2px; }
+        .colorbar-labels span:nth-child(2) { color: #555; font-weight: 500; }
+
+        .footer { text-align: center; padding: 2rem; font-size: 0.8rem; color: #999; }
+        .footer a { color: #2471A3; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Dimer table */
+        .dimer-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
+        .dimer-table th { text-align: left; padding: 0.5rem 0.8rem; background: #f8f9fa; font-weight: 600; font-size: 0.8rem; color: #666; }
+        .dimer-table td { padding: 0.5rem 0.8rem; border-top: 1px solid #eee; }
+        .dimer-table tr.clickable { cursor: pointer; }
+        .dimer-table tr.clickable:hover { background: #f0f7fc; }
+        .dimer-table tr.selected { background: #eaf2f8; font-weight: 600; }
+
+        /* Autocomplete */
+        .ac-wrap { position: relative; flex: 1; min-width: 250px; }
+        .ac-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; max-height: 260px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .ac-list.active { display: block; }
+        .ac-item { padding: 0.5rem 0.8rem; cursor: pointer; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
+        .ac-item:hover, .ac-item.selected { background: #eaf2f8; }
+        .ac-item .ac-id { font-weight: 700; color: #2471A3; margin-right: 0.5rem; }
+        .ac-item .ac-gene { font-weight: 600; color: #333; margin-right: 0.4rem; }
+        .ac-item .ac-name { color: #666; }
+        .ac-item .ac-org { color: #999; font-size: 0.78rem; font-style: italic; }
+
+        /* Sequence viewer */
+        .seq-row { display:flex; align-items:center; margin-bottom:0; }
+        .seq-num { font-size:0.72rem; color:#888; width:36px; text-align:right; padding-right:4px; flex-shrink:0; font-family:'SF Mono','Fira Code',monospace; }
+        .seq-blocks { display:flex; flex-wrap:nowrap; font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.4; letter-spacing:0.5px; }
+        .seq-res { display:inline-block; width:0.75em; text-align:center; cursor:default; color:#333; }
+        .seq-res.clir { color:white; font-weight:700; }
+        .seq-chain-label { font-size:0.75rem; font-weight:700; color:#1a5276; margin-top:0.5rem; margin-bottom:0.2rem; }
+        .seq-tooltip { position:fixed; background:#333; color:white; padding:2px 6px; border-radius:4px; font-size:0.72rem; pointer-events:none; z-index:200; display:none; font-family:'SF Mono',monospace; }
+
+        /* Tag */
+        .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600; }
+        .tag-homo { background: #d5f5e3; color: #1e8449; }
+        .tag-hetero { background: #fdebd0; color: #d35400; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="container" style="padding:0;">
+        <h1>Dimer (AlphaFold DB) &rarr; ChimeraX</h1>
+        <p>Fetch dimer predictions from the AlphaFold Protein Structure Database and calculate AFM-LIS metrics</p>
+        <div class="header-links">
+            <a href="index.html">Home</a>
+            <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>
+            <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>
+            <a href="chimerax_visualization_monomer.html">AFDB Monomer-ChimeraX</a>
+            <a href="guide.html">Guide</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Step 1: Fetch Dimer -->
+    <div class="card">
+        <div class="step-header">Fetch Dimer Prediction &nbsp;<span style="font-weight:400; font-size:0.8rem; color:#888;">(data fetched from AlphaFold Database &mdash; all analysis runs locally in your browser)</span></div>
+        <label>UniProt ID, AlphaFold Model ID, or AlphaFold DB URL</label>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <div class="ac-wrap">
+                <input type="text" id="uniprot-input" placeholder="e.g. P69905, AF-0000000066214167, or protein name" autocomplete="off" style="width:100%; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.95rem;">
+                <div class="ac-list" id="ac-list"></div>
+            </div>
+            <button class="btn btn-primary" style="margin:0;" id="btn-fetch" onclick="fetchDimers()">Search</button>
+            <button class="btn-secondary" onclick="tryExample('AF-0000000066214167')">Example: Fiber protein 2</button>
+            <button class="btn-secondary" onclick="tryExample('AF-0000000066082551')">Example: pp71</button>
+        </div>
+        <div style="font-size:0.8rem; color:#888; margin-top:0.4rem;">Not all proteins have dimer predictions. Browse <a href="https://alphafold.ebi.ac.uk" target="_blank" style="color:#2471A3;">AlphaFold DB</a> to find available complexes, then paste the URL or model ID here.</div>
+        <div class="status" id="status"></div>
+        <div id="external-links" style="display:none; font-size:0.82rem; margin-top:0.3rem;"></div>
+
+        <!-- Dimer results table -->
+        <div id="dimer-results" style="display:none; margin-top:1rem;">
+            <label>Found Dimers &mdash; click a row to load</label>
+            <div style="overflow-x:auto;">
+                <table class="dimer-table" id="dimer-table">
+                    <thead><tr><th>Complex</th><th>Type</th><th>Gene(s)</th><th>pLDDT</th><th>ipTM</th><th>ipSAE</th><th>pDockQ2</th><th>LIS</th></tr></thead>
+                    <tbody id="dimer-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+        <!-- PAE / LIS / cLIS Maps -->
+        <div class="card result-card">
+            <h2>Maps</h2>
+            <div id="maps-flex" style="display:flex; gap:0.4rem; justify-content:center; overflow:hidden;"></div>
+        </div>
+
+        <!-- Sequence Viewer -->
+        <div class="card result-card" id="seq-viewer-card" style="display:none;">
+            <h2>Sequence Viewer</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Light background = LIR (PAE &le; 12 &Aring;). Dark background with white text = cLIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;). Each chain uses its own color.
+            </div>
+            <div id="seq-viewer" style="font-family:'SF Mono','Fira Code',monospace; overflow-x:auto;"></div>
+        </div>
+
+        <!-- Chain Pair Table -->
+        <div class="card result-card">
+            <h2>Chain Pair Details</h2>
+            <table class="data-table" id="pairs-table">
+                <thead><tr><th>Pair</th><th>iLIS</th><th>LIS</th><th>cLIS</th><th>LIR (A)</th><th>LIR (B)</th><th>cLIR (A)</th><th>cLIR (B)</th></tr></thead>
+                <tbody id="pairs-tbody"></tbody>
+            </table>
+            <div style="margin-top:0.5rem;">
+                <a class="btn-download cxc" style="background:#27ae60; border-color:#27ae60; font-size:0.82rem; cursor:pointer;" onclick="downloadCSV()">&#8595; Download CSV</a>
+            </div>
+        </div>
+
+        <!-- Script -->
+        <div class="card result-card" id="script-card">
+            <div class="step-header">ChimeraX Script</div>
+
+            <!-- Options -->
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.9rem; font-weight:600; color:#1a5276;">Options</label>
+
+                <label>Cutoffs</label>
+                <div style="display:flex; gap:1.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+                    <div>
+                        <span style="font-size:0.85rem; color:#555;">PAE cutoff (&Aring;):</span>
+                        <input type="number" id="pae-cutoff" value="12" min="1" max="30" step="1" style="width:60px; padding:0.3rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.9rem;">
+                    </div>
+                    <div>
+                        <span style="font-size:0.85rem; color:#555;">C&beta; cutoff (&Aring;):</span>
+                        <input type="number" id="cb-cutoff" value="8" min="1" max="20" step="1" style="width:60px; padding:0.3rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.9rem;">
+                    </div>
+                </div>
+
+                <label>Color Scheme</label>
+                <div class="color-section">
+                    <div class="color-group">
+                        <h3>Chain A</h3>
+                        <div class="color-pair">
+                            <input type="color" id="color-lir-a" value="#b3d4e8">
+                            <div><div class="color-label">LIR</div><div class="color-hex" id="hex-lir-a">#b3d4e8</div></div>
+                        </div>
+                        <div class="color-pair">
+                            <input type="color" id="color-clir-a" value="#2471A3">
+                            <div><div class="color-label">cLIR</div><div class="color-hex" id="hex-clir-a">#2471A3</div></div>
+                        </div>
+                    </div>
+                    <div class="color-group">
+                        <h3>Chain B</h3>
+                        <div class="color-pair">
+                            <input type="color" id="color-lir-b" value="#f5cba7">
+                            <div><div class="color-label">LIR</div><div class="color-hex" id="hex-lir-b">#f5cba7</div></div>
+                        </div>
+                        <div class="color-pair">
+                            <input type="color" id="color-clir-b" value="#E67E22">
+                            <div><div class="color-label">cLIR</div><div class="color-hex" id="hex-clir-b">#E67E22</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.8rem; margin-top:0.5rem;">
+                    <div class="color-preview-strip" id="color-strip" style="flex:1; margin:0;">
+                        <div style="background:#b3d4e8"></div><div style="background:#2471A3"></div><div style="background:#E67E22"></div><div style="background:#f5cba7"></div>
+                    </div>
+                    <button onclick="swapColors()" style="padding:0.3rem 0.8rem; border:2px solid #e0e0e0; border-radius:6px; background:white; cursor:pointer; font-size:0.82rem; color:#666; white-space:nowrap;">Swap A &#8596; B</button>
+                </div>
+                <label style="margin-top:1rem">Presets &mdash; gradient (LIR light, cLIR dark)</label>
+                <div class="presets-row">
+                    <div class="preset-chip active" onclick="applyPreset('#b3d4e8','#2471A3','#f5cba7','#E67E22',this)"><div class="preset-strip"><span style="background:#b3d4e8"></span><span style="background:#2471A3"></span><span style="background:#E67E22"></span><span style="background:#f5cba7"></span></div>Blue / Orange</div>
+                    <div class="preset-chip" onclick="applyPreset('#d1c4e9','#5e35b1','#fff3b0','#f9a825',this)"><div class="preset-strip"><span style="background:#d1c4e9"></span><span style="background:#5e35b1"></span><span style="background:#f9a825"></span><span style="background:#fff3b0"></span></div>Purple / Gold</div>
+                    <div class="preset-chip" onclick="applyPreset('#b2dfdb','#00897b','#ffccbc','#e64a19',this)"><div class="preset-strip"><span style="background:#b2dfdb"></span><span style="background:#00897b"></span><span style="background:#e64a19"></span><span style="background:#ffccbc"></span></div>Teal / Coral</div>
+                    <div class="preset-chip" onclick="applyPreset('#cfd8dc','#546e7a','#f8bbd0','#c2185b',this)"><div class="preset-strip"><span style="background:#cfd8dc"></span><span style="background:#546e7a"></span><span style="background:#c2185b"></span><span style="background:#f8bbd0"></span></div>Slate / Rose</div>
+                    <div class="preset-chip" onclick="applyPreset('#c5cae9','#303f9f','#ffe0b2','#e65100',this)"><div class="preset-strip"><span style="background:#c5cae9"></span><span style="background:#303f9f"></span><span style="background:#e65100"></span><span style="background:#ffe0b2"></span></div>Indigo / Tangerine</div>
+                    <div class="preset-chip" onclick="applyPreset('#a8d5ba','#2e7d32','#ef9a9a','#c62828',this)"><div class="preset-strip"><span style="background:#a8d5ba"></span><span style="background:#2e7d32"></span><span style="background:#c62828"></span><span style="background:#ef9a9a"></span></div>Green / Red</div>
+                </div>
+                <label style="margin-top:0.5rem">Presets &mdash; solid</label>
+                <div class="presets-row">
+                    <div class="preset-chip" onclick="applyPreset('#2471A3','#2471A3','#E67E22','#E67E22',this)"><div class="preset-strip"><span style="background:#2471A3"></span><span style="background:#2471A3"></span><span style="background:#E67E22"></span><span style="background:#E67E22"></span></div>Blue / Orange</div>
+                    <div class="preset-chip" onclick="applyPreset('#5e35b1','#5e35b1','#f9a825','#f9a825',this)"><div class="preset-strip"><span style="background:#5e35b1"></span><span style="background:#5e35b1"></span><span style="background:#f9a825"></span><span style="background:#f9a825"></span></div>Purple / Gold</div>
+                    <div class="preset-chip" onclick="applyPreset('#00897b','#00897b','#e64a19','#e64a19',this)"><div class="preset-strip"><span style="background:#00897b"></span><span style="background:#00897b"></span><span style="background:#e64a19"></span><span style="background:#e64a19"></span></div>Teal / Coral</div>
+                    <div class="preset-chip" onclick="applyPreset('#546e7a','#546e7a','#c2185b','#c2185b',this)"><div class="preset-strip"><span style="background:#546e7a"></span><span style="background:#546e7a"></span><span style="background:#c2185b"></span><span style="background:#c2185b"></span></div>Slate / Rose</div>
+                    <div class="preset-chip" onclick="applyPreset('#6A9EC6','#6A9EC6','#D4A76A','#D4A76A',this)"><div class="preset-strip"><span style="background:#6A9EC6"></span><span style="background:#6A9EC6"></span><span style="background:#D4A76A"></span><span style="background:#D4A76A"></span></div>Steel / Wheat</div>
+                    <div class="preset-chip" onclick="applyPreset('#6495ED','#6495ED','#FF6347','#FF6347',this)"><div class="preset-strip"><span style="background:#6495ED"></span><span style="background:#6495ED"></span><span style="background:#FF6347"></span><span style="background:#FF6347"></span></div>Cornflower / Tomato</div>
+                    <div class="preset-chip" onclick="applyPreset('#87CEEB','#87CEEB','#FFD700','#FFD700',this)"><div class="preset-strip"><span style="background:#87CEEB"></span><span style="background:#87CEEB"></span><span style="background:#FFD700"></span><span style="background:#FFD700"></span></div>SkyBlue / Gold</div>
+                    <div class="preset-chip" onclick="applyPreset('#90EE90','#90EE90','#DDA0DD','#DDA0DD',this)"><div class="preset-strip"><span style="background:#90EE90"></span><span style="background:#90EE90"></span><span style="background:#DDA0DD"></span><span style="background:#DDA0DD"></span></div>LightGreen / Plum</div>
+                    <div class="preset-chip" onclick="applyPreset('#FFA07A','#FFA07A','#20B2AA','#20B2AA',this)"><div class="preset-strip"><span style="background:#FFA07A"></span><span style="background:#FFA07A"></span><span style="background:#20B2AA"></span><span style="background:#20B2AA"></span></div>Salmon / Teal</div>
+                </div>
+                <label style="margin-top:0.5rem">Presets &mdash; ChimeraX commands</label>
+                <div class="presets-row">
+                    <div class="preset-chip" onclick="applyCxcPreset('plddt',this)"><div class="preset-strip"><span style="background:#0053D6"></span><span style="background:#65CBF3"></span><span style="background:#FFDB13"></span><span style="background:#FF7D45"></span></div>pLDDT</div>
+                    <div class="preset-chip" onclick="applyCxcPreset('bychain',this)"><div class="preset-strip"><span style="background:#6495ED"></span><span style="background:#FF6347"></span><span style="background:#90EE90"></span><span style="background:#DDA0DD"></span></div>bychain</div>
+                    <div class="preset-chip" onclick="applyCxcPreset('bypolymer',this)"><div class="preset-strip"><span style="background:#87CEEB"></span><span style="background:#FFA07A"></span><span style="background:#98FB98"></span><span style="background:#DDA0DD"></span></div>bypolymer</div>
+                </div>
+            </div>
+            <hr style="border:none; border-top:1px solid #e0e0e0; margin-bottom:1rem;">
+
+            <div class="script-preview" id="script-preview"></div>
+            <div class="download-row">
+                <a class="btn-download cxc" id="dl-cxc" download>&#8595; Download .cxc</a>
+                <a class="btn-download cif" id="dl-cif" download>&#8595; Download .cif</a>
+            </div>
+            <div class="info-box" style="margin-top:1rem;">Place the .cxc and .cif files in the same folder, then double-click the .cxc — ChimeraX will launch automatically.</div>
+        </div>
+    </div>
+
+    <!-- How to Use -->
+    <div class="card">
+        <div class="step-header">How to Use &nbsp;<a href="guide.html" style="font-size:0.8rem; font-weight:400; color:#2471A3;">(Full guide)</a></div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem; padding-left:2.3rem;">
+            <div>
+                <h4 style="font-size:0.9rem; color:#1a5276; margin-bottom:0.5rem;">Quick Start</h4>
+                <ol style="padding-left:1.2rem; font-size:0.85rem; color:#555; line-height:1.7;" start="0">
+                    <li>Install <a href="https://www.cgl.ucsf.edu/chimerax/download.html" target="_blank" style="color:#2471A3;">UCSF ChimeraX</a></li>
+                    <li>Enter a UniProt ID and click <strong>Search Dimers</strong></li>
+                    <li>Select a dimer from the results table</li>
+                    <li>Explore PAE, LIS, and cLIS maps</li>
+                    <li>Review metrics (iLIS, LIS, cLIS, ipTM, pDockQ2, pLDDT) and maps</li>
+                    <li>Download .cxc + .cif, place in the same folder, then double-click the .cxc — ChimeraX will launch automatically</li>
+                </ol>
+            </div>
+            <div>
+                <h4 style="font-size:0.9rem; color:#1a5276; margin-bottom:0.5rem;">Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS</a>)</h4>
+                <table style="font-size:0.85rem;">
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>LIR</strong></td><td style="padding:0.25rem 0; color:#555;">Local Interaction Residues (PAE &le; 12 &Aring;)</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>cLIR</strong></td><td style="padding:0.25rem 0; color:#555;">contact-filtered LIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>LIS</strong></td><td style="padding:0.25rem 0; color:#555;">Local Interaction Score &mdash; normalized PAE confidence (0&ndash;1)</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>cLIS</strong></td><td style="padding:0.25rem 0; color:#555;">contact-filtered LIS &mdash; restricted to direct contacts</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>iLIS</strong></td><td style="padding:0.25rem 0; color:#555;">integrated LIS &mdash; &radic;(LIS &times; cLIS)</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>ipTM</strong></td><td style="padding:0.25rem 0; color:#555;">interface predicted TM-score (from AlphaFold DB)</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>pDockQ2</strong></td><td style="padding:0.25rem 0; color:#555;">predicted DockQ2 score (from AlphaFold DB)</td></tr>
+                </table>
+                <h4 style="font-size:0.9rem; color:#1a5276; margin-top:0.8rem; margin-bottom:0.5rem;">References</h4>
+                <ul style="list-style:none; padding:0; font-size:0.85rem;">
+                    <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2024</a> &mdash; Enhanced PPI Discovery via AlphaFold-Multimer</li>
+                    <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2025</a> &mdash; <em>In silico</em> Kinase-TF atlas for human and fly</li>
+                    <li style="margin-bottom:0.3rem; color:#555;"><a href="https://alphafold.ebi.ac.uk" target="_blank" style="color:#2471A3; font-weight:600;">AlphaFold Protein Structure Database</a> &mdash; Dimer predictions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Made by Ah-Ram Kim &middot;
+        <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a> &middot;
+        <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a> &middot;
+        <a href="chimerax_visualization_monomer.html">AFDB Monomer-ChimeraX</a> &middot;
+        Metrics defined by <a href="https://github.com/flyark/AFM-LIS">AFM-LIS</a> &middot;
+        Visualization in <a href="https://www.cgl.ucsf.edu/chimerax/">UCSF ChimeraX</a>
+    </div>
+</div>
+
+<script>
+// ============================================================================
+// GLOBAL STATE
+// ============================================================================
+let dimerList = [];          // fetched dimer entries
+let selectedDimer = null;    // currently selected dimer entry
+let dimerCifText = null;     // fetched CIF content
+let dimerPaeData = null;     // fetched PAE data
+let dimerChains = null;      // chain info from PAE JSON
+let dimerPairResult = null;  // computed pair metrics
+let dimerCifFilename = '';   // filename for download
+let cxcColorMode = '';       // ChimeraX color command preset
+
+// ============================================================================
+// CORS PROXY (AlphaFold DB complex API lacks CORS headers)
+// ============================================================================
+const CORS_PROXIES = [
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+async function fetchViaProxy(url) {
+    // Race all proxies — use whichever responds first
+    return new Promise((resolve, reject) => {
+        let resolved = false;
+        let pending = CORS_PROXIES.length;
+
+        CORS_PROXIES.forEach(makeProxy => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
+
+            fetch(makeProxy(url), { signal: controller.signal })
+                .then(resp => {
+                    clearTimeout(timeout);
+                    if (resp.ok && !resolved) {
+                        resolved = true;
+                        resolve(resp);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => {
+                    pending--;
+                    if (pending === 0 && !resolved) reject(new Error('All CORS proxies failed'));
+                });
+        });
+    });
+}
+
+async function fetchJsonViaProxy(url) {
+    // Try direct first (in case CORS is added), then proxy
+    try {
+        const resp = await fetch(url);
+        if (resp.ok) return await resp.json();
+    } catch {}
+    const proxyResp = await fetchViaProxy(url);
+    return await proxyResp.json();
+}
+
+async function fetchTextViaProxy(url) {
+    try {
+        const resp = await fetch(url);
+        if (resp.ok) return await resp.text();
+    } catch {}
+    const proxyResp = await fetchViaProxy(url);
+    return await proxyResp.text();
+}
+
+// ============================================================================
+// STATUS
+// ============================================================================
+function setStatus(msg, type = '') {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status' + (type ? ' ' + type : '');
+}
+
+// ============================================================================
+// EXAMPLE
+// ============================================================================
+function tryExample(id) {
+    document.getElementById('uniprot-input').value = id || 'AF-0000000066214167';
+    fetchDimers();
+}
+
+// ============================================================================
+// AUTOCOMPLETE (UniProt search)
+// ============================================================================
+let acDebounce = null;
+let acSelected = -1;
+
+(function initAutocomplete() {
+    const input = document.getElementById('uniprot-input');
+    const list = document.getElementById('ac-list');
+
+    input.addEventListener('input', () => {
+        clearTimeout(acDebounce);
+        const q = input.value.trim();
+        if (q.length < 2 || q.startsWith('http') || q.startsWith('AF-')) { hideAc(); return; }
+        if (/^[A-Z][0-9][A-Z0-9]{3}[0-9]$/i.test(q)) { hideAc(); return; }
+        acDebounce = setTimeout(() => searchUniprot(q), 300);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = list.querySelectorAll('.ac-item');
+        if (!list.classList.contains('active') || items.length === 0) {
+            if (e.key === 'Enter') { e.preventDefault(); fetchDimers(); }
+            return;
+        }
+        if (e.key === 'ArrowDown') { e.preventDefault(); acSelected = Math.min(acSelected + 1, items.length - 1); updateAcHL(items); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); acSelected = Math.max(acSelected - 1, 0); updateAcHL(items); }
+        else if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            if (acSelected >= 0 && acSelected < items.length) items[acSelected].click();
+            else if (e.key === 'Enter') { hideAc(); fetchDimers(); }
+        } else if (e.key === 'Escape') { hideAc(); }
+    });
+
+    document.addEventListener('click', (e) => { if (!e.target.closest('.ac-wrap')) hideAc(); });
+})();
+
+function hideAc() { document.getElementById('ac-list').classList.remove('active'); acSelected = -1; }
+function updateAcHL(items) {
+    items.forEach((it, i) => it.classList.toggle('selected', i === acSelected));
+    if (acSelected >= 0) items[acSelected].scrollIntoView({ block: 'nearest' });
+}
+
+async function searchUniprot(query) {
+    try {
+        const url = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}&fields=accession,gene_names,protein_name,organism_name&size=8&format=json`;
+        const resp = await fetch(url);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const results = data.results || [];
+        const list = document.getElementById('ac-list');
+        list.innerHTML = '';
+        acSelected = -1;
+        if (results.length === 0) { hideAc(); return; }
+
+        for (const r of results) {
+            const acc = r.primaryAccession || '';
+            const gene = (r.genes || [{}])[0]?.geneName?.value || '';
+            const name = r.proteinDescription?.recommendedName?.fullName?.value
+                      || r.proteinDescription?.submissionNames?.[0]?.fullName?.value || '';
+            const org = r.organism?.scientificName || '';
+
+            const item = document.createElement('div');
+            item.className = 'ac-item';
+            item.innerHTML = `<span class="ac-id">${acc}</span><span class="ac-gene">${esc(gene)}</span><span class="ac-name">${esc(name.substring(0, 50))}</span><br><span class="ac-org">${esc(org)}</span>`;
+            item.addEventListener('click', () => {
+                document.getElementById('uniprot-input').value = acc;
+                hideAc();
+                fetchDimers();
+            });
+            list.appendChild(item);
+        }
+        list.classList.add('active');
+    } catch (e) { console.warn('Autocomplete error:', e); }
+}
+
+// ============================================================================
+// INPUT PARSING
+// ============================================================================
+function parseInput(raw) {
+    raw = raw.trim();
+    // Full AlphaFold DB URL: https://alphafold.ebi.ac.uk/entry/AF-0000000066660593
+    const urlMatch = raw.match(/alphafold\.ebi\.ac\.uk\/entry\/(AF-\d+)/i);
+    if (urlMatch) return { type: 'model', id: urlMatch[1] };
+    // Model entity ID: AF-0000000066660593
+    if (/^AF-\d+$/i.test(raw)) return { type: 'model', id: raw };
+    // UniProt ID: P69905, Q5VSL9, etc.
+    if (/^[A-Za-z0-9_-]+$/.test(raw)) return { type: 'uniprot', id: raw.toUpperCase() };
+    return null;
+}
+
+function showExternalLinks(entry) {
+    const el = document.getElementById('external-links');
+    const parts = [];
+    if (entry.complexName) parts.push(`<strong>${entry.complexName}</strong>`);
+    if (entry.gene && entry.gene.length > 0) parts.push(`(${entry.gene.join(', ')})`);
+    const uniprotIds = entry.uniprotAccession || [];
+    if (uniprotIds.length > 0) {
+        for (const uid of uniprotIds) {
+            parts.push(`<a href="https://www.uniprot.org/uniprot/${uid}" target="_blank" style="color:#2471A3;">UniProt: ${uid}</a>`);
+        }
+    }
+    if (entry.modelEntityId) {
+        parts.push(`<a href="https://alphafold.ebi.ac.uk/entry/${entry.modelEntityId}" target="_blank" style="color:#2471A3;">AlphaFold Database</a>`);
+    }
+    el.innerHTML = parts.join(' &middot; ');
+    el.style.display = parts.length > 0 ? '' : 'none';
+}
+
+// ============================================================================
+// FETCH DIMERS
+// ============================================================================
+async function fetchDimers() {
+    const rawInput = document.getElementById('uniprot-input').value.trim();
+    if (!rawInput) { setStatus('Please enter a UniProt ID, model ID, or URL.', 'error'); return; }
+
+    const parsed = parseInput(rawInput);
+    if (!parsed) { setStatus('Invalid input. Enter a UniProt ID, AF model ID, or AlphaFold DB URL.', 'error'); return; }
+
+    document.getElementById('btn-fetch').disabled = true;
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('error-msg').classList.remove('active');
+    document.getElementById('dimer-results').style.display = 'none';
+
+    try {
+        if (parsed.type === 'model') {
+            // Direct model entity ID — fetch its metadata and load directly
+            setStatus(`Fetching model ${parsed.id}...`, 'loading');
+            const data = await fetchJsonViaProxy(`https://alphafold.ebi.ac.uk/api/complex/${parsed.id}`);
+            const entry = Array.isArray(data) ? data[0] : data;
+            if (!entry || !entry.modelEntityId) throw new Error(`Invalid response for "${parsed.id}".`);
+
+            dimerList = [entry];
+            setStatus(`Found: ${entry.complexName || parsed.id}. Loading...`, 'success');
+            displayDimerTable();
+            // Auto-select the single result
+            selectDimer(0, document.querySelector('#dimer-tbody tr'));
+
+        } else {
+            // UniProt ID — search for complexes
+            setStatus(`Searching AlphaFold DB for complexes involving ${parsed.id}...`, 'loading');
+            const data = await fetchJsonViaProxy(`https://alphafold.ebi.ac.uk/api/complex/${parsed.id}`);
+            if (!Array.isArray(data) || data.length === 0) {
+                throw new Error(`No complexes found for "${parsed.id}". Not all proteins have dimer predictions in AlphaFold DB yet. Try searching on alphafold.ebi.ac.uk and paste the model URL here.`);
+            }
+
+            // Filter to dimers only
+            dimerList = data.filter(entry => entry.oligomericState === 'dimer');
+            if (dimerList.length === 0) {
+                // Show all complexes if no dimers found
+                dimerList = data;
+                setStatus(`No dimers found, showing all ${data.length} complex(es). Click a row to load.`, 'success');
+            } else {
+                setStatus(`Found ${dimerList.length} dimer(s). Click a row to load.`, 'success');
+            }
+            displayDimerTable();
+
+            // Auto-select if only one result
+            if (dimerList.length === 1) {
+                selectDimer(0, document.querySelector('#dimer-tbody tr'));
+            }
+        }
+
+    } catch (e) {
+        setStatus(e.message, 'error');
+        console.error(e);
+    }
+    document.getElementById('btn-fetch').disabled = false;
+}
+
+function displayDimerTable() {
+    const tbody = document.getElementById('dimer-tbody');
+    tbody.innerHTML = '';
+
+    for (let i = 0; i < dimerList.length; i++) {
+        const entry = dimerList[i];
+        const accessions = entry.uniprotAccession || [];
+        const typeTag = entry.assemblyType === 'Homo'
+            ? '<span class="tag tag-homo">homo</span>'
+            : '<span class="tag tag-hetero">hetero</span>';
+
+        const name = entry.complexName || entry.modelEntityId || 'Unknown';
+        const genes = (entry.gene || []).join(', ') || accessions.join(', ');
+        const plddt = entry.globalMetricValue != null ? entry.globalMetricValue.toFixed(1) : '—';
+        const lis = entry.complexPredictionAccuracy_LIS != null ? entry.complexPredictionAccuracy_LIS.toFixed(3) : '—';
+        const iptm = entry.complexPredictionAccuracy_ipTM != null ? entry.complexPredictionAccuracy_ipTM.toFixed(3) : '—';
+        const ipsae = entry.complexPredictionAccuracy_ipSAE != null ? entry.complexPredictionAccuracy_ipSAE.toFixed(3) : '—';
+        const pdockq2 = entry.complexPredictionAccuracy_pDockQ2 != null ? entry.complexPredictionAccuracy_pDockQ2.toFixed(3) : '—';
+
+        const tr = document.createElement('tr');
+        tr.className = 'clickable';
+        tr.innerHTML = `<td>${esc(name)}</td><td>${typeTag}</td><td>${esc(genes)}</td><td>${plddt}</td><td>${iptm}</td><td>${ipsae}</td><td>${pdockq2}</td><td>${lis}</td>`;
+        tr.onclick = () => selectDimer(i, tr);
+        tbody.appendChild(tr);
+    }
+
+    document.getElementById('dimer-results').style.display = '';
+}
+
+async function selectDimer(idx, trEl) {
+    const entry = dimerList[idx];
+    selectedDimer = entry;
+
+    // Show external links
+    showExternalLinks(entry);
+
+    // Highlight row
+    document.querySelectorAll('#dimer-tbody tr').forEach(tr => tr.classList.remove('selected'));
+    if (trEl) trEl.classList.add('selected');
+
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('error-msg').classList.remove('active');
+
+    const modelEntityId = entry.modelEntityId;
+    const version = entry.latestVersion || entry.modelVersion || 1;
+
+    try {
+        setStatus(`Fetching CIF for ${modelEntityId}...`, 'loading');
+        const cifUrl = `https://alphafold.ebi.ac.uk/files/${modelEntityId}-model_v${version}.cif`;
+        dimerCifText = await fetchTextViaProxy(cifUrl);
+        dimerCifFilename = `${modelEntityId}-model_v${version}.cif`;
+
+        setStatus(`Fetching PAE for ${modelEntityId}...`, 'loading');
+        const paeUrl = `https://alphafold.ebi.ac.uk/files/${modelEntityId}-predicted_aligned_error_v${version}.json`;
+        dimerPaeData = await fetchJsonViaProxy(paeUrl);
+
+        setStatus('Analyzing...', 'loading');
+        await new Promise(r => setTimeout(r, 10));
+
+        processDimer();
+
+    } catch (e) {
+        setStatus(e.message, 'error');
+        console.error(e);
+    }
+}
+
+// ============================================================================
+// CIF PARSING
+// ============================================================================
+const AA3TO1 = {ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLN:'Q',GLU:'E',GLY:'G',HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',THR:'T',TRP:'W',TYR:'Y',VAL:'V'};
+
+function parseCifSequence(cifText) {
+    // Extract per-chain sequences from CIF CA atoms
+    const chains = new Map(); // chain -> [{resnum, aa}]
+    const lines = cifText.split('\n');
+    let inAtomSite = false;
+    const colNames = [];
+
+    for (const line of lines) {
+        if (line.startsWith('_atom_site.')) {
+            inAtomSite = true;
+            colNames.push(line.trim().split('.')[1]);
+            continue;
+        }
+        if (inAtomSite && !line.startsWith('_atom_site.') && !line.startsWith('#') && line.trim()) {
+            if (line.startsWith('loop_') || line.startsWith('_')) { inAtomSite = false; continue; }
+            const parts = line.trim().split(/\s+/);
+            if (parts.length < colNames.length) continue;
+            const getCol = (name) => parts[colNames.indexOf(name)] || '';
+            if (getCol('group_PDB') !== 'ATOM') continue;
+            if (getCol('label_atom_id') !== 'CA') continue;
+            const chain = getCol('label_asym_id');
+            const resSeq = parseInt(getCol('label_seq_id'));
+            const resName = getCol('label_comp_id');
+            if (isNaN(resSeq)) continue;
+            if (!chains.has(chain)) chains.set(chain, []);
+            const arr = chains.get(chain);
+            if (!arr.find(r => r.resnum === resSeq)) {
+                arr.push({ resnum: resSeq, aa: AA3TO1[resName] || 'X' });
+            }
+        }
+    }
+    return chains; // Map<string, [{resnum, aa}]>
+}
+
+function lightenColor(hex, amount) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgb(${Math.round(r+(255-r)*amount)},${Math.round(g+(255-g)*amount)},${Math.round(b+(255-b)*amount)})`;
+}
+
+function buildDimerSequenceViewer() {
+    const container = document.getElementById('seq-viewer');
+    const card = document.getElementById('seq-viewer-card');
+    if (!container || !dimerCifText || !dimerPairResult) { if (card) card.style.display = 'none'; return; }
+
+    card.style.display = '';
+    container.innerHTML = '';
+
+    const v = dimerPairResult;
+    const chainSeqs = parseCifSequence(dimerCifText);
+    const colors = {
+        lir_a: document.getElementById('color-lir-a')?.value || '#b3d4e8',
+        clir_a: document.getElementById('color-clir-a')?.value || '#2471A3',
+        lir_b: document.getElementById('color-lir-b')?.value || '#f5cba7',
+        clir_b: document.getElementById('color-clir-b')?.value || '#E67E22',
+    };
+
+    // Tooltip
+    let tooltip = document.querySelector('.seq-tooltip');
+    if (!tooltip) { tooltip = document.createElement('div'); tooltip.className = 'seq-tooltip'; document.body.appendChild(tooltip); }
+
+    const chainConfigs = [
+        { name: v.ci, seq: chainSeqs.get(v.ci) || [], lir: v.lirI, clir: v.clirI, lirColor: colors.lir_a, clirColor: colors.clir_a },
+        { name: v.cj, seq: chainSeqs.get(v.cj) || [], lir: v.lirJ, clir: v.clirJ, lirColor: colors.lir_b, clirColor: colors.clir_b },
+    ];
+
+    for (const cc of chainConfigs) {
+        const label = document.createElement('div');
+        label.className = 'seq-chain-label';
+        label.textContent = `Chain ${cc.name} (${cc.seq.length} residues)`;
+        container.appendChild(label);
+
+        const perRow = 80;
+        for (let rowStart = 0; rowStart < cc.seq.length; rowStart += perRow) {
+            const row = document.createElement('div');
+            row.className = 'seq-row';
+
+            const numLabel = document.createElement('span');
+            numLabel.className = 'seq-num';
+            numLabel.textContent = cc.seq[rowStart].resnum;
+            row.appendChild(numLabel);
+
+            const blocks = document.createElement('span');
+            blocks.className = 'seq-blocks';
+
+            const rowEnd = Math.min(rowStart + perRow, cc.seq.length);
+            for (let i = rowStart; i < rowEnd; i++) {
+                const res = cc.seq[i];
+                const isClir = cc.clir.has(res.resnum);
+                const isLir = cc.lir.has(res.resnum);
+                const el = document.createElement('span');
+                el.className = 'seq-res' + (isClir ? ' clir' : '');
+                el.style.background = isClir ? cc.clirColor : isLir ? lightenColor(cc.clirColor.replace('#',''), 0.4) : 'transparent';
+                el.textContent = res.aa;
+                el.addEventListener('mouseenter', (e) => {
+                    tooltip.textContent = `${res.aa}${res.resnum}` + (isClir ? ' (cLIR)' : isLir ? ' (LIR)' : '');
+                    tooltip.style.display = '';
+                    tooltip.style.left = (e.clientX + 8) + 'px';
+                    tooltip.style.top = (e.clientY - 20) + 'px';
+                });
+                el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+                blocks.appendChild(el);
+
+                if ((i - rowStart + 1) % 10 === 0 && i < rowEnd - 1) {
+                    const gap = document.createElement('span');
+                    gap.style.cssText = 'width:3px; display:inline-block;';
+                    blocks.appendChild(gap);
+                }
+            }
+            row.appendChild(blocks);
+
+            const endLabel = document.createElement('span');
+            endLabel.className = 'seq-num';
+            endLabel.style.textAlign = 'left';
+            endLabel.style.paddingLeft = '3px';
+            endLabel.textContent = cc.seq[rowEnd - 1].resnum;
+            row.appendChild(endLabel);
+
+            container.appendChild(row);
+        }
+    }
+}
+
+function parseCifCoords(cifText) {
+    const coords = [];
+    const lines = cifText.split('\n');
+    let inAtomSite = false;
+    const colNames = [];
+    const residues = new Map();
+
+    for (const line of lines) {
+        if (line.startsWith('_atom_site.')) {
+            inAtomSite = true;
+            colNames.push(line.trim().split('.')[1]);
+            continue;
+        }
+        if (inAtomSite && !line.startsWith('_atom_site.') && !line.startsWith('#') && line.trim()) {
+            if (line.startsWith('loop_') || line.startsWith('_')) { inAtomSite = false; continue; }
+            const parts = line.trim().split(/\s+/);
+            if (parts.length < colNames.length) continue;
+
+            const getCol = (name) => parts[colNames.indexOf(name)] || '';
+            const groupPDB = getCol('group_PDB');
+            if (groupPDB !== 'ATOM') continue;
+
+            const atomName = getCol('label_atom_id');
+            const resName = getCol('label_comp_id');
+            const chain = getCol('label_asym_id');
+            const resSeq = parseInt(getCol('label_seq_id'));
+            const x = parseFloat(getCol('Cartn_x'));
+            const y = parseFloat(getCol('Cartn_y'));
+            const z = parseFloat(getCol('Cartn_z'));
+
+            if (isNaN(resSeq) || isNaN(x)) continue;
+
+            const key = `${chain}_${resSeq}`;
+            if (atomName === 'CB') {
+                residues.set(key, {chain, resnum: resSeq, x, y, z});
+            } else if (atomName === 'CA' && resName === 'GLY' && !residues.has(key)) {
+                residues.set(key, {chain, resnum: resSeq, x, y, z});
+            }
+        }
+    }
+    return [...residues.values()];
+}
+
+// ============================================================================
+// CONTACT MAP
+// ============================================================================
+function computeContactMap(coords, threshold) {
+    const n = coords.length;
+    const contact = new Uint8Array(n * n);
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const dx = coords[i].x - coords[j].x;
+            const dy = coords[i].y - coords[j].y;
+            const dz = coords[i].z - coords[j].z;
+            const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist < threshold) {
+                contact[i * n + j] = 1;
+                contact[j * n + i] = 1;
+            }
+        }
+    }
+    return { contact, n };
+}
+
+// ============================================================================
+// PROCESS DIMER
+// ============================================================================
+function processDimer() {
+    const paeCutoff = parseFloat(document.getElementById('pae-cutoff').value) || 12;
+    const cbCutoff = parseFloat(document.getElementById('cb-cutoff').value) || 8;
+
+    // Parse PAE data
+    // AlphaFold DB PAE JSON format: array with one object containing predicted_aligned_error and chains
+    let paeMatrix, maxPae, chains;
+    if (Array.isArray(dimerPaeData)) {
+        const paeObj = dimerPaeData[0];
+        paeMatrix = paeObj.predicted_aligned_error;
+        maxPae = paeObj.max_predicted_aligned_error || 31.75;
+        chains = paeObj.chains || [];
+    } else {
+        paeMatrix = dimerPaeData.predicted_aligned_error;
+        maxPae = dimerPaeData.max_predicted_aligned_error || 31.75;
+        chains = dimerPaeData.chains || [];
+    }
+
+    if (!paeMatrix || paeMatrix.length === 0) {
+        setStatus('PAE matrix not found in the data.', 'error');
+        return;
+    }
+
+    const nTotal = paeMatrix.length;
+    dimerChains = chains;
+
+    // Determine chain boundaries
+    // If chains array is available, use it. Otherwise infer from CIF.
+    let chainNames = [];
+    let chainSizes = [];
+    let chainStarts = [];
+
+    if (chains.length >= 2) {
+        // Use chains from PAE JSON
+        for (const c of chains) {
+            chainNames.push(c.label_asym_id || c.name);
+            const len = c.sequenceEnd - c.sequenceStart + 1;
+            chainSizes.push(len);
+            chainStarts.push(c.sequenceStart - 1); // 0-based
+        }
+    } else {
+        // Infer from CIF coordinates
+        const coords = parseCifCoords(dimerCifText);
+        const chainMap = new Map();
+        for (const c of coords) {
+            if (!chainMap.has(c.chain)) chainMap.set(c.chain, 0);
+            chainMap.set(c.chain, chainMap.get(c.chain) + 1);
+        }
+        let offset = 0;
+        for (const [name, size] of chainMap) {
+            chainNames.push(name);
+            chainSizes.push(size);
+            chainStarts.push(offset);
+            offset += size;
+        }
+    }
+
+    if (chainNames.length < 2) {
+        setStatus('Could not identify two chains in this structure.', 'error');
+        return;
+    }
+
+    // Build offsets (cumulative)
+    const offsets = [];
+    let acc = 0;
+    for (const s of chainSizes) { offsets.push(acc); acc += s; }
+
+    // Parse CIF for coordinates
+    const coords = parseCifCoords(dimerCifText);
+
+    // Build coordinate lookup by chain + resnum
+    const coordMap = new Map();
+    for (const c of coords) {
+        coordMap.set(`${c.chain}_${c.resnum}`, c);
+    }
+
+    // Build flat coordinate array matching PAE matrix order
+    const flatCoords = [];
+    for (let ci = 0; ci < chainNames.length; ci++) {
+        const chainName = chainNames[ci];
+        const chainLen = chainSizes[ci];
+        for (let r = 1; r <= chainLen; r++) {
+            const c = coordMap.get(`${chainName}_${r}`);
+            if (c) {
+                flatCoords.push(c);
+            } else {
+                flatCoords.push(null);
+            }
+        }
+    }
+
+    // Compute contact map from flat coords
+    const validCoords = flatCoords.map(c => c || {x: 99999, y: 99999, z: 99999});
+    const { contact, n: nCoords } = computeContactMap(validCoords, cbCutoff);
+    const nUse = Math.min(nTotal, nCoords);
+
+    // Compute LIS/cLIS for chain pair A-B (PAE averaged per pair inside computePairMetrics)
+    const lenA = chainSizes[0], lenB = chainSizes[1];
+    const offA = offsets[0], offB = offsets[1];
+
+    const abResult = computePairMetrics(paeMatrix, contact, nUse, offA, lenA, offB, lenB, paeCutoff);
+    const iLIS = Math.sqrt(abResult.lis * abResult.clis);
+
+    // Metrics from AlphaFold DB API
+    const ipTM = selectedDimer.complexPredictionAccuracy_ipTM || 0;
+    const pDockQ2 = selectedDimer.complexPredictionAccuracy_pDockQ2 || 0;
+    const pLDDT = selectedDimer.globalMetricValue || 0;
+
+    dimerPairResult = {
+        ci: chainNames[0], cj: chainNames[1],
+        iLIS, LIS: abResult.lis, cLIS: abResult.clis, ipTM, pDockQ2, pLDDT,
+        lirI: abResult.lirI, lirJ: abResult.lirJ,
+        clirI: abResult.clirI, clirJ: abResult.clirJ,
+        lenI: lenA, lenJ: lenB,
+        paeMatrix, chainNames, chainSizes, offsets, nTotal,
+        contact, nUse, paeCutoff, cbCutoff
+    };
+
+    setStatus('Done!', 'success');
+    displayDimerResults();
+}
+
+function computePairMetrics(pae, contact, nUse, offI, lenI, offJ, lenJ, paeCutoff) {
+    let lisSum = 0, lisCount = 0;
+    let clisSum = 0, clisCount = 0;
+    const lirI = new Set(), lirJ = new Set();
+    const clirI = new Set(), clirJ = new Set();
+
+    for (let i = 0; i < lenI; i++) {
+        for (let j = 0; j < lenJ; j++) {
+            const ri = offI + i;
+            const rj = offJ + j;
+            const v = (pae[ri][rj] + pae[rj][ri]) / 2; // average both directions
+            if (v < paeCutoff) {
+                const tv = 1 - v / paeCutoff;
+                lisSum += tv;
+                lisCount++;
+                lirI.add(i + 1);
+                lirJ.add(j + 1);
+                if (ri < nUse && rj < nUse && contact[ri * nUse + rj]) {
+                    clisSum += tv;
+                    clisCount++;
+                    clirI.add(i + 1);
+                    clirJ.add(j + 1);
+                }
+            }
+        }
+    }
+
+    const lis = lisCount > 0 ? lisSum / lisCount : 0;
+    const clis = clisCount > 0 ? clisSum / clisCount : 0;
+
+    return { lis, clis, lirI, lirJ, clirI, clirJ, lisCount, clisCount };
+}
+
+// ============================================================================
+// DISPLAY RESULTS
+// ============================================================================
+function displayDimerResults() {
+    const v = dimerPairResult;
+    const complexName = selectedDimer.complexName || selectedDimer.modelEntityId || 'Dimer';
+
+    // Chain pair table
+    const tbody = document.getElementById('pairs-tbody');
+    tbody.innerHTML = `
+        <tr>
+            <td>${v.ci} &mdash; ${v.cj}</td>
+            <td>${v.iLIS.toFixed(3)}</td>
+            <td>${v.LIS.toFixed(3)}</td>
+            <td>${v.cLIS.toFixed(3)}</td>
+            <td>${v.lirI.size} (of ${v.lenI})</td>
+            <td>${v.lirJ.size} (of ${v.lenJ})</td>
+            <td>${v.clirI.size}</td>
+            <td>${v.clirJ.size}</td>
+        </tr>
+    `;
+
+    // Draw maps
+    drawAllMaps();
+
+    // Sequence viewer
+    buildDimerSequenceViewer();
+
+    // Generate script
+    generateAndDisplayScript();
+
+    document.getElementById('results').classList.add('active');
+}
+
+// ============================================================================
+// MAP DRAWING
+// ============================================================================
+const HIRES = 2;
+
+function bwrColor(value, vmin, vmax) {
+    const t = Math.max(0, Math.min(1, (value - vmin) / (vmax - vmin)));
+    if (t < 0.5) {
+        const s = t / 0.5;
+        return [Math.round(s * 255), Math.round(s * 255), 255];
+    } else {
+        const s = (t - 0.5) / 0.5;
+        return [255, Math.round((1 - s) * 255), Math.round((1 - s) * 255)];
+    }
+}
+
+// matplotlib Blues: white → light blue → dark blue
+function bluesColor(value, vmin, vmax) {
+    const t = Math.max(0, Math.min(1, (value - vmin) / (vmax - vmin)));
+    // Approximate matplotlib Blues: (247,251,255) → (107,174,214) → (8,48,107)
+    if (t < 0.5) {
+        const s = t / 0.5;
+        return [Math.round(247 - s * 140), Math.round(251 - s * 77), Math.round(255 - s * 41)];
+    } else {
+        const s = (t - 0.5) / 0.5;
+        return [Math.round(107 - s * 99), Math.round(174 - s * 126), Math.round(214 - s * 107)];
+    }
+}
+
+// matplotlib Greens: white → light green → dark green
+function greensColor(value, vmin, vmax) {
+    const t = Math.max(0, Math.min(1, (value - vmin) / (vmax - vmin)));
+    // Approximate matplotlib Greens: (247,252,245) → (116,196,118) → (0,68,27)
+    if (t < 0.5) {
+        const s = t / 0.5;
+        return [Math.round(247 - s * 131), Math.round(252 - s * 56), Math.round(245 - s * 127)];
+    } else {
+        const s = (t - 0.5) / 0.5;
+        return [Math.round(116 - s * 116), Math.round(196 - s * 128), Math.round(118 - s * 91)];
+    }
+}
+
+function buildLisMap(pae, lenI, lenJ, offsetI, offsetJ, paeCutoff) {
+    const map = Array.from({length: lenI}, () => Array(lenJ).fill(0));
+    for (let i = 0; i < lenI; i++) {
+        for (let j = 0; j < lenJ; j++) {
+            const ri = offsetI + i, rj = offsetJ + j;
+            const v = (pae[ri][rj] + pae[rj][ri]) / 2;
+            map[i][j] = v < paeCutoff ? 1 - v / paeCutoff : 0;
+        }
+    }
+    return map;
+}
+
+function buildClisMap(pae, contact, nUse, lenI, lenJ, offsetI, offsetJ, paeCutoff) {
+    const map = Array.from({length: lenI}, () => Array(lenJ).fill(0));
+    for (let i = 0; i < lenI; i++) {
+        for (let j = 0; j < lenJ; j++) {
+            const ri = offsetI + i;
+            const rj = offsetJ + j;
+            const v = (pae[ri][rj] + pae[rj][ri]) / 2;
+            const tv = v < paeCutoff ? 1 - v / paeCutoff : 0;
+            const cv = (ri < nUse && rj < nUse) ? contact[ri * nUse + rj] : 0;
+            map[i][j] = (tv > 0 && cv) ? tv : 0;
+        }
+    }
+    return map;
+}
+
+function dilateMap(map2d, radius) {
+    const rows = map2d.length;
+    const cols = map2d[0].length;
+    const result = map2d.map(row => [...row]);
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            if (map2d[i][j] > 0) {
+                for (let di = -radius; di <= radius; di++) {
+                    for (let dj = -radius; dj <= radius; dj++) {
+                        const ni = i + di, nj = j + dj;
+                        if (ni >= 0 && ni < rows && nj >= 0 && nj < cols) {
+                            result[ni][nj] = Math.max(result[ni][nj], map2d[i][j]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+function drawFullMapCanvas(canvas, pae, nTotal, chainSizes, chainNames, colorFn, vmin, vmax, displaySize) {
+    const leftMargin = 28;
+    const bottomMargin = 36;
+    const plotPx = displaySize * HIRES;
+    const leftPx = leftMargin * HIRES;
+    const bottomPx = bottomMargin * HIRES;
+    const scale = plotPx / nTotal;
+
+    canvas.width = plotPx + leftPx;
+    canvas.height = plotPx + bottomPx;
+    canvas.style.width = (displaySize + leftMargin) + 'px';
+    canvas.style.height = (displaySize + bottomMargin) + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw pixels
+    const imgData = ctx.createImageData(plotPx, plotPx);
+    const data = imgData.data;
+    for (let py = 0; py < plotPx; py++) {
+        const i = Math.min(nTotal - 1, Math.floor(py / scale));
+        const row = pae[i];
+        for (let px = 0; px < plotPx; px++) {
+            const j = Math.min(nTotal - 1, Math.floor(px / scale));
+            const [r, g, b] = colorFn(row[j], vmin, vmax);
+            const idx = (py * plotPx + px) * 4;
+            data[idx] = r; data[idx + 1] = g; data[idx + 2] = b; data[idx + 3] = 255;
+        }
+    }
+    ctx.putImageData(imgData, leftPx, 0);
+
+    // Border
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 0.5 * HIRES;
+    ctx.strokeRect(leftPx, 0, plotPx, plotPx);
+
+    // Chain boundaries
+    let cum = 0;
+    for (let k = 0; k < chainSizes.length - 1; k++) {
+        cum += chainSizes[k];
+        const pos = Math.round(cum * scale);
+        ctx.beginPath(); ctx.moveTo(leftPx + pos, 0); ctx.lineTo(leftPx + pos, plotPx); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(leftPx, pos); ctx.lineTo(leftPx + plotPx, pos); ctx.stroke();
+    }
+
+    // Chain labels
+    const chainFont = Math.max(9, Math.min(14, Math.floor(displaySize / chainSizes.length / 2.5))) * HIRES;
+    const tickFont = Math.max(7, Math.min(10, Math.floor(displaySize / 16))) * HIRES;
+    let labelCum = 0;
+    for (let k = 0; k < chainSizes.length; k++) {
+        const chainMid = (labelCum + chainSizes[k] / 2) * scale;
+        const name = chainNames[k];
+
+        ctx.font = `${chainFont}px sans-serif`;
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(name, leftPx - 3 * HIRES, chainMid);
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(name, leftPx + chainMid, plotPx + 2 * HIRES);
+
+        ctx.font = `${tickFont}px sans-serif`;
+        ctx.fillStyle = '#888';
+        ctx.fillText(`1-${chainSizes[k]}`, leftPx + chainMid, plotPx + chainFont + 3 * HIRES);
+
+        labelCum += chainSizes[k];
+    }
+}
+
+function drawOffDiagMapCanvas(canvas, map2d, lenI, lenJ, chainNames, colorFn, vmin, vmax, displaySize) {
+    const leftMargin = 20;
+    const bottomMargin = 36;
+    const plotW = displaySize * HIRES;
+    const plotH = Math.round(displaySize * lenI / lenJ) * HIRES;
+    const leftPx = leftMargin * HIRES;
+    const bottomPx = bottomMargin * HIRES;
+    const scaleX = plotW / lenJ;
+    const scaleY = plotH / lenI;
+
+    // Maintain aspect ratio
+    const actualH = Math.round(displaySize * (lenI / lenJ));
+    canvas.width = plotW + leftPx;
+    canvas.height = plotH + bottomPx;
+    canvas.style.width = (displaySize + leftMargin) + 'px';
+    canvas.style.height = (actualH + bottomMargin) + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const imgData = ctx.createImageData(plotW, plotH);
+    const data = imgData.data;
+    for (let py = 0; py < plotH; py++) {
+        const i = Math.min(lenI - 1, Math.floor(py / scaleY));
+        for (let px = 0; px < plotW; px++) {
+            const j = Math.min(lenJ - 1, Math.floor(px / scaleX));
+            const [r, g, b] = colorFn(map2d[i][j], vmin, vmax);
+            const idx = (py * plotW + px) * 4;
+            data[idx] = r; data[idx + 1] = g; data[idx + 2] = b; data[idx + 3] = 255;
+        }
+    }
+    ctx.putImageData(imgData, leftPx, 0);
+
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 0.5 * HIRES;
+    ctx.strokeRect(leftPx, 0, plotW, plotH);
+
+    // Axis labels
+    const chainFont = 12 * HIRES;
+    const tickFont = 9 * HIRES;
+    ctx.font = `${chainFont}px sans-serif`;
+    ctx.fillStyle = '#333';
+
+    // Y-axis: chain A
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(chainNames[0], leftPx - 3 * HIRES, plotH / 2);
+
+    // X-axis: chain B
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(chainNames[1], leftPx + plotW / 2, plotH + 2 * HIRES);
+
+    ctx.font = `${tickFont}px sans-serif`;
+    ctx.fillStyle = '#888';
+    ctx.fillText(`1-${lenJ}`, leftPx + plotW / 2, plotH + chainFont + 3 * HIRES);
+}
+
+function createMapPanel(parentEl, label, mapCanvas, displaySize, colorFn, vmin, vmax, tickLabels) {
+    const panel = document.createElement('div');
+    panel.style.cssText = 'flex:0 0 auto; text-align:center;';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'map-label';
+    lbl.textContent = label;
+    panel.appendChild(lbl);
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; align-items:flex-start; gap:3px;';
+
+    row.appendChild(mapCanvas);
+
+    // Vertical colorbar + tick labels
+    const cbarWrap = document.createElement('div');
+    cbarWrap.style.cssText = 'display:flex; gap:2px;';
+
+    const cbar = document.createElement('canvas');
+    cbar.width = 14;
+    cbar.height = displaySize;
+    // Draw reversed: max at top (y=0), min at bottom (y=h)
+    const ctx = cbar.getContext('2d');
+    for (let y = 0; y < displaySize; y++) {
+        const v = vmax - (y / displaySize) * (vmax - vmin); // reversed
+        const [r, g, b] = colorFn(v, vmin, vmax);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(0, y, 14, 1);
+    }
+    cbarWrap.appendChild(cbar);
+
+    const ticks = document.createElement('div');
+    ticks.style.cssText = `display:flex; flex-direction:column; justify-content:space-between; height:${displaySize}px; font-size:0.65rem; color:#888;`;
+    // tickLabels top-to-bottom (max first since reversed)
+    for (const t of tickLabels) {
+        const s = document.createElement('span');
+        s.textContent = t;
+        ticks.appendChild(s);
+    }
+    cbarWrap.appendChild(ticks);
+    row.appendChild(cbarWrap);
+
+    panel.appendChild(row);
+    parentEl.appendChild(panel);
+}
+
+function buildFullLisMap(pae, nTotal, paeCutoff) {
+    // Full NxN LIS map — score = (1 - PAE/cutoff) where PAE < cutoff, else 0
+    // Symmetrized: average of pae[i][j] and pae[j][i]
+    const map = Array.from({length: nTotal}, () => Array(nTotal).fill(0));
+    for (let i = 0; i < nTotal; i++) {
+        for (let j = 0; j < nTotal; j++) {
+            const avg = (pae[i][j] + pae[j][i]) / 2;
+            map[i][j] = avg < paeCutoff ? 1 - avg / paeCutoff : 0;
+        }
+    }
+    return map;
+}
+
+function buildFullClisMap(pae, contact, nUse, nTotal, paeCutoff) {
+    const map = Array.from({length: nTotal}, () => Array(nTotal).fill(0));
+    for (let i = 0; i < nTotal; i++) {
+        for (let j = 0; j < nTotal; j++) {
+            const avg = (pae[i][j] + pae[j][i]) / 2;
+            const tv = avg < paeCutoff ? 1 - avg / paeCutoff : 0;
+            const cv = (i < nUse && j < nUse) ? contact[i * nUse + j] : 0;
+            map[i][j] = (tv > 0 && cv) ? tv : 0;
+        }
+    }
+    return map;
+}
+
+function drawAllMaps() {
+    const v = dimerPairResult;
+    // Card inner width ~1052px. Each panel = canvas(ds+28) + 3 + 14 cbar + 2 + 18 labels ≈ ds+65
+    // 3 panels + 2 gaps(6px): 3*(ds+65) + 12 ≤ 1052 → ds ≤ 281
+    const displaySize = 240;
+
+    const container = document.getElementById('maps-flex');
+    container.innerHTML = '';
+
+    // PAE
+    const paeCanvas = document.createElement('canvas');
+    drawFullMapCanvas(paeCanvas, v.paeMatrix, v.nTotal, v.chainSizes, v.chainNames, bwrColor, 0, 30, displaySize);
+    createMapPanel(container, 'PAE', paeCanvas, displaySize, bwrColor, 0, 30, ['30', '15', '0']);
+
+    // LIS (Blues)
+    const lisMap = buildFullLisMap(v.paeMatrix, v.nTotal, v.paeCutoff);
+    const lisCanvas = document.createElement('canvas');
+    drawFullMapCanvas(lisCanvas, lisMap, v.nTotal, v.chainSizes, v.chainNames, bluesColor, 0, 1, displaySize);
+    createMapPanel(container, 'LIS', lisCanvas, displaySize, bluesColor, 0, 1, ['1', '0.5', '0']);
+
+    // cLIS (Greens, dilated)
+    const clisMap = buildFullClisMap(v.paeMatrix, v.contact, v.nUse, v.nTotal, v.paeCutoff);
+    const clisDilateRadius = v.nTotal > 500 ? 2 : 1;
+    const dilated = dilateMap(clisMap, clisDilateRadius);
+    const clisCanvas = document.createElement('canvas');
+    drawFullMapCanvas(clisCanvas, dilated, v.nTotal, v.chainSizes, v.chainNames, greensColor, 0, 1, displaySize);
+    createMapPanel(container, 'cLIS', clisCanvas, displaySize, greensColor, 0, 1, ['1', '0.5', '0']);
+}
+
+// ============================================================================
+// CXC GENERATION
+// ============================================================================
+function resSpec(positions, chain) {
+    if (positions.size === 0) return '';
+    const sorted = [...positions].sort((a, b) => a - b);
+    const ranges = [];
+    let start = sorted[0], end = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === end + 1) end = sorted[i];
+        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
+    }
+    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+    return `/${chain}:${ranges.join(',')}`;
+}
+
+function fillGaps(positions, maxGap = 20) {
+    if (positions.size === 0) return new Set();
+    const sorted = [...positions].sort((a, b) => a - b);
+    const filled = new Set(sorted);
+    for (let i = 0; i < sorted.length - 1; i++) {
+        const gap = sorted[i + 1] - sorted[i] - 1;
+        if (gap > 0 && gap <= maxGap) {
+            for (let j = sorted[i] + 1; j < sorted[i + 1]; j++) filled.add(j);
+        }
+    }
+    return filled;
+}
+
+function rangesStr(positions) {
+    if (positions.size === 0) return 'none';
+    const sorted = [...positions].sort((a, b) => a - b);
+    const ranges = [];
+    let start = sorted[0], end = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] <= end + 15) end = sorted[i];
+        else { ranges.push(`${start}-${end}`); start = end = sorted[i]; }
+    }
+    ranges.push(`${start}-${end}`);
+    return ranges.join(', ');
+}
+
+function generateAndDisplayScript() {
+    const v = dimerPairResult;
+    const colors = {
+        lir_a: document.getElementById('color-lir-a').value,
+        clir_a: document.getElementById('color-clir-a').value,
+        lir_b: document.getElementById('color-lir-b').value,
+        clir_b: document.getElementById('color-clir-b').value,
+    };
+
+    const lirIStr = rangesStr(v.lirI), lirJStr = rangesStr(v.lirJ);
+    const iLIS = v.iLIS.toFixed(3), ipTM = v.ipTM.toFixed(3);
+    const partA = `Chain ${v.ci} (${lirIStr})`;
+    const partB = `Chain ${v.cj} (${lirJStr})`;
+    const partC = `iLIS: ${iLIS}  ipTM: ${ipTM}`;
+    const xB = (0.03 + partA.length * 0.009 + 0.015).toFixed(3);
+    const xC = (parseFloat(xB) + partB.length * 0.009 + 0.015).toFixed(3);
+
+    const lirISpec = resSpec(fillGaps(v.lirI), v.ci);
+    const lirJSpec = resSpec(fillGaps(v.lirJ), v.cj);
+    const clirISpec = resSpec(v.clirI, v.ci);
+    const clirJSpec = resSpec(v.clirJ, v.cj);
+
+    const paeCut = document.getElementById('pae-cutoff').value || '12';
+    const cbCut = document.getElementById('cb-cutoff').value || '8';
+
+    let lines = [
+        `# ChimeraX: Chain ${v.ci} \u2014 Chain ${v.cj} (iLIS=${iLIS}, ipTM=${ipTM})`,
+        `# Chain /${v.ci}: ${v.lenI} residues, LIR: ${lirIStr}`,
+        `# Chain /${v.cj}: ${v.lenJ} residues, LIR: ${lirJStr}`,
+        `# Source: AlphaFold Protein Structure Database`,
+        `# Generated by Dimer-ChimeraX Tool`, '',
+        'close', `open ${dimerCifFilename}`, '',
+        '# \u2500\u2500 Setup \u2500\u2500',
+        'set bgColor white', 'graphics silhouettes true', 'lighting soft',
+    ];
+    if (cxcColorMode === 'plddt') {
+        lines.push('color bfactor palette #FF7D45:#FFDB13:#65CBF3:#0053D6 range 50,90');
+    } else if (cxcColorMode === 'bychain') {
+        lines.push('color bychain');
+    } else if (cxcColorMode === 'bypolymer') {
+        lines.push('color bypolymer');
+    } else {
+        lines.push(`color #1/${v.ci} ${colors.lir_a}`, `color #1/${v.cj} ${colors.lir_b}`);
+    }
+    lines.push(
+        'hide atoms', 'hide cartoons', '',
+        '# \u2500\u2500 Title \u2500\u2500',
+        `2dlabels create title text "${partA}" xpos 0.03 ypos 0.95 size 16 color ${colors.clir_a} bold true`,
+        `2dlabels create title2 text "${partB}" xpos ${xB} ypos 0.95 size 16 color ${colors.clir_b} bold true`,
+        `2dlabels create title3 text "${partC}" xpos ${xC} ypos 0.95 size 16 color black bold true`, '',
+        '# \u2500\u2500 Show LIR regions \u2500\u2500',
+        `# LIR ${v.ci}: ${v.lirI.size} residues`,
+    );
+    if (lirISpec) lines.push(`show #1${lirISpec} cartoons`);
+    lines.push('', `# LIR ${v.cj}: ${v.lirJ.size} residues`);
+    if (lirJSpec) lines.push(`show #1${lirJSpec} cartoons`);
+    lines.push('', '# \u2500\u2500 Highlight cLIR \u2500\u2500');
+    if (!cxcColorMode && v.clirI.size > 0) {
+        lines.push(`# cLIR ${v.ci}: ${v.clirI.size} residues`);
+        lines.push(`color #1${clirISpec} ${colors.clir_a}`);
+        lines.push('');
+    }
+    if (!cxcColorMode && v.clirJ.size > 0) {
+        lines.push(`# cLIR ${v.cj}: ${v.clirJ.size} residues`);
+        lines.push(`color #1${clirJSpec} ${colors.clir_b}`);
+        lines.push('');
+    }
+    lines.push('# \u2500\u2500 Final \u2500\u2500', 'view', 'lighting soft depthCue true', '');
+    lines.push('# \u2500\u2500 Save figure \u2500\u2500');
+    lines.push(`save chain${v.ci}_chain${v.cj}.png transparentBackground true`);
+    lines.push('');
+    lines.push('# \u2500\u2500 Color Legend \u2500\u2500');
+    lines.push(`# LIR  = Local Interaction Region (PAE <= ${paeCut})`);
+    lines.push(`# cLIR = contact LIR (PAE <= ${paeCut} & C-beta <= ${cbCut} \u00c5)`);
+    lines.push('#');
+    lines.push(`# LIR  (${colors.lir_a}) = Chain ${v.ci}`, `# cLIR (${colors.clir_a}) = Chain ${v.ci}`);
+    lines.push(`# LIR  (${colors.lir_b}) = Chain ${v.cj}`, `# cLIR (${colors.clir_b}) = Chain ${v.cj}`);
+    lines.push('# Non-LIR regions are HIDDEN');
+    lines.push('');
+    lines.push('# \u2500\u2500 Alternative: color by pLDDT (uncomment below) \u2500\u2500');
+    lines.push('# color bfactor palette #FF7D45:#FFDB13:#65CBF3:#0053D6 range 50,90');
+    lines.push('# # Very high (>90): dark blue, High (70-90): light blue, Low (50-70): yellow, Very low (<50): orange');
+
+    const cxc = lines.join('\n');
+
+    document.getElementById('script-preview').innerHTML = highlightCxc(cxc);
+
+    const dlCxc = document.getElementById('dl-cxc');
+    dlCxc.href = URL.createObjectURL(new Blob([cxc], { type: 'text/plain' }));
+    dlCxc.download = `chain${v.ci}_chain${v.cj}_interface.cxc`;
+
+    const dlCif = document.getElementById('dl-cif');
+    dlCif.href = URL.createObjectURL(new Blob([dimerCifText], { type: 'text/plain' }));
+    dlCif.download = dimerCifFilename;
+}
+
+function highlightCxc(text) {
+    return text.split('\n').map(line => {
+        if (line.startsWith('#')) return `<span class="comment">${esc(line)}</span>`;
+        line = esc(line).replace(/(#[0-9A-Fa-f]{6})/g, '<span class="color-val">$1</span>');
+        const m = line.match(/^(\w+)/);
+        if (m) line = `<span class="command">${m[1]}</span>` + line.slice(m[1].length);
+        return line;
+    }).join('\n');
+}
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ============================================================================
+// CSV DOWNLOAD
+// ============================================================================
+function downloadCSV() {
+    if (!dimerPairResult) return;
+    const v = dimerPairResult;
+    const complexName = selectedDimer.complexName || selectedDimer.modelEntityId || 'dimer';
+
+    const ipSAE = selectedDimer.complexPredictionAccuracy_ipSAE || 0;
+    const afdbPlddt = selectedDimer.globalMetricValue || 0;
+    const afdbPdockq2 = selectedDimer.complexPredictionAccuracy_pDockQ2 || 0;
+    const header = 'complex_name,protein_1,protein_2,iLIS,LIS,cLIS,ipTM,ipSAE,pDockQ2,pLDDT,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const row = [
+        `"${complexName}"`, v.ci, v.cj,
+        v.iLIS.toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+        v.ipTM.toFixed(6), ipSAE.toFixed(6), afdbPdockq2.toFixed(6), afdbPlddt.toFixed(1),
+        v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
+        v.lenI, v.lenJ,
+        `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
+        `"[${[...v.lirJ].sort((a,b)=>a-b).join(', ')}]"`,
+        `"[${[...v.clirI].sort((a,b)=>a-b).join(', ')}]"`,
+        `"[${[...v.clirJ].sort((a,b)=>a-b).join(', ')}]"`,
+    ].join(',');
+
+    const blob = new Blob([header + '\n' + row], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${complexName}_lis_analysis.csv`;
+    a.click();
+}
+
+// ============================================================================
+// COLOR PICKERS & PRESETS
+// ============================================================================
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('input', () => {
+        document.getElementById(input.id.replace('color-', 'hex-')).textContent = input.value;
+        const s = document.getElementById('color-strip').children;
+        s[0].style.background = document.getElementById('color-lir-a').value;
+        s[1].style.background = document.getElementById('color-clir-a').value;
+        s[2].style.background = document.getElementById('color-clir-b').value;
+        s[3].style.background = document.getElementById('color-lir-b').value;
+    });
+});
+
+function applyPreset(la, ca, lb, cb, el) {
+    cxcColorMode = '';
+    document.getElementById('color-lir-a').value = la;
+    document.getElementById('color-clir-a').value = ca;
+    document.getElementById('color-lir-b').value = lb;
+    document.getElementById('color-clir-b').value = cb;
+    document.getElementById('hex-lir-a').textContent = la;
+    document.getElementById('hex-clir-a').textContent = ca;
+    document.getElementById('hex-lir-b').textContent = lb;
+    document.getElementById('hex-clir-b').textContent = cb;
+    const s = document.getElementById('color-strip').children;
+    s[0].style.background = la; s[1].style.background = ca; s[2].style.background = cb; s[3].style.background = lb;
+    if (el) { document.querySelectorAll('.preset-chip').forEach(p => p.classList.remove('active')); el.classList.add('active'); }
+    // Re-render script if results are visible
+    if (dimerPairResult) generateAndDisplayScript();
+}
+
+function applyCxcPreset(mode, el) {
+    cxcColorMode = mode;
+    document.querySelectorAll('.preset-chip').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+    if (dimerPairResult) generateAndDisplayScript();
+}
+
+function swapColors() {
+    const la = document.getElementById('color-lir-a').value;
+    const ca = document.getElementById('color-clir-a').value;
+    const lb = document.getElementById('color-lir-b').value;
+    const cb = document.getElementById('color-clir-b').value;
+    applyPreset(lb, cb, la, ca, null);
+}
+</script>
+</body>
+</html>

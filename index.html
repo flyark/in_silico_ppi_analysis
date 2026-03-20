@@ -14,11 +14,11 @@
         .header-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.85rem; padding: 0.25rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; transition: all 0.2s; }
         .header-links a:hover { background: rgba(255,255,255,0.15); color: white; }
         .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-        .tool-card { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem; display: flex; gap: 1.5rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; width: 100%; }
+        .tool-card { background: white; border-radius: 12px; padding: 1.2rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem; display: flex; gap: 1.2rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; width: 100%; }
         .tool-card:hover { border-color: #2471A3; box-shadow: 0 4px 16px rgba(36,113,163,0.15); }
-        .tool-icon { font-size: 2.5rem; flex-shrink: 0; }
-        .tool-info h2 { font-size: 1.2rem; color: #1a5276; margin-bottom: 0.3rem; }
-        .tool-info p { font-size: 0.9rem; color: #666; line-height: 1.5; min-height: 3rem; }
+        .tool-icon { font-size: 2rem; flex-shrink: 0; }
+        .tool-info h2 { font-size: 1.1rem; color: #1a5276; margin-bottom: 0.2rem; }
+        .tool-info p { font-size: 0.85rem; color: #666; line-height: 1.4; }
         .links { text-align: center; margin: 1rem 0; }
         .links a { color: #2471A3; text-decoration: none; font-size: 0.9rem; margin: 0 0.8rem; }
         .links a:hover { text-decoration: underline; }
@@ -33,8 +33,9 @@
         <div class="header-links">
             <a href="chimerax_visualization_flypredictome.html">FlyPredictome-ChimeraX</a>
             <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>
+            <a href="chimerax_visualization_dimer.html">AFDB Dimer-ChimeraX</a>
+            <a href="chimerax_visualization_monomer.html">AFDB Monomer-ChimeraX</a>
             <a href="guide.html">Guide</a>
-            <a href="https://github.com/flyark/AFM-LIS" target="_blank">AFM-LIS</a>
             <a href="https://github.com/flyark/chimerax_visualization_lis" target="_blank">GitHub</a>
         </div>
     </div>
@@ -44,21 +45,35 @@
         <div class="tool-icon">&#129712;</div>
         <div class="tool-info">
             <h2>FlyPredictome &rarr; ChimeraX</h2>
-            <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script. Supports all FlyPredictome prediction pairs.</p>
+            <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script.</p>
         </div>
     </a>
     <a class="tool-card" href="chimerax_visualization_af3.html">
         <div class="tool-icon">&#129516;</div>
         <div class="tool-info">
             <h2>AlphaFold3 &rarr; ChimeraX</h2>
-            <p>Upload an AlphaFold3 zip file to calculate AFM-LIS metrics (iLIS, LIS, cLIS, LIR, cLIR), view PAE/LIS/cLIS maps, score matrices, and generate ChimeraX scripts. Supports multi-chain complexes.</p>
+            <p>Upload an AlphaFold3 zip file or folder to calculate AFM-LIS metrics (iLIS, LIS, cLIS, LIR, cLIR), view PAE/LIS/cLIS maps, score matrices, and generate ChimeraX scripts. Supports multi-chain complexes.</p>
+        </div>
+    </a>
+    <a class="tool-card" href="chimerax_visualization_dimer.html">
+        <div class="tool-icon">&#129309;</div>
+        <div class="tool-info">
+            <h2>AlphaFold Database Dimer &rarr; ChimeraX</h2>
+            <p>Search the AlphaFold Protein Structure Database for dimer predictions by UniProt ID, calculate iLIS between chains, view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
+        </div>
+    </a>
+    <a class="tool-card" href="chimerax_visualization_monomer.html">
+        <div class="tool-icon">&#128300;</div>
+        <div class="tool-info">
+            <h2>AlphaFold Database Monomer Domain LIS &rarr; ChimeraX <span style="font-size:0.6rem; color:#E67E22; vertical-align:super;">ALPHA</span></h2>
+            <p>Fetch monomer predictions from the AlphaFold Protein Structure Database by UniProt ID. Auto-detect domains, view PAE/LIS/cLIS maps, and calculate intramolecular iLIS between domains.</p>
         </div>
     </a>
     <a class="tool-card" href="guide.html">
         <div class="tool-icon">&#128214;</div>
         <div class="tool-info">
             <h2>Step-by-Step Guide</h2>
-            <p>Visual instructions for both tools — from getting your data to opening the visualization in ChimeraX. Includes metric definitions and color scheme references.</p>
+            <p>Visual instructions for all tools — from getting your data to opening the visualization in ChimeraX. Includes metric definitions and color scheme references.</p>
         </div>
     </a>
     <div class="links">
@@ -68,6 +83,6 @@
         <a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a>
     </div>
 </div>
-<div class="footer">Made by Ah-Ram Kim</div>
+<div class="footer">Made by Ah-Ram Kim &middot; <a href="https://github.com/flyark/AFM-LIS">AFM-LIS</a></div>
 </body>
 </html>

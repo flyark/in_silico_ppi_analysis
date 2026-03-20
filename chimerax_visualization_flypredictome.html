@@ -341,6 +341,15 @@
         .preset-strip span { flex: 1; }
         .preset-name { font-size: 0.82rem; color: #666; }
 
+        /* ── Sequence viewer ── */
+        .seq-row { display:flex; align-items:center; margin-bottom:0; }
+        .seq-num { font-size:0.72rem; color:#888; width:36px; text-align:right; padding-right:4px; flex-shrink:0; font-family:'SF Mono','Fira Code',monospace; }
+        .seq-blocks { display:flex; flex-wrap:nowrap; font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.4; letter-spacing:0.5px; }
+        .seq-res { display:inline-block; width:0.75em; text-align:center; cursor:default; color:#333; }
+        .seq-res.clir { color:white; font-weight:700; }
+        .seq-chain-label { font-size:0.75rem; font-weight:700; color:#1a5276; margin-top:0.5rem; margin-bottom:0.2rem; }
+        .seq-tooltip { position:fixed; background:#333; color:white; padding:2px 6px; border-radius:4px; font-size:0.72rem; pointer-events:none; z-index:200; display:none; font-family:'SF Mono',monospace; }
+
         /* ── Preset chips (in Options card) ── */
         .presets-row {
             display: flex;
@@ -373,13 +382,9 @@
         <div class="header-links">
             <a href="index.html">Home</a>
             <a href="chimerax_visualization_af3.html">AlphaFold3-ChimeraX</a>
-            <a href="chimerax_visualization_monomer.html">Monomer-ChimeraX</a>
+            <a href="chimerax_visualization_dimer.html">AFDB Dimer-ChimeraX</a>
+            <a href="chimerax_visualization_monomer.html">AFDB Monomer-ChimeraX</a>
             <a href="guide.html">Guide</a>
-            <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">FlyPredictome</a>
-            <a href="https://github.com/flyark/AFM-LIS" target="_blank">AFM-LIS</a>
-            <a href="https://github.com/flyark/chimerax_visualization_lis" target="_blank">GitHub</a>
-            <a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank">Kim et al. 2024</a>
-            <a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a>
         </div>
     </div>
 </div>
@@ -388,96 +393,15 @@
 
     <!-- Input -->
     <div class="card">
-        <div class="step-header"><span class="step-num">1</span> <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" class="step-link">FlyPredictome</a>&nbsp; URL</div>
+        <div class="step-header"><a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" class="step-link">FlyPredictome</a>&nbsp; URL</div>
         <div class="url-row">
             <input type="text" id="url-input"
                    placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/..."
                    value="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Akt1/foxo/SET_47/">
-            <select id="rank-select">
-                <option value="1">Rank 1</option>
-                <option value="2">Rank 2</option>
-                <option value="3">Rank 3</option>
-                <option value="4">Rank 4</option>
-                <option value="5">Rank 5</option>
-            </select>
             <button class="btn btn-primary" id="btn-generate" onclick="generate()">Generate</button>
         </div>
         <div id="fetch-status" class="fetch-status"></div>
         <textarea id="html-input" style="display:none"></textarea>
-    </div>
-
-    <!-- Options -->
-    <div class="card">
-        <div class="step-header"><span class="step-num">2</span> Options</div>
-
-        <label>Color Scheme</label>
-        <div class="color-section">
-            <div class="color-group">
-                <h3>Chain A (Protein 1)</h3>
-                <div class="color-pair">
-                    <input type="color" id="color-lir-a" value="#b3d4e8">
-                    <div>
-                        <div class="color-label">LIR — confident domain <span class="color-def">(PAE &le; 12)</span></div>
-                        <div class="color-hex" id="hex-lir-a">#b3d4e8</div>
-                    </div>
-                </div>
-                <div class="color-pair">
-                    <input type="color" id="color-clir-a" value="#2471A3">
-                    <div>
-                        <div class="color-label">cLIR — confident interface <span class="color-def">(PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</span></div>
-                        <div class="color-hex" id="hex-clir-a">#2471A3</div>
-                    </div>
-                </div>
-            </div>
-            <div class="color-group">
-                <h3>Chain B (Protein 2)</h3>
-                <div class="color-pair">
-                    <input type="color" id="color-lir-b" value="#f5cba7">
-                    <div>
-                        <div class="color-label">LIR — confident domain <span class="color-def">(PAE &le; 12)</span></div>
-                        <div class="color-hex" id="hex-lir-b">#f5cba7</div>
-                    </div>
-                </div>
-                <div class="color-pair">
-                    <input type="color" id="color-clir-b" value="#E67E22">
-                    <div>
-                        <div class="color-label">cLIR — confident interface <span class="color-def">(PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</span></div>
-                        <div class="color-hex" id="hex-clir-b">#E67E22</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:0.8rem; margin-top:0.5rem;">
-            <div class="color-preview-strip" id="color-strip" style="flex:1; margin:0;">
-                <div style="background:#b3d4e8"></div><div style="background:#2471A3"></div><div style="background:#E67E22"></div><div style="background:#f5cba7"></div>
-            </div>
-            <button onclick="swapColors()" style="padding:0.3rem 0.8rem; border:2px solid #e0e0e0; border-radius:6px; background:white; cursor:pointer; font-size:0.82rem; color:#666; white-space:nowrap;">Swap A &#8596; B</button>
-        </div>
-
-        <label style="margin-top:1rem">Presets &mdash; gradient (LIR light, cLIR dark)</label>
-        <div class="presets-row">
-            <div class="preset-chip active" onclick="applyPreset('#b3d4e8','#2471A3','#f5cba7','#E67E22',this)"><div class="preset-strip"><span style="background:#b3d4e8"></span><span style="background:#2471A3"></span><span style="background:#E67E22"></span><span style="background:#f5cba7"></span></div>Blue / Orange</div>
-            <div class="preset-chip" onclick="applyPreset('#d1c4e9','#5e35b1','#fff3b0','#f9a825',this)"><div class="preset-strip"><span style="background:#d1c4e9"></span><span style="background:#5e35b1"></span><span style="background:#f9a825"></span><span style="background:#fff3b0"></span></div>Purple / Gold</div>
-            <div class="preset-chip" onclick="applyPreset('#b2dfdb','#00897b','#ffccbc','#e64a19',this)"><div class="preset-strip"><span style="background:#b2dfdb"></span><span style="background:#00897b"></span><span style="background:#e64a19"></span><span style="background:#ffccbc"></span></div>Teal / Coral</div>
-            <div class="preset-chip" onclick="applyPreset('#cfd8dc','#546e7a','#f8bbd0','#c2185b',this)"><div class="preset-strip"><span style="background:#cfd8dc"></span><span style="background:#546e7a"></span><span style="background:#c2185b"></span><span style="background:#f8bbd0"></span></div>Slate / Rose</div>
-            <div class="preset-chip" onclick="applyPreset('#c5cae9','#303f9f','#ffe0b2','#e65100',this)"><div class="preset-strip"><span style="background:#c5cae9"></span><span style="background:#303f9f"></span><span style="background:#e65100"></span><span style="background:#ffe0b2"></span></div>Indigo / Tangerine</div>
-            <div class="preset-chip" onclick="applyPreset('#a8d5ba','#2e7d32','#ef9a9a','#c62828',this)"><div class="preset-strip"><span style="background:#a8d5ba"></span><span style="background:#2e7d32"></span><span style="background:#c62828"></span><span style="background:#ef9a9a"></span></div>Green / Red</div>
-        </div>
-        <label style="margin-top:0.5rem">Presets &mdash; solid (same color for LIR and cLIR)</label>
-        <div class="presets-row">
-            <div class="preset-chip" onclick="applyPreset('#2471A3','#2471A3','#E67E22','#E67E22',this)"><div class="preset-strip"><span style="background:#2471A3"></span><span style="background:#2471A3"></span><span style="background:#E67E22"></span><span style="background:#E67E22"></span></div>Blue / Orange</div>
-            <div class="preset-chip" onclick="applyPreset('#5e35b1','#5e35b1','#f9a825','#f9a825',this)"><div class="preset-strip"><span style="background:#5e35b1"></span><span style="background:#5e35b1"></span><span style="background:#f9a825"></span><span style="background:#f9a825"></span></div>Purple / Gold</div>
-            <div class="preset-chip" onclick="applyPreset('#00897b','#00897b','#e64a19','#e64a19',this)"><div class="preset-strip"><span style="background:#00897b"></span><span style="background:#00897b"></span><span style="background:#e64a19"></span><span style="background:#e64a19"></span></div>Teal / Coral</div>
-            <div class="preset-chip" onclick="applyPreset('#546e7a','#546e7a','#c2185b','#c2185b',this)"><div class="preset-strip"><span style="background:#546e7a"></span><span style="background:#546e7a"></span><span style="background:#c2185b"></span><span style="background:#c2185b"></span></div>Slate / Rose</div>
-            <div class="preset-chip" onclick="applyPreset('#6A9EC6','#6A9EC6','#D4A76A','#D4A76A',this)"><div class="preset-strip"><span style="background:#6A9EC6"></span><span style="background:#6A9EC6"></span><span style="background:#D4A76A"></span><span style="background:#D4A76A"></span></div>Steel / Wheat</div>
-        </div>
-        <label style="margin-top:0.5rem">Presets &mdash; ChimeraX defaults</label>
-        <div class="presets-row">
-            <div class="preset-chip" onclick="applyPreset('#6495ED','#6495ED','#FF6347','#FF6347',this)"><div class="preset-strip"><span style="background:#6495ED"></span><span style="background:#6495ED"></span><span style="background:#FF6347"></span><span style="background:#FF6347"></span></div>Cornflower / Tomato</div>
-            <div class="preset-chip" onclick="applyPreset('#87CEEB','#87CEEB','#FFD700','#FFD700',this)"><div class="preset-strip"><span style="background:#87CEEB"></span><span style="background:#87CEEB"></span><span style="background:#FFD700"></span><span style="background:#FFD700"></span></div>SkyBlue / Gold</div>
-            <div class="preset-chip" onclick="applyPreset('#90EE90','#90EE90','#DDA0DD','#DDA0DD',this)"><div class="preset-strip"><span style="background:#90EE90"></span><span style="background:#90EE90"></span><span style="background:#DDA0DD"></span><span style="background:#DDA0DD"></span></div>LightGreen / Plum</div>
-            <div class="preset-chip" onclick="applyPreset('#FFA07A','#FFA07A','#20B2AA','#20B2AA',this)"><div class="preset-strip"><span style="background:#FFA07A"></span><span style="background:#FFA07A"></span><span style="background:#20B2AA"></span><span style="background:#20B2AA"></span></div>Salmon / Teal</div>
-        </div>
     </div>
 
     <!-- Error -->
@@ -486,51 +410,128 @@
     <!-- Results -->
     <div class="results" id="results">
 
-        <!-- Summary -->
+        <!-- All Ranks (click to select) -->
         <div class="card result-card">
-            <h2 id="result-title"></h2>
-            <div class="metrics-grid">
-                <div class="metric"><div class="value" id="m-ilis"></div><div class="label">iLIS</div></div>
-                <div class="metric"><div class="value" id="m-iptm"></div><div class="label">ipTM</div></div>
-                <div class="metric"><div class="value" id="m-clir-a"></div><div class="label">cLIR (A)</div></div>
-                <div class="metric"><div class="value" id="m-clir-b"></div><div class="label">cLIR (B)</div></div>
-                <div class="metric"><div class="value" id="m-lir-a"></div><div class="label">LIR (A)</div></div>
-                <div class="metric"><div class="value" id="m-lir-b"></div><div class="label">LIR (B)</div></div>
+            <h2 id="result-title">All Ranks</h2>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Rank</th><th>Symbol 1</th><th>Symbol 2</th><th>iLIS</th><th>ipTM</th><th>LIR (A/B)</th><th>cLIR (A/B)</th><th>Len (A/B)</th></tr>
+                    </thead>
+                    <tbody id="ranks-tbody"></tbody>
+                </table>
             </div>
-            <table class="data-table">
-                <thead><tr><th>Chain</th><th>Symbol</th><th>Length</th><th>LIR</th><th>cLIR</th></tr></thead>
-                <tbody id="interface-tbody"></tbody>
-            </table>
+            <div style="margin-top:0.5rem;">
+                <a class="btn-download cxc" style="background:#27ae60; border-color:#27ae60; font-size:0.82rem; cursor:pointer;" onclick="downloadFlyCSV()">&#8595; Download CSV</a>
+            </div>
+        </div>
+
+        <!-- Sequence Viewer -->
+        <div class="card result-card" id="seq-viewer-card" style="display:none;">
+            <h2>Sequence Viewer</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Light background = LIR (PAE &le; 12 &Aring;). Dark background = cLIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;). Each chain uses its own color.
+            </div>
+            <div id="seq-viewer" style="overflow-x:auto;"></div>
         </div>
 
         <!-- Script -->
         <div class="card result-card">
-            <h2>ChimeraX Script</h2>
+            <div class="step-header">ChimeraX Script</div>
+
+            <!-- Options -->
+            <div style="margin-bottom:1rem;">
+                <label style="font-size:0.9rem; font-weight:600; color:#1a5276;">Options</label>
+
+                <label>Color Scheme</label>
+                <div class="color-section">
+                    <div class="color-group">
+                        <h3>Chain A (Protein 1)</h3>
+                        <div class="color-pair">
+                            <input type="color" id="color-lir-a" value="#b3d4e8">
+                            <div>
+                                <div class="color-label">LIR — confident domain <span class="color-def">(PAE &le; 12)</span></div>
+                                <div class="color-hex" id="hex-lir-a">#b3d4e8</div>
+                            </div>
+                        </div>
+                        <div class="color-pair">
+                            <input type="color" id="color-clir-a" value="#2471A3">
+                            <div>
+                                <div class="color-label">cLIR — confident interface <span class="color-def">(PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</span></div>
+                                <div class="color-hex" id="hex-clir-a">#2471A3</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="color-group">
+                        <h3>Chain B (Protein 2)</h3>
+                        <div class="color-pair">
+                            <input type="color" id="color-lir-b" value="#f5cba7">
+                            <div>
+                                <div class="color-label">LIR — confident domain <span class="color-def">(PAE &le; 12)</span></div>
+                                <div class="color-hex" id="hex-lir-b">#f5cba7</div>
+                            </div>
+                        </div>
+                        <div class="color-pair">
+                            <input type="color" id="color-clir-b" value="#E67E22">
+                            <div>
+                                <div class="color-label">cLIR — confident interface <span class="color-def">(PAE &le; 12 &amp; C&beta; &le; 8 &Aring;)</span></div>
+                                <div class="color-hex" id="hex-clir-b">#E67E22</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.8rem; margin-top:0.5rem;">
+                    <div class="color-preview-strip" id="color-strip" style="flex:1; margin:0;">
+                        <div style="background:#b3d4e8"></div><div style="background:#2471A3"></div><div style="background:#E67E22"></div><div style="background:#f5cba7"></div>
+                    </div>
+                    <button onclick="swapColors()" style="padding:0.3rem 0.8rem; border:2px solid #e0e0e0; border-radius:6px; background:white; cursor:pointer; font-size:0.82rem; color:#666; white-space:nowrap;">Swap A &#8596; B</button>
+                </div>
+
+                <label style="margin-top:1rem">Presets &mdash; gradient (LIR light, cLIR dark)</label>
+                <div class="presets-row">
+                    <div class="preset-chip active" onclick="applyPreset('#b3d4e8','#2471A3','#f5cba7','#E67E22',this)"><div class="preset-strip"><span style="background:#b3d4e8"></span><span style="background:#2471A3"></span><span style="background:#E67E22"></span><span style="background:#f5cba7"></span></div>Blue / Orange</div>
+                    <div class="preset-chip" onclick="applyPreset('#d1c4e9','#5e35b1','#fff3b0','#f9a825',this)"><div class="preset-strip"><span style="background:#d1c4e9"></span><span style="background:#5e35b1"></span><span style="background:#f9a825"></span><span style="background:#fff3b0"></span></div>Purple / Gold</div>
+                    <div class="preset-chip" onclick="applyPreset('#b2dfdb','#00897b','#ffccbc','#e64a19',this)"><div class="preset-strip"><span style="background:#b2dfdb"></span><span style="background:#00897b"></span><span style="background:#e64a19"></span><span style="background:#ffccbc"></span></div>Teal / Coral</div>
+                    <div class="preset-chip" onclick="applyPreset('#cfd8dc','#546e7a','#f8bbd0','#c2185b',this)"><div class="preset-strip"><span style="background:#cfd8dc"></span><span style="background:#546e7a"></span><span style="background:#c2185b"></span><span style="background:#f8bbd0"></span></div>Slate / Rose</div>
+                    <div class="preset-chip" onclick="applyPreset('#c5cae9','#303f9f','#ffe0b2','#e65100',this)"><div class="preset-strip"><span style="background:#c5cae9"></span><span style="background:#303f9f"></span><span style="background:#e65100"></span><span style="background:#ffe0b2"></span></div>Indigo / Tangerine</div>
+                    <div class="preset-chip" onclick="applyPreset('#a8d5ba','#2e7d32','#ef9a9a','#c62828',this)"><div class="preset-strip"><span style="background:#a8d5ba"></span><span style="background:#2e7d32"></span><span style="background:#c62828"></span><span style="background:#ef9a9a"></span></div>Green / Red</div>
+                </div>
+                <label style="margin-top:0.5rem">Presets &mdash; solid</label>
+                <div class="presets-row">
+                    <div class="preset-chip" onclick="applyPreset('#2471A3','#2471A3','#E67E22','#E67E22',this)"><div class="preset-strip"><span style="background:#2471A3"></span><span style="background:#2471A3"></span><span style="background:#E67E22"></span><span style="background:#E67E22"></span></div>Blue / Orange</div>
+                    <div class="preset-chip" onclick="applyPreset('#5e35b1','#5e35b1','#f9a825','#f9a825',this)"><div class="preset-strip"><span style="background:#5e35b1"></span><span style="background:#5e35b1"></span><span style="background:#f9a825"></span><span style="background:#f9a825"></span></div>Purple / Gold</div>
+                    <div class="preset-chip" onclick="applyPreset('#00897b','#00897b','#e64a19','#e64a19',this)"><div class="preset-strip"><span style="background:#00897b"></span><span style="background:#00897b"></span><span style="background:#e64a19"></span><span style="background:#e64a19"></span></div>Teal / Coral</div>
+                    <div class="preset-chip" onclick="applyPreset('#546e7a','#546e7a','#c2185b','#c2185b',this)"><div class="preset-strip"><span style="background:#546e7a"></span><span style="background:#546e7a"></span><span style="background:#c2185b"></span><span style="background:#c2185b"></span></div>Slate / Rose</div>
+                    <div class="preset-chip" onclick="applyPreset('#6A9EC6','#6A9EC6','#D4A76A','#D4A76A',this)"><div class="preset-strip"><span style="background:#6A9EC6"></span><span style="background:#6A9EC6"></span><span style="background:#D4A76A"></span><span style="background:#D4A76A"></span></div>Steel / Wheat</div>
+                    <div class="preset-chip" onclick="applyPreset('#6495ED','#6495ED','#FF6347','#FF6347',this)"><div class="preset-strip"><span style="background:#6495ED"></span><span style="background:#6495ED"></span><span style="background:#FF6347"></span><span style="background:#FF6347"></span></div>Cornflower / Tomato</div>
+                    <div class="preset-chip" onclick="applyPreset('#87CEEB','#87CEEB','#FFD700','#FFD700',this)"><div class="preset-strip"><span style="background:#87CEEB"></span><span style="background:#87CEEB"></span><span style="background:#FFD700"></span><span style="background:#FFD700"></span></div>SkyBlue / Gold</div>
+                    <div class="preset-chip" onclick="applyPreset('#90EE90','#90EE90','#DDA0DD','#DDA0DD',this)"><div class="preset-strip"><span style="background:#90EE90"></span><span style="background:#90EE90"></span><span style="background:#DDA0DD"></span><span style="background:#DDA0DD"></span></div>LightGreen / Plum</div>
+                    <div class="preset-chip" onclick="applyPreset('#FFA07A','#FFA07A','#20B2AA','#20B2AA',this)"><div class="preset-strip"><span style="background:#FFA07A"></span><span style="background:#FFA07A"></span><span style="background:#20B2AA"></span><span style="background:#20B2AA"></span></div>Salmon / Teal</div>
+                </div>
+                <label style="margin-top:0.5rem">Presets &mdash; ChimeraX commands</label>
+                <div class="presets-row">
+                    <div class="preset-chip" onclick="applyCxcPreset('plddt',this)"><div class="preset-strip"><span style="background:#0053D6"></span><span style="background:#65CBF3"></span><span style="background:#FFDB13"></span><span style="background:#FF7D45"></span></div>pLDDT</div>
+                    <div class="preset-chip" onclick="applyCxcPreset('bychain',this)"><div class="preset-strip"><span style="background:#6495ED"></span><span style="background:#FF6347"></span><span style="background:#90EE90"></span><span style="background:#DDA0DD"></span></div>bychain</div>
+                    <div class="preset-chip" onclick="applyCxcPreset('bypolymer',this)"><div class="preset-strip"><span style="background:#87CEEB"></span><span style="background:#FFA07A"></span><span style="background:#98FB98"></span><span style="background:#DDA0DD"></span></div>bypolymer</div>
+                </div>
+            </div>
+            <hr style="border:none; border-top:1px solid #e0e0e0; margin-bottom:1rem;">
+
             <div class="script-preview" id="script-preview"></div>
             <div class="download-row">
                 <a class="btn-download cxc" id="dl-cxc" download>&#8595; Download .cxc</a>
                 <a class="btn-download pdb" id="dl-pdb" target="_blank">&#8595; Download .pdb</a>
             </div>
             <div class="info-box" style="margin-top: 1rem;">
-                The .pdb link opens the file from FlyPredictome. Save it in the same folder as the .cxc file, then open the .cxc in ChimeraX.
+                The .pdb link opens the file from FlyPredictome. Save it in the same folder as the .cxc file, then double-click the .cxc to launch ChimeraX automatically.
             </div>
         </div>
 
-        <!-- All Ranks -->
-        <div class="card result-card">
-            <h2>All Ranks</h2>
-            <table class="data-table">
-                <thead>
-                    <tr><th>Rank</th><th>Symbol 1</th><th>Symbol 2</th><th>iLIS</th><th>ipTM</th><th>cLIR (A)</th><th>cLIR (B)</th></tr>
-                </thead>
-                <tbody id="ranks-tbody"></tbody>
-            </table>
-        </div>
     </div>
 
     <!-- Instructions -->
     <div class="card" id="help-section">
-        <div class="step-header"><span class="step-num">?</span> How to Use &nbsp;<a href="guide.html" style="font-size:0.8rem; font-weight:400; color:#2471A3;">(Full guide)</a></div>
+        <div class="step-header">How to Use &nbsp;<a href="guide.html" style="font-size:0.8rem; font-weight:400; color:#2471A3;">(Full guide)</a></div>
         <div class="help-content">
             <div class="help-col">
                 <h4>Quick Start</h4>
@@ -539,9 +540,8 @@
                     <li>Go to <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">FlyPredictome</a> and search for a protein pair</li>
                     <li>Copy the FlyPredictome result page URL</li>
                     <li>Paste the URL above and click <strong>Generate</strong></li>
-                    <li>Download the <code>.cxc</code> script and <code>.pdb</code> file</li>
-                    <li>Place both files in the same folder</li>
-                    <li>Open the <code>.cxc</code> file to open ChimeraX</li>
+                    <li>Download the <code>.cxc</code> script and <code>.pdb</code> file, place both in the same folder</li>
+                    <li>Double-click the <code>.cxc</code> file — ChimeraX will launch automatically</li>
                 </ol>
             </div>
             <div class="help-col">
@@ -557,7 +557,7 @@
                 <h4 style="margin-top: 0.8rem">References</h4>
                 <ul class="ref-list">
                     <li><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank">Kim et al. 2024</a> — Enhanced PPI Discovery via AlphaFold-Multimer</li>
-                    <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a> — Kinase–TF Interactome Atlas</li>
+                    <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a> — <em>In silico</em> Kinase-TF atlas for human and fly</li>
                 </ul>
             </div>
         </div>
@@ -727,8 +727,18 @@ function generateCxc(row, pdbFilename, colors) {
         `set bgColor white`,
         `graphics silhouettes true`,
         `lighting soft`,
-        `color #1/A ${colors.lir_a}`,
-        `color #1/B ${colors.lir_b}`,
+    ];
+    if (cxcColorMode === 'plddt') {
+        lines.push('color bfactor palette #FF7D45:#FFDB13:#65CBF3:#0053D6 range 50,90');
+    } else if (cxcColorMode === 'bychain') {
+        lines.push('color bychain');
+    } else if (cxcColorMode === 'bypolymer') {
+        lines.push('color bypolymer');
+    } else {
+        lines.push(`color #1/A ${colors.lir_a}`);
+        lines.push(`color #1/B ${colors.lir_b}`);
+    }
+    lines.push(
         `hide atoms`,
         `hide cartoons`,
         ``,
@@ -739,7 +749,7 @@ function generateCxc(row, pdbFilename, colors) {
         ``,
         `# \u2500\u2500 Show ONLY LIR regions as cartoons \u2500\u2500`,
         `# LIR_A: ${sym1}, ${LIR_A.size} residues`,
-    ];
+    );
     if (lirASpec) lines.push(`show #1${lirASpec} cartoons`);
     lines.push('');
     lines.push(`# LIR_B: ${sym2}, ${LIR_B.size} residues`);
@@ -747,12 +757,12 @@ function generateCxc(row, pdbFilename, colors) {
     lines.push('');
 
     lines.push(`# \u2500\u2500 Highlight cLIR residues (contact interface) \u2500\u2500`);
-    if (cLIR_A.size > 0) {
+    if (!cxcColorMode && cLIR_A.size > 0) {
         lines.push(`# cLIR_A: ${sym1}, ${cLIR_A.size} residues`);
         lines.push(`color #1${clirASpec} ${colors.clir_a}`);
         lines.push('');
     }
-    if (cLIR_B.size > 0) {
+    if (!cxcColorMode && cLIR_B.size > 0) {
         lines.push(`# cLIR_B: ${sym2}, ${cLIR_B.size} residues`);
         lines.push(`color #1${clirBSpec} ${colors.clir_b}`);
         lines.push('');
@@ -780,6 +790,10 @@ function generateCxc(row, pdbFilename, colors) {
     if (LIR_B.size > 0) { const s = [...LIR_B].sort((a,b)=>a-b); lines.push(`# LIR_B: ${sym2} ${s[0]}-${s[s.length-1]} (${LIR_B.size} residues)`); }
     if (cLIR_A.size > 0) lines.push(`# cLIR_A: ${sym1} ${cLIR_A.size} residues`);
     if (cLIR_B.size > 0) lines.push(`# cLIR_B: ${sym2} ${cLIR_B.size} residues`);
+    lines.push('');
+    lines.push('# \u2500\u2500 Alternative: color by pLDDT (uncomment below) \u2500\u2500');
+    lines.push('# color bfactor palette #FF7D45:#FFDB13:#65CBF3:#0053D6 range 50,90');
+    lines.push('# # Very high (>90): dark blue, High (70-90): light blue, Low (50-70): yellow, Very low (<50): orange');
 
     return lines.join('\n');
 }
@@ -795,6 +809,12 @@ function highlightCxc(text) {
     }).join('\n');
 }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Global state for rank switching ──
+let cxcColorMode = '';       // ChimeraX color command preset
+let flyParsed = null;      // parsed table data
+let flyChainSeqs = null;   // parsed PDB sequences
+let flyCurrentRank = 1;    // currently selected rank
 
 // ── CORS proxy fetch ──
 const CORS_PROXIES = [
@@ -835,7 +855,7 @@ async function fetchViaProxy(url) {
 async function generate() {
     const urlInput = document.getElementById('url-input').value.trim();
     let html = document.getElementById('html-input').value.trim();
-    const rank = parseInt(document.getElementById('rank-select').value);
+    const rank = 1; // always start with rank 1, user clicks table to switch
     const status = document.getElementById('fetch-status');
 
     document.getElementById('error-msg').classList.remove('active');
@@ -863,11 +883,50 @@ async function generate() {
 
     if (!html) { showError('Please enter a FlyPredictome URL or paste the HTML page source.'); return; }
 
-    const parsed = parseTable(html);
-    if (!parsed || parsed.rows.length === 0) {
+    flyParsed = parseTable(html);
+    if (!flyParsed || flyParsed.rows.length === 0) {
         showError('Could not find the rank_table. If URL fetch failed, try pasting the page source manually (View Page Source → Select All → Copy → Paste).');
         return;
     }
+
+    // Fetch PDB for sequence viewer
+    flyChainSeqs = null;
+    if (flyParsed.pdbUrl) {
+        try {
+            const pdbText = await fetchTextViaProxy(flyParsed.pdbUrl);
+            if (pdbText && pdbText.includes('ATOM')) {
+                flyChainSeqs = parsePdbSequence(pdbText);
+            }
+        } catch (e) { console.warn('Could not fetch PDB for sequence:', e); }
+    }
+
+    flyCurrentRank = rank;
+
+    // Build All Ranks table (clickable rows)
+    document.getElementById('ranks-tbody').innerHTML = flyParsed.rows.map(r => {
+        const rk = r['Rank'] || '?';
+        return `<tr class="clickable ${parseInt(rk) === rank ? 'selected' : ''}" onclick="loadRank(${parseInt(rk)})">
+            <td>${rk}</td><td>${r['Symbol 1']||''}</td><td>${r['Symbol 2']||''}</td>
+            <td>${r['iLIS']||''}</td><td>${r['ipTM']||''}</td>
+            <td>${r._LIR_A.size} / ${r._LIR_B.size}</td>
+            <td>${r._cLIR_A.size} / ${r._cLIR_B.size}</td>
+            <td>${r['Len A']||'?'} / ${r['Len B']||'?'}</td>
+        </tr>`;
+    }).join('');
+
+    // Load the selected rank
+    loadRank(rank);
+
+    document.getElementById('results').classList.add('active');
+}
+
+function loadRank(rankNum) {
+    if (!flyParsed) return;
+    flyCurrentRank = rankNum;
+
+    const target = flyParsed.rows.find(r => parseInt(r['Rank']) === rankNum) || flyParsed.rows[0];
+    const sym1 = target['Symbol 1'] || '?';
+    const sym2 = target['Symbol 2'] || '?';
 
     const colors = {
         lir_a: document.getElementById('color-lir-a').value,
@@ -876,62 +935,203 @@ async function generate() {
         clir_b: document.getElementById('color-clir-b').value,
     };
 
-    // Find target rank
-    let target = parsed.rows.find(r => parseInt(r['Rank']) === rank) || parsed.rows[0];
-    const sym1 = target['Symbol 1'] || '?';
-    const sym2 = target['Symbol 2'] || '?';
-
-    // PDB filename
-    const pdbFilename = parsed.pdbUrl ? parsed.pdbUrl.split('/').pop() : `${sym1}___${sym2}.pdb`;
+    // PDB filename — use original from page (FlyPredictome only provides rank 1 PDB)
+    const pdbFilename = flyParsed.pdbUrl ? flyParsed.pdbUrl.split('/').pop() : `${sym1}___${sym2}.pdb`;
 
     // Generate script
     const cxcScript = generateCxc(target, pdbFilename, colors);
 
     // Populate UI
-    document.getElementById('result-title').textContent = `${sym1} \u2014 ${sym2}`;
-    document.getElementById('m-ilis').textContent = target['iLIS'] || 'N/A';
-    document.getElementById('m-iptm').textContent = target['ipTM'] || 'N/A';
-    document.getElementById('m-clir-a').textContent = target._cLIR_A.size;
-    document.getElementById('m-clir-b').textContent = target._cLIR_B.size;
-    document.getElementById('m-lir-a').textContent = target._LIR_A.size;
-    document.getElementById('m-lir-b').textContent = target._LIR_B.size;
+    document.getElementById('result-title').textContent = `${sym1} \u2014 ${sym2} (Rank ${rankNum})`;
 
-    document.getElementById('interface-tbody').innerHTML = `
-        <tr><td>A</td><td>${sym1}</td><td>${target['Len A'] || '?'}</td><td>${target._LIR_A.size}</td><td>${target._cLIR_A.size}</td></tr>
-        <tr><td>B</td><td>${sym2}</td><td>${target['Len B'] || '?'}</td><td>${target._LIR_B.size}</td><td>${target._cLIR_B.size}</td></tr>
-    `;
+    // Highlight selected rank row
+    document.querySelectorAll('#ranks-tbody tr').forEach(tr => {
+        tr.classList.toggle('selected', tr.cells[0].textContent.trim() === String(rankNum));
+    });
 
     // Script preview
     document.getElementById('script-preview').innerHTML = highlightCxc(cxcScript);
 
-    // CXC download (blob)
+    // CXC download
     const cxcBlob = new Blob([cxcScript], { type: 'text/plain' });
     const dlCxc = document.getElementById('dl-cxc');
     dlCxc.href = URL.createObjectURL(cxcBlob);
-    dlCxc.download = `${sym1}_${sym2}_interface.cxc`;
+    dlCxc.download = `${sym1}_${sym2}_rank${rankNum}_interface.cxc`;
 
     // PDB download link
     const dlPdb = document.getElementById('dl-pdb');
-    if (parsed.pdbUrl) {
-        dlPdb.href = parsed.pdbUrl;
+    if (flyParsed.pdbUrl) {
+        dlPdb.href = flyParsed.pdbUrl;
         dlPdb.style.display = '';
     } else {
         dlPdb.style.display = 'none';
     }
 
-    // All ranks
-    document.getElementById('ranks-tbody').innerHTML = parsed.rows.map(r => {
-        const rk = r['Rank'] || '?';
-        const sel = parseInt(rk) === rank ? 'selected' : '';
-        return `<tr class="${sel}">
-            <td>${rk}</td><td>${r['Symbol 1']||''}</td><td>${r['Symbol 2']||''}</td>
-            <td>${r['iLIS']||''}</td><td>${r['ipTM']||''}</td>
-            <td>${r._cLIR_A.size}</td><td>${r._cLIR_B.size}</td>
-        </tr>`;
-    }).join('');
+    // Sequence viewer
+    buildFlySeqViewer(target, sym1, sym2, colors, flyChainSeqs);
+}
 
-    document.getElementById('results').classList.add('active');
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+function lightenColor(hex, amount) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgb(${Math.round(r+(255-r)*amount)},${Math.round(g+(255-g)*amount)},${Math.round(b+(255-b)*amount)})`;
+}
+
+// Generic proxy fetch (unlike fetchViaProxy which checks for rank_table)
+async function fetchTextViaProxy(url) {
+    // Try direct first
+    try {
+        const resp = await fetch(url);
+        if (resp.ok) return await resp.text();
+    } catch {}
+    // Try proxies
+    for (const makeProxy of CORS_PROXIES) {
+        try {
+            const resp = await fetch(makeProxy(url), { signal: AbortSignal.timeout(10000) });
+            if (resp.ok) {
+                const text = await resp.text();
+                if (text.length > 100) return text;
+            }
+        } catch {}
+    }
+    return null;
+}
+
+const AA3TO1 = {ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLN:'Q',GLU:'E',GLY:'G',HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',THR:'T',TRP:'W',TYR:'Y',VAL:'V'};
+
+function parsePdbSequence(pdbText) {
+    // Extract per-chain sequences from PDB CA atoms
+    const chains = new Map(); // chain -> [{resnum, aa}]
+    for (const line of pdbText.split('\n')) {
+        if (!line.startsWith('ATOM')) continue;
+        const atomName = line.substring(12, 16).trim();
+        if (atomName !== 'CA') continue;
+        const chain = line.substring(21, 22).trim();
+        const resName = line.substring(17, 20).trim();
+        const resSeq = parseInt(line.substring(22, 26).trim());
+        if (isNaN(resSeq)) continue;
+        if (!chains.has(chain)) chains.set(chain, []);
+        const arr = chains.get(chain);
+        if (!arr.find(r => r.resnum === resSeq)) {
+            arr.push({ resnum: resSeq, aa: AA3TO1[resName] || 'X' });
+        }
+    }
+    return chains;
+}
+
+function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
+    const container = document.getElementById('seq-viewer');
+    const card = document.getElementById('seq-viewer-card');
+    if (!container) return;
+
+    const lenA = parseInt(row['Len A'] || row['protein_1_size']) || 0;
+    const lenB = parseInt(row['Len B'] || row['protein_2_size']) || 0;
+    if (lenA === 0 && lenB === 0) { card.style.display = 'none'; return; }
+
+    card.style.display = '';
+    container.innerHTML = '';
+
+    let tooltip = document.querySelector('.seq-tooltip');
+    if (!tooltip) { tooltip = document.createElement('div'); tooltip.className = 'seq-tooltip'; document.body.appendChild(tooltip); }
+
+    const seqA = chainSeqs ? (chainSeqs.get('A') || chainSeqs.get(chainSeqs.keys().next().value)) : null;
+    const seqB = chainSeqs ? (chainSeqs.get('B') || (chainSeqs.size > 1 ? chainSeqs.get([...chainSeqs.keys()][1]) : null)) : null;
+
+    const chainConfigs = [
+        { name: `Chain A: ${sym1}`, len: lenA, seq: seqA, lir: row._LIR_A, clir: row._cLIR_A, clirColor: colors.clir_a },
+        { name: `Chain B: ${sym2}`, len: lenB, seq: seqB, lir: row._LIR_B, clir: row._cLIR_B, clirColor: colors.clir_b },
+    ];
+
+    for (const cc of chainConfigs) {
+        if (cc.len === 0) continue;
+        const label = document.createElement('div');
+        label.className = 'seq-chain-label';
+        label.textContent = `${cc.name} (${cc.len} residues)`;
+        container.appendChild(label);
+
+        const hasSeq = cc.seq && cc.seq.length > 0;
+        const perRow = 80;
+        const totalRes = hasSeq ? cc.seq.length : cc.len;
+
+        for (let rowStart = 0; rowStart < totalRes; rowStart += perRow) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'seq-row';
+
+            const startNum = hasSeq ? cc.seq[rowStart].resnum : rowStart + 1;
+            const numLabel = document.createElement('span');
+            numLabel.className = 'seq-num';
+            numLabel.textContent = startNum;
+            rowDiv.appendChild(numLabel);
+
+            const blocks = document.createElement('span');
+            blocks.className = 'seq-blocks';
+
+            const rowEnd = Math.min(rowStart + perRow, totalRes);
+            for (let i = rowStart; i < rowEnd; i++) {
+                const resnum = hasSeq ? cc.seq[i].resnum : i + 1;
+                const aa = hasSeq ? cc.seq[i].aa : null;
+                const isClir = cc.clir.has(resnum);
+                const isLir = cc.lir.has(resnum);
+                const el = document.createElement('span');
+                el.className = 'seq-res' + (isClir ? ' clir' : '');
+                el.style.background = isClir ? cc.clirColor : isLir ? lightenColor(cc.clirColor, 0.4) : 'transparent';
+                if (aa) el.textContent = aa;
+                el.addEventListener('mouseenter', (e) => {
+                    tooltip.textContent = (aa ? `${aa}${resnum}` : `Res ${resnum}`) + (isClir ? ' (cLIR)' : isLir ? ' (LIR)' : '');
+                    tooltip.style.display = '';
+                    tooltip.style.left = (e.clientX + 8) + 'px';
+                    tooltip.style.top = (e.clientY - 20) + 'px';
+                });
+                el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+                blocks.appendChild(el);
+
+                if ((i - rowStart + 1) % 10 === 0 && i < rowEnd - 1) {
+                    const gap = document.createElement('span');
+                    gap.style.cssText = 'width:3px; display:inline-block;';
+                    blocks.appendChild(gap);
+                }
+            }
+            rowDiv.appendChild(blocks);
+
+            const endNum = hasSeq ? cc.seq[rowEnd - 1].resnum : rowEnd;
+            const endLabel = document.createElement('span');
+            endLabel.className = 'seq-num';
+            endLabel.style.textAlign = 'left';
+            endLabel.style.paddingLeft = '3px';
+            endLabel.textContent = rowEnd;
+            rowDiv.appendChild(endLabel);
+
+            container.appendChild(rowDiv);
+        }
+    }
+}
+
+function downloadFlyCSV() {
+    if (!flyParsed || flyParsed.rows.length === 0) return;
+    const header = 'Rank,Symbol_1,Symbol_2,iLIS,ipTM,LIR_A,LIR_B,cLIR_A,cLIR_B,Len_A,Len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const rows = [header];
+    for (const r of flyParsed.rows) {
+        rows.push([
+            r['Rank'] || '', r['Symbol 1'] || '', r['Symbol 2'] || '',
+            r['iLIS'] || '', r['ipTM'] || '',
+            r._LIR_A.size, r._LIR_B.size, r._cLIR_A.size, r._cLIR_B.size,
+            r['Len A'] || '', r['Len B'] || '',
+            `"[${[...r._LIR_A].sort((a,b)=>a-b).join(', ')}]"`,
+            `"[${[...r._LIR_B].sort((a,b)=>a-b).join(', ')}]"`,
+            `"[${[...r._cLIR_A].sort((a,b)=>a-b).join(', ')}]"`,
+            `"[${[...r._cLIR_B].sort((a,b)=>a-b).join(', ')}]"`,
+        ].join(','));
+    }
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const sym1 = flyParsed.rows[0]?.['Symbol 1'] || 'protein1';
+    const sym2 = flyParsed.rows[0]?.['Symbol 2'] || 'protein2';
+    a.download = `${sym1}_${sym2}_all_ranks.csv`;
+    a.click();
 }
 
 function showError(msg) {
@@ -942,6 +1142,7 @@ function showError(msg) {
 
 // ── Apply color preset ──
 function applyPreset(lirA, clirA, lirB, clirB, el) {
+    cxcColorMode = '';
     document.getElementById('color-lir-a').value = lirA;
     document.getElementById('color-clir-a').value = clirA;
     document.getElementById('color-lir-b').value = lirB;
@@ -956,6 +1157,15 @@ function applyPreset(lirA, clirA, lirB, clirB, el) {
         document.querySelectorAll('.preset-chip, .preset').forEach(p => p.classList.remove('active'));
         el.classList.add('active');
     }
+    // Regenerate CXC with new colors
+    if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
+}
+
+function applyCxcPreset(mode, el) {
+    cxcColorMode = mode;
+    document.querySelectorAll('.preset-chip').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+    if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
 }
 
 function swapColors() {
