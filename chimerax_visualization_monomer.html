@@ -128,7 +128,7 @@
         <div class="step-header"><span class="step-num">1</span> Fetch AlphaFold Monomer Prediction &nbsp;<span style="font-weight:400; font-size:0.8rem; color:#888;">(all analysis runs locally in your browser &mdash; no data is uploaded to any server)</span></div>
         <label>UniProt ID or AlphaFold DB URL</label>
         <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-            <input type="text" id="uniprot-input" placeholder="e.g. P28482 or https://alphafold.ebi.ac.uk/entry/P28482" style="flex:1; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem;">
+            <input type="text" id="uniprot-input" value="P12931" placeholder="e.g. P12931 or https://alphafold.ebi.ac.uk/entry/P12931" style="flex:1; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem;">
             <button class="btn btn-primary" style="margin:0;" id="btn-fetch" onclick="fetchData()">Fetch</button>
         </div>
         <div class="status" id="status"></div>
@@ -138,16 +138,24 @@
     <div class="card" id="regions-card" style="display:none;">
         <div class="step-header"><span class="step-num">2</span> Define Regions</div>
 
-        <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+        <div style="display:flex; gap:1rem; align-items:flex-start; flex-wrap:wrap;">
             <!-- PAE Map -->
             <div class="map-item" id="pae-map-container">
                 <div class="map-label" id="pae-map-label">PAE Map</div>
                 <canvas id="pae-canvas"></canvas>
             </div>
-        </div>
-        <div class="colorbar-row">
-            <canvas id="colorbar-pae" width="300" height="14"></canvas>
-            <div class="colorbar-labels"><span>0</span><span>Predicted Aligned Error (&Aring;)</span><span>30</span></div>
+            <!-- Vertical colorbar on the right -->
+            <div style="display:flex; flex-direction:column; align-items:center; margin-top:1.5rem;">
+                <div style="font-size:0.72rem; color:#888; margin-bottom:2px;">PAE (&Aring;)</div>
+                <div style="display:flex; align-items:stretch; gap:3px;">
+                    <canvas id="colorbar-pae-v" width="16" height="200"></canvas>
+                    <div style="display:flex; flex-direction:column; justify-content:space-between; font-size:0.7rem; color:#888;">
+                        <span>0</span>
+                        <span>15</span>
+                        <span>30</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div style="margin-top:1rem;">
@@ -961,7 +969,7 @@ function drawPaeMap() {
     if (!monPae) return;
     const canvas = document.getElementById('pae-canvas');
     drawMapCanvasSingle(canvas, monPae, monProteinLen, bwrColor, 0, 30, monRegions);
-    drawColorbar('colorbar-pae', bwrColor, 0, 30);
+    drawVerticalColorbar('colorbar-pae-v', bwrColor, 0, 30);
 }
 
 function drawPaeMapResult(validRegions) {
@@ -1157,6 +1165,19 @@ function drawScoreMatrix(validRegions) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillText(label, leftPx + k * cPx + cPx / 2, gridPx + 4 * HIRES);
+    }
+}
+
+function drawVerticalColorbar(canvasId, colorFn, vmin, vmax) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const h = canvas.height;
+    for (let y = 0; y < h; y++) {
+        const v = vmin + (y / h) * (vmax - vmin);
+        const [r, g, b] = colorFn(v, vmin, vmax);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(0, y, canvas.width, 1);
     }
 }
 
