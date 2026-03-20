@@ -344,6 +344,7 @@
             <div class="script-preview" id="script-preview"></div>
             <div class="download-row">
                 <a class="btn-download cxc" id="dl-cxc" download>&#8595; Download .cxc</a>
+                <button class="btn-download" id="btn-copy" style="background:white; color:#2471A3; border:2px solid #2471A3; cursor:pointer;" onclick="copyScript()">Copy to Clipboard</button>
                 <a class="btn-download cif" id="dl-cif" download>&#8595; Download .cif</a>
             </div>
             <div class="info-box" style="margin-top:1rem;">Place the .cxc and .cif files in the same folder, then double-click the .cxc — ChimeraX will launch automatically.</div>
@@ -375,6 +376,7 @@
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>cLIR</strong></td><td style="padding:0.25rem 0; color:#555;">contact-filtered LIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>ipTM</strong></td><td style="padding:0.25rem 0; color:#555;">interface predicted TM-score</td></tr>
                 </table>
+                <p style="font-size:0.78rem; color:#888; margin-top:0.4rem; line-height:1.4;">PAE (Predicted Aligned Error) measures how confidently the model predicts the relative position of two residues &mdash; lower values indicate higher confidence.</p>
                 <h4 style="font-size:0.9rem; color:#1a5276; margin-top:0.8rem; margin-bottom:0.5rem;">References</h4>
                 <ul style="list-style:none; padding:0; font-size:0.85rem;">
                     <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2024</a> &mdash; Enhanced PPI Discovery via AlphaFold-Multimer</li>
@@ -765,6 +767,23 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function addDownloadBtn(canvas, filename) {
+    if (!canvas || canvas.dataset.dlBtn) return;
+    canvas.dataset.dlBtn = '1';
+    const btn = document.createElement('a');
+    btn.textContent = '\u2B07 PNG';
+    btn.style.cssText = 'display:inline-block; font-size:0.7rem; color:#2471A3; cursor:pointer; margin-top:0.2rem; text-decoration:none; opacity:0.6;';
+    btn.onmouseenter = () => btn.style.opacity = '1';
+    btn.onmouseleave = () => btn.style.opacity = '0.6';
+    btn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = filename + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+    canvas.parentElement.appendChild(btn);
+}
+
 function buildDimerContactMap() {
     const v = dimerPairResult;
     const card = document.getElementById('contact-map-card');
@@ -877,6 +896,7 @@ function buildDimerContactMap() {
     ctx.fillStyle = '#888'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText(`${contacts.length} cLIR contact pairs`, width/2, barY_B + barH + 18);
     ctx.restore();
+    addDownloadBtn(canvas, 'contact_map');
 }
 
 function buildChordDiagram() {
@@ -1032,6 +1052,7 @@ function buildChordDiagram() {
     }
 
     ctx.restore();
+    addDownloadBtn(canvas, 'chord_diagram');
 }
 
 function lightenColor(hex, amount) {
@@ -1596,6 +1617,7 @@ function drawScoreMatrix() {
         if (t === 0) return [255, 255, 255];
         return [Math.round(255 * (1 - t)), Math.round(255 - t * 85), Math.round(255 * (1 - t))];
     }, 0, 1);
+    addDownloadBtn(canvas, 'score_matrix');
 }
 
 function drawColorbar(canvasId, colorFn, vmin, vmax) {
@@ -1877,12 +1899,14 @@ function drawAllMaps() {
     const paeCanvas = document.createElement('canvas');
     drawFullMapCanvas(paeCanvas, v.paeMatrix, v.nTotal, v.chainSizes, v.chainNames, bwrColor, 0, 30, displaySize);
     createMapPanel(container, 'PAE', paeCanvas, displaySize, bwrColor, 0, 30, ['30', '15', '0']);
+    addDownloadBtn(paeCanvas, 'pae_map');
 
     // LIS (Blues)
     const lisMap = buildFullLisMap(v.paeMatrix, v.nTotal, v.paeCutoff);
     const lisCanvas = document.createElement('canvas');
     drawFullMapCanvas(lisCanvas, lisMap, v.nTotal, v.chainSizes, v.chainNames, bluesColor, 0, 1, displaySize);
     createMapPanel(container, 'LIS', lisCanvas, displaySize, bluesColor, 0, 1, ['1', '0.5', '0']);
+    addDownloadBtn(lisCanvas, 'lis_map');
 
     // cLIS (Greens, dilated)
     const clisMap = buildFullClisMap(v.paeMatrix, v.contact, v.nUse, v.nTotal, v.paeCutoff);
@@ -1891,6 +1915,7 @@ function drawAllMaps() {
     const clisCanvas = document.createElement('canvas');
     drawFullMapCanvas(clisCanvas, dilated, v.nTotal, v.chainSizes, v.chainNames, greensColor, 0, 1, displaySize);
     createMapPanel(container, 'cLIS', clisCanvas, displaySize, greensColor, 0, 1, ['1', '0.5', '0']);
+    addDownloadBtn(clisCanvas, 'clis_map');
 }
 
 // ============================================================================
@@ -2005,6 +2030,7 @@ function generateAndDisplayScript() {
     lines.push('# \u2500\u2500 Final \u2500\u2500', 'view', 'lighting soft depthCue true', '');
     lines.push('# \u2500\u2500 Save figure \u2500\u2500');
     lines.push(`save chain${v.ci}_chain${v.cj}.png transparentBackground true`);
+    lines.push(`save ${dimerCifFilename.replace(/\.[^.]+$/, '')}_session.cxs`);
     lines.push('');
     lines.push('# \u2500\u2500 Color Legend \u2500\u2500');
     lines.push(`# LIR  = Local Interaction Region (PAE <= ${paeCut})`);
@@ -2150,6 +2176,15 @@ function makeSortable(table) {
             sortableRows.forEach(r => tbody.appendChild(r));
             pinnedRows.forEach(r => tbody.appendChild(r));
         });
+    });
+}
+
+function copyScript() {
+    const text = document.getElementById('script-preview').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 1500);
     });
 }
 </script>

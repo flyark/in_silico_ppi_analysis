@@ -16,7 +16,7 @@
         .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
         .tool-card { background: white; border-radius: 12px; padding: 1.2rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem; display: flex; gap: 1.2rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; width: 100%; }
         .tool-card:hover { border-color: #2471A3; box-shadow: 0 4px 16px rgba(36,113,163,0.15); }
-        .tool-icon { font-size: 2rem; flex-shrink: 0; }
+
         .tool-info h2 { font-size: 1.1rem; color: #1a5276; margin-bottom: 0.2rem; }
         .tool-info p { font-size: 0.85rem; color: #666; line-height: 1.4; }
         .links { text-align: center; margin: 1rem 0; }
@@ -41,36 +41,34 @@
     </div>
 </div>
 <div class="container">
+    <div style="background:#eaf2f8; border-left:4px solid #2471A3; padding:0.8rem 1.2rem; margin-bottom:1.5rem; border-radius:0 8px 8px 0; font-size:0.9rem; color:#1a5276;">
+        New here? Start with <a href="universal.html" style="color:#2471A3; font-weight:600;">Universal Prediction Analysis</a> for any structure prediction, or read the <a href="guide.html" style="color:#2471A3; font-weight:600;">Step-by-Step Guide</a>.
+    </div>
     <a class="tool-card" href="flypredictome.html">
-
         <div class="tool-info">
             <h2>FlyPredictome Analysis</h2>
             <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script.</p>
         </div>
     </a>
     <a class="tool-card" href="universal.html">
-
         <div class="tool-info">
             <h2>Universal Prediction Analysis</h2>
             <p>Upload prediction files from AlphaFold3, AlphaFold2, ColabFold, Boltz, Chai-1, or OpenFold. Calculate AFM-LIS metrics (iLIS, LIS, cLIS), view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
         </div>
     </a>
     <a class="tool-card" href="dimer.html">
-
         <div class="tool-info">
             <h2>AlphaFold DB Dimer Analysis</h2>
             <p>Search the AlphaFold Protein Structure Database for dimer predictions by UniProt ID, calculate iLIS between chains, view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
         </div>
     </a>
     <a class="tool-card" href="monomer.html">
-
         <div class="tool-info">
             <h2>AlphaFold DB Monomer Subdomain Analysis</h2>
             <p>Fetch monomer predictions from the AlphaFold Protein Structure Database by UniProt ID. Auto-detect domains, view PAE/LIS/cLIS maps, and calculate intramolecular iLIS between domains.</p>
         </div>
     </a>
     <a class="tool-card" href="guide.html">
-
         <div class="tool-info">
             <h2>Step-by-Step Guide</h2>
             <p>Visual instructions for all tools — from getting your data to opening the visualization in ChimeraX. Includes metric definitions and color scheme references.</p>

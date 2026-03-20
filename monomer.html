@@ -331,6 +331,7 @@
             <div class="script-preview" id="script-preview"></div>
             <div class="download-row">
                 <a class="btn-download cxc" id="dl-cxc" download>&#8595; Download .cxc</a>
+                <button class="btn-download" id="btn-copy" style="background:white; color:#2471A3; border:2px solid #2471A3; cursor:pointer;" onclick="copyScript()">Copy to Clipboard</button>
                 <a class="btn-download pdb" id="dl-pdb" download>&#8595; Download .pdb</a>
             </div>
             <div class="info-box" style="margin-top:1rem;">Place the .cxc and .pdb files in the same folder, then double-click the .cxc — ChimeraX will launch automatically.</div>
@@ -361,6 +362,7 @@
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>LIR</strong></td><td style="padding:0.25rem 0; color:#555;">Local Interaction Residues (PAE &le; 12 &Aring;)</td></tr>
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>cLIR</strong></td><td style="padding:0.25rem 0; color:#555;">contact-filtered LIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
                 </table>
+                <p style="font-size:0.78rem; color:#888; margin-top:0.4rem; line-height:1.4;">PAE (Predicted Aligned Error) measures how confidently the model predicts the relative position of two residues &mdash; lower values indicate higher confidence.</p>
                 <h4 style="font-size:0.9rem; color:#1a5276; margin-top:0.8rem; margin-bottom:0.5rem;">References</h4>
                 <ul style="list-style:none; padding:0; font-size:0.85rem;">
                     <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2024</a> &mdash; Enhanced PPI Discovery via AlphaFold-Multimer</li>
@@ -1491,6 +1493,7 @@ function generateAndShowScript(validRegions) {
     lines.push('# \u2500\u2500 Final \u2500\u2500', 'view', 'lighting soft depthCue true', '');
     lines.push('# \u2500\u2500 Save figure \u2500\u2500');
     lines.push(`save ${monUniprotId}_regions.png transparentBackground true`);
+    lines.push(`save ${monUniprotId}_regions_session.cxs`);
     lines.push('');
     lines.push('# \u2500\u2500 Color Legend \u2500\u2500');
     lines.push(`# LIR  = Local Interaction Region (PAE <= ${paeCut})`);
@@ -1694,6 +1697,7 @@ function createMonomerMapPanel(container, label, map2d, colorFn, vmin, vmax, tic
     const canvas = document.createElement('canvas');
     drawMapCanvasSingle(canvas, map2d, monProteinLen, colorFn, vmin, vmax, monRegions, displaySize);
     row.appendChild(canvas);
+    addDownloadBtn(canvas, label.toLowerCase() + '_map');
 
     // Vertical colorbar (reversed: max at top), aligned with plot area
     const cbarWrap = document.createElement('div');
@@ -2067,6 +2071,7 @@ function drawChordDiagram(validRegions) {
     }
 
     ctx.restore();
+    addDownloadBtn(canvas, 'chord_diagram');
 }
 
 function hexToRgba(hex, alpha) {
@@ -2076,6 +2081,23 @@ function hexToRgba(hex, alpha) {
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
     return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function addDownloadBtn(canvas, filename) {
+    if (!canvas || canvas.dataset.dlBtn) return;
+    canvas.dataset.dlBtn = '1';
+    const btn = document.createElement('a');
+    btn.textContent = '\u2B07 PNG';
+    btn.style.cssText = 'display:inline-block; font-size:0.7rem; color:#2471A3; cursor:pointer; margin-top:0.2rem; text-decoration:none; opacity:0.6;';
+    btn.onmouseenter = () => btn.style.opacity = '1';
+    btn.onmouseleave = () => btn.style.opacity = '0.6';
+    btn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = filename + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+    canvas.parentElement.appendChild(btn);
 }
 
 function drawScoreMatrix(validRegions) {
@@ -2205,6 +2227,7 @@ function drawScoreMatrix(validRegions) {
         ctx.textBaseline = 'top';
         ctx.fillText(`${r.name}`, leftPx + k * cPx + cPx / 2, gridPx + 4 * HIRES);
     }
+    addDownloadBtn(canvas, 'score_matrix');
 }
 
 function drawColorbar(canvasId, colorFn, vmin, vmax) {
@@ -2252,6 +2275,15 @@ function makeSortable(table) {
             sortableRows.forEach(r => tbody.appendChild(r));
             pinnedRows.forEach(r => tbody.appendChild(r));
         });
+    });
+}
+
+function copyScript() {
+    const text = document.getElementById('script-preview').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 1500);
     });
 }
 </script>
