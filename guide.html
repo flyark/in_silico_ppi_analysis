@@ -263,18 +263,45 @@
     <!-- ================================================================ -->
     <div class="tool-section">
         <h2 class="tool-title">Color Scheme Guide</h2>
+
         <div class="step">
             <div class="step-badge" style="background:#E67E22;">&#127912;</div>
             <div class="step-content">
                 <h3>Default: Blue / Orange gradient</h3>
-                <p>LIR regions shown in light colors, cLIR (contact interface) in dark colors.</p>
+                <p>LIR regions (confident interaction domain, PAE &le; 12 &Aring;) are shown in light colors. cLIR residues (direct contact interface, PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;) are highlighted in darker colors. Non-interacting regions are hidden.</p>
                 <div style="display:flex; gap:1rem; margin-top:0.5rem; flex-wrap:wrap;">
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain A — LIR</span></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#2471A3; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain A — cLIR</span></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#f5cba7; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain B — LIR</span></div>
-                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#E67E22; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain B — cLIR</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#b3d4e8; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain A &mdash; LIR (light blue)</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#2471A3; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain A &mdash; cLIR (dark blue)</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#f5cba7; border-radius:4px; border:1px solid #ccc;"></div><span style="font-size:0.85rem;">Chain B &mdash; LIR (light orange)</span></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:24px; height:24px; background:#E67E22; border-radius:4px;"></div><span style="font-size:0.85rem;">Chain B &mdash; cLIR (dark orange)</span></div>
                 </div>
-                <p style="margin-top:0.5rem;">Other presets available: Purple/Gold, Teal/Coral, Slate/Rose, solid colors, ChimeraX defaults, and auto-assigned multi-chain (tab10 palette).</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-badge" style="background:#546e7a;">&#9881;</div>
+            <div class="step-content">
+                <h3>Preset categories</h3>
+                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
+                    <li><strong>Gradient</strong> &mdash; light color for LIR, dark color for cLIR (e.g., Blue/Orange, Purple/Gold, Teal/Coral)</li>
+                    <li><strong>Solid</strong> &mdash; same color for both LIR and cLIR, useful when you don't need to distinguish the interface boundary</li>
+                    <li><strong>ChimeraX defaults</strong> &mdash; familiar colors for ChimeraX users (Cornflower/Tomato, SkyBlue/Gold, etc.)</li>
+                    <li><strong>Multi-chain (tab10)</strong> &mdash; auto-assigned distinct colors per chain, shown only for complexes with more than 2 chains</li>
+                </ul>
+                <p style="margin-top:0.3rem;"><strong>Swap A &harr; B</strong> button reverses chain colors without changing the color combination.</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-badge" style="background:#27ae60;">&#8635;</div>
+            <div class="step-content">
+                <h3>Applying color changes</h3>
+                <p>After selecting a new color scheme or adjusting individual colors:</p>
+                <ul style="font-size:0.88rem; color:#555; padding-left:1.2rem; line-height:1.8;">
+                    <li><strong>FlyPredictome:</strong> Click <strong>Generate</strong> again to regenerate the .cxc script with updated colors</li>
+                    <li><strong>AlphaFold3:</strong> Click a chain pair row in the table again, or click <strong>Process</strong> to reprocess with updated colors and cutoffs</li>
+                </ul>
+                <p style="margin-top:0.3rem; font-size:0.85rem; color:#888;">The PAE/LIS/cLIS maps are not affected by color choices &mdash; they use fixed colorscales (bwr, Blues, Greens). Only the ChimeraX .cxc script uses the selected chain colors.</p>
             </div>
         </div>
     </div>
