@@ -207,13 +207,16 @@
         </div>
         <div class="btn-row">
             <button class="btn btn-primary" id="btn-process" onclick="processFiles()" disabled>Process</button>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem;">
-                <span style="color:#888; font-size:0.82rem; align-self:center;">p53–MDM2 examples:</span>
-                <button onclick="loadExample('alphafold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">AlphaFold3</button>
-                <button onclick="loadExample('colabfold')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">ColabFold</button>
-                <button onclick="loadExample('boltz2')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Boltz-2</button>
-                <button onclick="loadExample('chai-1')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Chai-1</button>
-                <button onclick="loadExample('openfold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">OpenFold3</button>
+            <div style="margin-top:0.8rem;">
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+                    <span style="color:#888; font-size:0.82rem;">p53&ndash;MDM2 examples:</span>
+                    <button onclick="loadExample('alphafold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">AlphaFold3</button>
+                    <button onclick="loadExample('colabfold')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">ColabFold</button>
+                    <button onclick="loadExample('boltz2')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Boltz-2</button>
+                    <button onclick="loadExample('chai-1')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Chai-1</button>
+                    <button onclick="loadExample('openfold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">OpenFold3</button>
+                </div>
+                <div style="font-size:0.72rem; color:#aaa; margin-top:0.3rem;">AlphaFold3 predicted via <a href="https://alphafoldserver.com" target="_blank" style="color:#aaa;">AlphaFold Server</a>. ColabFold, Boltz-2, Chai-1, and OpenFold3 predicted via <a href="https://www.tamarind.bio" target="_blank" style="color:#aaa;">Tamarind Bio</a>.</div>
             </div>
         </div>
         <div class="status" id="status"></div>
