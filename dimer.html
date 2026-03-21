@@ -250,9 +250,9 @@
             <div id="seq-viewer" style="font-family:'SF Mono','Fira Code',monospace; overflow-x:auto;"></div>
         </div>
 
-        <!-- Interface Contact Map -->
+        <!-- Linear Contact Map -->
         <div class="card result-card" id="contact-map-card" style="display:none;">
-            <h2>Interface Contact Map</h2>
+            <h2>Linear Contact Map</h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Color gradient from chain A to chain B. UniProt domain annotations shown when available.
             </div>
@@ -260,9 +260,9 @@
             <div id="contact-domain-legend" style="margin-top:0.4rem; font-size:0.72rem; color:#666; display:flex; gap:0.8rem; flex-wrap:wrap;"></div>
         </div>
 
-        <!-- Chain Interaction Map (circular) -->
+        <!-- Circular Contact Map (circular) -->
         <div class="card result-card" id="chord-card" style="display:none;">
-            <h2>Chain Interaction Map</h2>
+            <h2>Circular Contact Map</h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Arcs represent chains (proportional to length). Lines connect cLIR residue pairs in physical contact.
             </div>
@@ -1741,7 +1741,7 @@ function displayDimerResults() {
     // Interface contact map
     buildDimerContactMap();
 
-    // Chain Interaction Map (circular chord diagram)
+    // Circular Contact Map (circular chord diagram)
     buildChordDiagram();
 
     // 3D Structure Viewer

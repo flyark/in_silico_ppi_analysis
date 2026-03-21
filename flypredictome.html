@@ -494,7 +494,7 @@
 
         <!-- Interaction Connection Diagram -->
         <div class="card result-card" id="connection-diagram-card" style="display:none;">
-            <h2>Interface Contact Map <span class="model-badge" id="contact-model-badge"></span></h2>
+            <h2>Linear Contact Map <span class="model-badge" id="contact-model-badge"></span></h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Per-rank structures fetched automatically.
             </div>
@@ -502,9 +502,9 @@
             <div id="fly-domain-legend" style="margin-top:0.4rem; font-size:0.72rem; color:#666; display:flex; gap:0.8rem; flex-wrap:wrap;"></div>
         </div>
 
-        <!-- Chain Interaction Map (circular) -->
+        <!-- Circular Contact Map (circular) -->
         <div class="card result-card" id="chord-card" style="display:none;">
-            <h2>Chain Interaction Map <span class="model-badge" id="chord-model-badge"></span></h2>
+            <h2>Circular Contact Map <span class="model-badge" id="chord-model-badge"></span></h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Arcs represent chains (proportional to length). Lines connect cLIR residue pairs in physical contact.
             </div>
@@ -1305,7 +1305,7 @@ async function loadRank(rankNum) {
     // Interaction connection diagram (needs PDB coordinates)
     buildConnectionDiagram(target, sym1, sym2, colors, flyPdbText);
 
-    // Chain Interaction Map (circular chord diagram)
+    // Circular Contact Map (circular chord diagram)
     buildChordDiagram(target, sym1, sym2, colors, flyPdbText);
 
     // 3D Structure Viewer (Mol*)
