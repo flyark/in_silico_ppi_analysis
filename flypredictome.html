@@ -385,6 +385,12 @@
         .data-table th.sort-asc::after { content: ' ▲'; color: #2471A3; }
         .data-table th.sort-desc::after { content: ' ▼'; color: #2471A3; }
 
+        /* ── Input tabs ── */
+        .input-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
+        .input-tab { padding: 0.5rem 1.2rem; font-size: 0.9rem; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+        .input-tab:hover { color: #2471A3; }
+        .input-tab.active { color: #2471A3; border-bottom-color: #2471A3; }
+
         @media (max-width: 768px) {
             .header { padding: 1rem; }
             .header h1 { font-size: 1.2rem; }
@@ -430,31 +436,52 @@
 
     <!-- Input -->
     <div class="card">
-        <div class="step-header"><a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" class="step-link">FlyPredictome</a>&nbsp; URL</div>
-        <div style="font-size:0.8rem; color:#888; margin-bottom:0.6rem;">Precomputed PPI predictions for <em>Drosophila</em> can be searched at <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:#2471A3;">FlyPredictome</a>. Paste a prediction page URL below, or click an example.</div>
-        <div class="url-row">
-            <input type="text" id="url-input"
-                   placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/..."
-                   value="">
-            <button class="btn btn-primary" id="btn-generate" onclick="generate()">Generate</button>
+        <div class="step-header"><a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" class="step-link">FlyPredictome</a>&nbsp; Interaction Lookup</div>
+        <div style="font-size:0.8rem; color:#888; margin-bottom:0.6rem;">Precomputed PPI predictions for <em>Drosophila</em> from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:#2471A3;">FlyPredictome</a>. Search by gene name or paste a prediction page URL.</div>
+
+        <div class="input-tabs">
+            <button class="input-tab active" data-tab="search" onclick="switchTab('search')">Search by Gene</button>
+            <button class="input-tab" data-tab="url" onclick="switchTab('url')">Paste URL</button>
         </div>
-        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
-            <span style="font-size:0.8rem; color:#888;">Examples:</span>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Akt1/foxo/SET_47/';generate()">Akt1–Foxo</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0283499/FBgn0036046/SET_487/';generate()">Ilp2–InR</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0003731/FBgn0005672/SET_590/';generate()">Spi–Egfr</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Dl/N/SET_71/';generate()">Dl–N</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/yki/sd/SET_49/';generate()">Yki–Sd</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/dsh/Axn/SET_69/';generate()">Dsh–Axn</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0004644/FBgn0031872/SET_585/';generate()">Hh–Ihog</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0004107/FBgn0010382/SET_119/';generate()">Cdk2–CycE</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Mad/Med/SET_69/';generate()">Mad–Med</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0011706/FBgn0260635/SET_563/';generate()">Rpr–Diap1</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/spz/Tl/SET_69/';generate()">Spz–Tl</button>
-            <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0032006/FBgn0030964/SET_454/';generate()">Pvr–Pvf1</button>
+
+        <!-- Search by Gene panel -->
+        <div id="search-panel">
+            <div class="url-row">
+                <input type="text" id="gene-search-input"
+                       placeholder="e.g., Akt1, foxo, sgg..."
+                       onkeydown="if(event.key==='Enter')searchGene()">
+                <button class="btn btn-primary" onclick="searchGene()">Search</button>
+            </div>
+            <div id="search-status" style="font-size:0.85rem; color:#666; min-height:1.2rem; margin-bottom:0.5rem;"></div>
+            <div id="search-results" style="display:none;"></div>
         </div>
-        <div id="fetch-status" class="fetch-status"></div>
-        <textarea id="html-input" style="display:none"></textarea>
+
+        <!-- Paste URL panel -->
+        <div id="url-panel" style="display:none;">
+            <div class="url-row">
+                <input type="text" id="url-input"
+                       placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/..."
+                       value="">
+                <button class="btn btn-primary" id="btn-generate" onclick="generate()">Generate</button>
+            </div>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
+                <span style="font-size:0.8rem; color:#888;">Examples:</span>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Akt1/foxo/SET_47/';generate()">Akt1–Foxo</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0283499/FBgn0036046/SET_487/';generate()">Ilp2–InR</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0003731/FBgn0005672/SET_590/';generate()">Spi–Egfr</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Dl/N/SET_71/';generate()">Dl–N</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/yki/sd/SET_49/';generate()">Yki–Sd</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/dsh/Axn/SET_69/';generate()">Dsh–Axn</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0004644/FBgn0031872/SET_585/';generate()">Hh–Ihog</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0004107/FBgn0010382/SET_119/';generate()">Cdk2–CycE</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Mad/Med/SET_69/';generate()">Mad–Med</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0011706/FBgn0260635/SET_563/';generate()">Rpr–Diap1</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/spz/Tl/SET_69/';generate()">Spz–Tl</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0032006/FBgn0030964/SET_454/';generate()">Pvr–Pvf1</button>
+            </div>
+            <div id="fetch-status" class="fetch-status"></div>
+            <textarea id="html-input" style="display:none"></textarea>
+        </div>
     </div>
 
     <!-- Error -->
@@ -641,7 +668,7 @@
                 </ol>
             </div>
             <div class="help-col">
-                <h4>AFM-LIS Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank">Kim et al. 2024, 2025</a>)</h4>
+                <h4><a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3; text-decoration:underline;">AFM-LIS</a> Metrics (<a href="https://doi.org/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">Kim et al. 2024</a>, <a href="https://doi.org/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">2025</a>)</h4>
                 <table class="help-table">
                     <tr><td><strong>iLIS</strong></td><td>integrated LIS &mdash; &radic;(LIS &times; cLIS)</td></tr>
                     <tr><td><strong>iLIA</strong></td><td>integrated LIA &mdash; &radic;(LIA &times; cLIA), geometric mean of interface area counts</td></tr>
@@ -676,6 +703,269 @@
 </div>
 
 <script>
+// ── Tab switching ──
+function switchTab(tab) {
+    document.getElementById('search-panel').style.display = tab === 'search' ? '' : 'none';
+    document.getElementById('url-panel').style.display = tab === 'url' ? '' : 'none';
+    document.querySelectorAll('.input-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.input-tab[data-tab="' + tab + '"]').classList.add('active');
+}
+
+// ── Gene search ──
+async function searchGene() {
+    const query = document.getElementById('gene-search-input').value.trim();
+    if (!query) return;
+
+    const statusEl = document.getElementById('search-status');
+    const resultsEl = document.getElementById('search-results');
+    statusEl.textContent = 'Searching...';
+    statusEl.style.color = '#2471A3';
+    resultsEl.style.display = 'none';
+
+    try {
+        // Step 1: Resolve gene symbol to FBgn (via proxy for CORS)
+        const fbgnText = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/get_fbgns/' + encodeURIComponent(query));
+        if (!fbgnText) throw new Error('Could not reach FlyPredictome. Try again.');
+        const fbgnData = JSON.parse(fbgnText);
+
+        if (!fbgnData.data || fbgnData.data.length === 0) {
+            statusEl.textContent = 'No genes found for "' + query + '".';
+            statusEl.style.color = '#c0392b';
+            return;
+        }
+
+        // Extract FBgn ID from the HTML in the response
+        const fbgnHtml = fbgnData.data[0][1]; // e.g., '<a id=FBgn0010379 ...>FBgn0010379</a>'
+        const fbgnMatch = fbgnHtml.match(/FBgn\d+/);
+        if (!fbgnMatch) {
+            statusEl.textContent = 'Could not resolve gene ID.';
+            statusEl.style.color = '#c0392b';
+            return;
+        }
+        const fbgnId = fbgnMatch[0];
+        const geneSymbol = fbgnData.data[0][2] || query;
+
+        statusEl.textContent = 'Found: ' + geneSymbol + ' (' + fbgnId + '). Loading interaction partners...';
+
+        // Step 2: Fetch famdb_summary to get all partners
+        const summaryResp = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/famdb_summary/' + fbgnId + '/');
+        if (!summaryResp) throw new Error('Could not fetch interaction data.');
+
+        // Step 3: Parse the HTML table
+        const partners = parseFamdbSummary(summaryResp, fbgnId, geneSymbol);
+
+        if (partners.length === 0) {
+            statusEl.textContent = 'No interaction partners found for ' + geneSymbol + '.';
+            statusEl.style.color = '#c0392b';
+            return;
+        }
+
+        statusEl.textContent = geneSymbol + ' (' + fbgnId + '): ' + partners.length + ' predicted interaction partners. Click a row to analyze.';
+        statusEl.style.color = '#27ae60';
+
+        // Step 4: Display partner table
+        displayPartnerTable(partners, geneSymbol);
+
+    } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        statusEl.style.color = '#c0392b';
+    }
+}
+
+function parseFamdbSummary(html, queryFbgn, querySymbol) {
+    // Column indices (0-based) from the actual famdb_summary table:
+    // 0: id (link), 1: ranks counts, 2: Protein 1, 3: Protein 2
+    // 4: fbgn1, 5: fbgn2, 6: ncbi_gene_id1, 7: ncbi_gene_id2
+    // 8: Symbol 1, 9: Symbol 2
+    // 10: iLIS avg, 11: iLIS best
+    // 12: LIS avg, 13: LIS best, 14: LIA avg, 15: LIA best
+    // 16: LIR avg, 17: LIR best, 18: LIpLDDT avg, 19: LIpLDDT best
+    // 20: cLIS avg, 21: cLIS best, 22: cLIA avg, 23: cLIA best
+    // 24: cLIR avg, 25: cLIR best, 26: cLIpLDDT avg, 27: cLIpLDDT best
+    // 28: pLDDT avg, 29: pLDDT best, 30: pTM avg, 31: pTM best
+    // 32: ipTM avg, 33: ipTM best, 34: Confidence avg, 35: Confidence best
+    // 36: Protein Len A, 37: Protein Len B, 38: directory name
+    // 39: MIST PPI, 40: MIST GI, 41: MIST Interlog PPI, 42: MIST Interlog GI
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const table = doc.getElementById('fam_summary_table');
+    if (!table) return [];
+
+    const rows = table.querySelectorAll('tbody tr');
+    const partners = [];
+
+    for (const row of rows) {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 38) continue;
+
+        try {
+            const sym1 = cells[8]?.textContent?.trim() || '';
+            const sym2 = cells[9]?.textContent?.trim() || '';
+            const fbgn1 = cells[4]?.textContent?.trim() || '';
+            const fbgn2 = cells[5]?.textContent?.trim() || '';
+            const ncbi1 = cells[6]?.textContent?.trim() || '';
+            const ncbi2 = cells[7]?.textContent?.trim() || '';
+
+            const ilisAvg = parseFloat(cells[10]?.textContent?.trim()) || 0;
+            const ilisBest = parseFloat(cells[11]?.textContent?.trim()) || 0;
+            const lisAvg = parseFloat(cells[12]?.textContent?.trim()) || 0;
+            const liaAvg = parseFloat(cells[14]?.textContent?.trim()) || 0;
+            const lirAvg = parseFloat(cells[16]?.textContent?.trim()) || 0;
+            const clisAvg = parseFloat(cells[20]?.textContent?.trim()) || 0;
+            const clirAvg = parseFloat(cells[24]?.textContent?.trim()) || 0;
+            const iptmAvg = parseFloat(cells[32]?.textContent?.trim()) || 0;
+            const lenA = parseInt(cells[36]?.textContent?.trim()) || 0;
+            const lenB = parseInt(cells[37]?.textContent?.trim()) || 0;
+            const dirName = cells[38]?.textContent?.trim() || '';
+
+            const mistPPI = parseInt(cells[39]?.textContent?.trim()) || 0;
+            const mistGI = parseInt(cells[40]?.textContent?.trim()) || 0;
+
+            // Determine which is the partner
+            const isQuery1 = (fbgn1 === queryFbgn || sym1.toLowerCase() === querySymbol.toLowerCase());
+            const partnerSymbol = isQuery1 ? sym2 : sym1;
+            const partnerFbgn = isQuery1 ? fbgn2 : fbgn1;
+            const partnerNcbi = isQuery1 ? ncbi2 : ncbi1;
+
+            // Extract detail URL from link in first cell
+            const detailLink = cells[0]?.querySelector('a[href*="famdb_details"]');
+            let detailUrl = '';
+            if (detailLink) {
+                detailUrl = detailLink.getAttribute('href') || '';
+                if (!detailUrl.startsWith('http')) {
+                    detailUrl = 'https://www.flyrnai.org' + detailUrl;
+                }
+            }
+
+            partners.push({
+                sym1, sym2, fbgn1, fbgn2, ncbi1, ncbi2,
+                partnerSymbol, partnerFbgn, partnerNcbi,
+                ilisAvg, ilisBest, lisAvg, clisAvg, iptmAvg,
+                lirAvg, clirAvg, liaAvg, lenA, lenB,
+                mistPPI, mistGI,
+                detailUrl, dirName
+            });
+        } catch (e) {
+            continue;
+        }
+    }
+
+    // Sort by iLIS best descending
+    partners.sort((a, b) => b.ilisBest - a.ilisBest);
+
+    return partners;
+}
+
+function displayPartnerTable(partners, querySymbol) {
+    const container = document.getElementById('search-results');
+    container.innerHTML = '';
+    container.style.display = '';
+
+    // Filter controls
+    const filterDiv = document.createElement('div');
+    filterDiv.style.cssText = 'display:flex; gap:1rem; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap;';
+    filterDiv.innerHTML =
+        '<label style="font-size:0.82rem; color:#555;">' +
+            '<input type="checkbox" id="filter-positive" checked onchange="filterPartnerTable()"> ' +
+            'iLIS &gt; 0 only' +
+        '</label>' +
+        '<label style="font-size:0.82rem; color:#555;">' +
+            '<input type="checkbox" id="filter-threshold" onchange="filterPartnerTable()"> ' +
+            'iLIS &ge; 0.223' +
+        '</label>' +
+        '<label style="font-size:0.82rem; color:#555;">' +
+            '<input type="checkbox" id="filter-mist" onchange="filterPartnerTable()"> ' +
+            'Has experimental evidence (MIST)' +
+        '</label>' +
+        '<span style="font-size:0.78rem; color:#999;" id="filter-count"></span>';
+    container.appendChild(filterDiv);
+
+    // Table
+    const tableWrap = document.createElement('div');
+    tableWrap.style.cssText = 'overflow-x:auto; max-height:400px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:8px;';
+
+    const table = document.createElement('table');
+    table.className = 'data-table';
+    table.id = 'partner-list-table';
+    table.style.fontSize = '0.8rem';
+    table.innerHTML =
+        '<thead style="position:sticky; top:0; z-index:1;">' +
+            '<tr>' +
+                '<th>Partner</th>' +
+                '<th>iLIS (avg)</th>' +
+                '<th>iLIS (best)</th>' +
+                '<th>ipTM (avg)</th>' +
+                '<th>LIR (avg)</th>' +
+                '<th>cLIR (avg)</th>' +
+                '<th>Len A/B</th>' +
+                '<th>MIST PPI</th>' +
+                '<th>MIST GI</th>' +
+            '</tr>' +
+        '</thead>' +
+        '<tbody id="partner-tbody"></tbody>';
+    tableWrap.appendChild(table);
+    container.appendChild(tableWrap);
+
+    // Store partners for filtering
+    window._searchPartners = partners;
+    window._searchQuery = querySymbol;
+
+    filterPartnerTable();
+    makeSortable(table);
+}
+
+function filterPartnerTable() {
+    const partners = window._searchPartners || [];
+    const tbody = document.getElementById('partner-tbody');
+    if (!tbody) return;
+
+    const positiveOnly = document.getElementById('filter-positive')?.checked;
+    const thresholdOnly = document.getElementById('filter-threshold')?.checked;
+    const mistOnly = document.getElementById('filter-mist')?.checked;
+
+    tbody.innerHTML = '';
+    let count = 0;
+
+    for (const p of partners) {
+        if (positiveOnly && p.ilisBest <= 0) continue;
+        if (thresholdOnly && p.ilisBest < 0.223) continue;
+        if (mistOnly && p.mistPPI === 0 && p.mistGI === 0) continue;
+
+        count++;
+        const tr = document.createElement('tr');
+        tr.className = 'clickable';
+        tr.style.cursor = 'pointer';
+
+        // Color code iLIS
+        const ilisColor = p.ilisBest >= 0.223 ? '#27ae60' : p.ilisBest > 0 ? '#e67e22' : '#999';
+
+        tr.innerHTML =
+            '<td><strong>' + esc(p.partnerSymbol) + '</strong> <span style="color:#999; font-size:0.72rem;">' + esc(p.partnerFbgn) + '</span></td>' +
+            '<td>' + p.ilisAvg.toFixed(3) + '</td>' +
+            '<td style="color:' + ilisColor + '; font-weight:600;">' + p.ilisBest.toFixed(3) + '</td>' +
+            '<td>' + p.iptmAvg.toFixed(2) + '</td>' +
+            '<td>' + Math.round(p.lirAvg) + '</td>' +
+            '<td>' + Math.round(p.clirAvg) + '</td>' +
+            '<td>' + p.lenA + ' / ' + p.lenB + '</td>' +
+            '<td>' + (p.mistPPI || '\u2014') + '</td>' +
+            '<td>' + (p.mistGI || '\u2014') + '</td>';
+
+        if (p.detailUrl) {
+            tr.onclick = ((url) => () => {
+                document.getElementById('url-input').value = url;
+                switchTab('url');
+                generate();
+            })(p.detailUrl);
+        }
+
+        tbody.appendChild(tr);
+    }
+
+    const countEl = document.getElementById('filter-count');
+    if (countEl) countEl.textContent = 'Showing ' + count + ' of ' + partners.length;
+}
+
 // ── Color picker sync ──
 document.querySelectorAll('input[type="color"]').forEach(input => {
     input.addEventListener('input', () => {
