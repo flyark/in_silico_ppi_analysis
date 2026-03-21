@@ -232,7 +232,7 @@
         <div class="card result-card" id="contact-map-card" style="display:none;">
             <h2>Interface Contact Map</h2>
             <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
-                Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Color gradient from chain A to chain B.
+                Lines connect cLIR residue pairs within C&beta; distance in the 3D structure. Color gradient from chain A to chain B. UniProt domain annotations shown when available.
             </div>
             <canvas id="contact-canvas"></canvas>
         </div>
@@ -422,6 +422,8 @@ let dimerPairResult = null;  // computed pair metrics
 let dimerCifFilename = '';   // filename for download
 let cxcColorMode = '';       // ChimeraX color command preset
 let viewer3dBlobUrl = null;  // blob URL for current Mol* iframe page
+let domainCache = new Map(); // UniProt ID -> domain array cache
+let chainDomains = { A: [], B: [] }; // domain annotations per chain
 
 // ============================================================================
 // CORS PROXY (AlphaFold DB complex API lacks CORS headers)
@@ -728,6 +730,17 @@ async function selectDimer(idx, trEl) {
         const paeUrl = `https://alphafold.ebi.ac.uk/files/${modelEntityId}-predicted_aligned_error_v${version}.json`;
         dimerPaeData = await fetchJsonViaProxy(paeUrl);
 
+        // Fetch UniProt domain annotations per chain
+        const uniprotIds = entry.uniprotAccession || [];
+        console.log('Dimer UniProt IDs:', uniprotIds, 'Entry keys:', Object.keys(entry));
+        chainDomains = { A: [], B: [] };
+        const domainPromises = [];
+        if (uniprotIds[0]) domainPromises.push(fetchDomains(uniprotIds[0]).then(d => { chainDomains.A = d; console.log('Chain A domains:', d); }));
+        if (uniprotIds[1]) domainPromises.push(fetchDomains(uniprotIds[1]).then(d => { chainDomains.B = d; console.log('Chain B domains:', d); }));
+        else if (uniprotIds[0]) domainPromises.push(fetchDomains(uniprotIds[0]).then(d => { chainDomains.B = d; })); // homodimer
+        await Promise.allSettled(domainPromises);
+        console.log('Final chainDomains:', chainDomains);
+
         setStatus('Analyzing...', 'loading');
         await new Promise(r => setTimeout(r, 10));
 
@@ -804,6 +817,51 @@ function addDownloadBtn(canvas, filename) {
     canvas.parentElement.appendChild(btn);
 }
 
+// ============================================================================
+// UNIPROT DOMAIN ANNOTATIONS
+// ============================================================================
+async function fetchDomains(uniprotId) {
+    if (!uniprotId) return [];
+    if (domainCache.has(uniprotId)) return domainCache.get(uniprotId);
+    let domains = [];
+    try {
+        // Try UniProt curated domains first
+        const resp = await fetch(`https://rest.uniprot.org/uniprotkb/${uniprotId}.json`);
+        if (resp.ok) {
+            const data = await resp.json();
+            domains = (data.features || [])
+                .filter(f => f.type === 'Domain')
+                .map(f => ({ name: f.description || 'Domain', start: f.location?.start?.value, end: f.location?.end?.value }))
+                .filter(d => d.start != null && d.end != null);
+        }
+        // Fallback: InterPro/Pfam if no UniProt domains
+        if (domains.length === 0) {
+            const iprResp = await fetch(`https://www.ebi.ac.uk/interpro/api/entry/pfam/protein/uniprot/${uniprotId}?format=json`);
+            if (iprResp.ok) {
+                const iprData = await iprResp.json();
+                for (const entry of (iprData.results || [])) {
+                    const name = entry.metadata?.name || 'Pfam domain';
+                    for (const prot of (entry.proteins || [])) {
+                        for (const loc of (prot.entry_protein_locations || [])) {
+                            for (const frag of (loc.fragments || [])) {
+                                if (frag.start != null && frag.end != null) {
+                                    domains.push({ name, start: frag.start, end: frag.end });
+                                }
+                            }
+                        }
+                    }
+                }
+                // Sort by start position
+                domains.sort((a, b) => a.start - b.start);
+            }
+        }
+    } catch (e) {
+        console.warn(`Failed to fetch domains for ${uniprotId}:`, e);
+    }
+    domainCache.set(uniprotId, domains);
+    return domains;
+}
+
 function buildDimerContactMap() {
     const v = dimerPairResult;
     const card = document.getElementById('contact-map-card');
@@ -850,9 +908,11 @@ function buildDimerContactMap() {
     };
 
     const S = 2;
-    const width = 900, height = 280;
+    const hasDomains = (chainDomains.A.length > 0 || chainDomains.B.length > 0);
+    const domainRowH = hasDomains ? 20 : 0;
+    const width = 900, height = 280 + domainRowH * 2;
     const barH = 14;
-    const barY_A = 45, barY_B = height - 55;
+    const barY_A = 45 + domainRowH, barY_B = height - 55 - domainRowH;
     const barLeft = 60, barRight = width - 20;
     const barW = barRight - barLeft;
 
@@ -914,7 +974,85 @@ function buildDimerContactMap() {
     }
 
     ctx.fillStyle = '#888'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(`${contacts.length} cLIR contact pairs`, width/2, barY_B + barH + 18);
+    ctx.fillText(`${contacts.length} cLIR contact pairs`, width/2, barY_B + barH + (hasDomains ? 22 : 18));
+
+    // Draw UniProt domain annotations
+    if (hasDomains) {
+        const domPalette = [
+            'rgba(102,194,165,0.35)', 'rgba(252,141,98,0.35)', 'rgba(141,160,203,0.35)',
+            'rgba(231,138,195,0.35)', 'rgba(166,216,84,0.35)', 'rgba(255,217,47,0.35)',
+            'rgba(229,196,148,0.35)', 'rgba(179,179,179,0.35)'
+        ];
+        const domBorderPalette = [
+            'rgba(102,194,165,0.7)', 'rgba(252,141,98,0.7)', 'rgba(141,160,203,0.7)',
+            'rgba(231,138,195,0.7)', 'rgba(166,216,84,0.7)', 'rgba(255,217,47,0.7)',
+            'rgba(229,196,148,0.7)', 'rgba(179,179,179,0.7)'
+        ];
+        const domBlockH = 14;
+        const domGap = 2;
+
+        // Chain A domains — above chain A bar
+        for (let di = 0; di < chainDomains.A.length; di++) {
+            const d = chainDomains.A[di];
+            const x1 = xA(Math.max(1, d.start));
+            const x2 = xA(Math.min(v.lenI, d.end));
+            const dw = x2 - x1;
+            const dy = barY_A - domGap - domBlockH;
+            ctx.fillStyle = domPalette[di % domPalette.length];
+            ctx.fillRect(x1, dy, dw, domBlockH);
+            ctx.strokeStyle = domBorderPalette[di % domBorderPalette.length];
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(x1, dy, dw, domBlockH);
+            // Label
+            ctx.fillStyle = '#444';
+            ctx.font = '7px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const label = d.name;
+            const labelW = ctx.measureText(label).width;
+            if (labelW < dw - 2) {
+                ctx.fillText(label, x1 + dw / 2, dy + domBlockH / 2);
+            } else {
+                // Try abbreviated label
+                const abbr = label.length > 6 ? label.substring(0, 5) + '..' : label;
+                const abbrW = ctx.measureText(abbr).width;
+                if (abbrW < dw - 2) {
+                    ctx.fillText(abbr, x1 + dw / 2, dy + domBlockH / 2);
+                }
+            }
+        }
+
+        // Chain B domains — below chain B bar
+        for (let di = 0; di < chainDomains.B.length; di++) {
+            const d = chainDomains.B[di];
+            const x1 = xB(Math.max(1, d.start));
+            const x2 = xB(Math.min(v.lenJ, d.end));
+            const dw = x2 - x1;
+            const dy = barY_B + barH + domGap;
+            ctx.fillStyle = domPalette[di % domPalette.length];
+            ctx.fillRect(x1, dy, dw, domBlockH);
+            ctx.strokeStyle = domBorderPalette[di % domBorderPalette.length];
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(x1, dy, dw, domBlockH);
+            // Label
+            ctx.fillStyle = '#444';
+            ctx.font = '7px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const label = d.name;
+            const labelW = ctx.measureText(label).width;
+            if (labelW < dw - 2) {
+                ctx.fillText(label, x1 + dw / 2, dy + domBlockH / 2);
+            } else {
+                const abbr = label.length > 6 ? label.substring(0, 5) + '..' : label;
+                const abbrW = ctx.measureText(abbr).width;
+                if (abbrW < dw - 2) {
+                    ctx.fillText(abbr, x1 + dw / 2, dy + domBlockH / 2);
+                }
+            }
+        }
+    }
+
     ctx.restore();
     addDownloadBtn(canvas, 'contact_map');
 }
@@ -1105,12 +1243,24 @@ function buildDimerSequenceViewer() {
     let tooltip = document.querySelector('.seq-tooltip');
     if (!tooltip) { tooltip = document.createElement('div'); tooltip.className = 'seq-tooltip'; document.body.appendChild(tooltip); }
 
+    // Build domain lookup per chain
+    const domPalette = ['#66c2a5','#fc8d62','#8da0cb','#e78ac3','#a6d854','#ffd92f','#e5c494','#b3b3b3'];
+    const chainDomainMap = { [v.ci]: chainDomains.A || [], [v.cj]: chainDomains.B || [] };
+
     const chainConfigs = [
         { name: v.ci, seq: chainSeqs.get(v.ci) || [], lir: v.lirI, clir: v.clirI, lirColor: colors.lir_a, clirColor: colors.clir_a },
         { name: v.cj, seq: chainSeqs.get(v.cj) || [], lir: v.lirJ, clir: v.clirJ, lirColor: colors.lir_b, clirColor: colors.clir_b },
     ];
 
     for (const cc of chainConfigs) {
+        const domains = chainDomainMap[cc.name] || [];
+        // Build per-residue domain lookup
+        const resDomain = {};
+        for (let di = 0; di < domains.length; di++) {
+            const d = domains[di];
+            for (let r = d.start; r <= d.end; r++) resDomain[r] = { name: d.name, idx: di };
+        }
+
         const label = document.createElement('div');
         label.className = 'seq-chain-label';
         label.textContent = `Chain ${cc.name} (${cc.seq.length} residues)`;
@@ -1134,12 +1284,17 @@ function buildDimerSequenceViewer() {
                 const res = cc.seq[i];
                 const isClir = cc.clir.has(res.resnum);
                 const isLir = cc.lir.has(res.resnum);
+                const dom = resDomain[res.resnum];
                 const el = document.createElement('span');
                 el.className = 'seq-res' + (isClir ? ' clir' : '');
                 el.style.background = isClir ? cc.clirColor : isLir ? lightenColor(cc.clirColor.replace('#',''), 0.4) : 'transparent';
                 el.textContent = res.aa;
                 el.addEventListener('mouseenter', (e) => {
-                    tooltip.textContent = `${res.aa}${res.resnum}` + (isClir ? ' (cLIR)' : isLir ? ' (LIR)' : '');
+                    let tip = `${res.aa}${res.resnum}`;
+                    if (isClir) tip += ' (cLIR)';
+                    else if (isLir) tip += ' (LIR)';
+                    if (dom) tip += ` [${dom.name}]`;
+                    tooltip.textContent = tip;
                     tooltip.style.display = '';
                     tooltip.style.left = (e.clientX + 8) + 'px';
                     tooltip.style.top = (e.clientY - 20) + 'px';
@@ -1163,7 +1318,58 @@ function buildDimerSequenceViewer() {
             row.appendChild(endLabel);
 
             container.appendChild(row);
+
+            // Domain bar row — uses same seq-blocks class for identical character width
+            if (domains.length > 0) {
+                const domRow = document.createElement('div');
+                domRow.className = 'seq-row';
+                domRow.style.marginTop = '3px';
+                domRow.style.marginBottom = '5px';
+                const domSpacer = document.createElement('span');
+                domSpacer.className = 'seq-num';
+                domSpacer.textContent = '';
+                domRow.appendChild(domSpacer);
+
+                const domBlocks = document.createElement('span');
+                domBlocks.className = 'seq-blocks';
+                domBlocks.style.lineHeight = '0';
+                for (let i = rowStart; i < rowEnd; i++) {
+                    const res = cc.seq[i];
+                    const dom = resDomain[res.resnum];
+                    const cell = document.createElement('span');
+                    cell.className = 'seq-res';
+                    cell.style.height = '3px';
+                    cell.style.lineHeight = '3px';
+                    cell.textContent = '\u00A0';
+                    if (dom) {
+                        cell.style.background = domPalette[dom.idx % domPalette.length];
+                    }
+                    domBlocks.appendChild(cell);
+                    // Match the 10-residue gap spacers from the sequence row
+                    if ((i - rowStart + 1) % 10 === 0 && i < rowEnd - 1) {
+                        const gap = document.createElement('span');
+                        gap.style.cssText = 'width:3px; display:inline-block;';
+                        domBlocks.appendChild(gap);
+                    }
+                }
+                domRow.appendChild(domBlocks);
+                container.appendChild(domRow);
+            }
         }
+    }
+
+    // Domain legend — show all instances with positions (use chain A domains as reference)
+    const refDomains = chainDomains.A.length > 0 ? chainDomains.A : chainDomains.B;
+    if (refDomains.length > 0) {
+        const legend = document.createElement('div');
+        legend.style.cssText = 'margin-top:0.5rem; font-size:0.72rem; color:#666; display:flex; gap:0.8rem; flex-wrap:wrap;';
+        for (let di = 0; di < refDomains.length; di++) {
+            const d = refDomains[di];
+            const item = document.createElement('span');
+            item.innerHTML = `<span style="display:inline-block; width:12px; height:3px; background:${domPalette[di % domPalette.length]}; vertical-align:middle; margin-right:3px;"></span>${d.name} (${d.start}\u2013${d.end})`;
+            legend.appendChild(item);
+        }
+        container.appendChild(legend);
     }
 }
 

@@ -101,10 +101,13 @@
 
         /* Sequence viewer */
         .seq-row { display:flex; align-items:center; margin-bottom:0; }
+        .seq-domain-row { display:flex; align-items:center; margin-bottom:2px; }
         .seq-num { font-size:0.72rem; color:#888; width:36px; text-align:right; padding-right:4px; flex-shrink:0; font-family:'SF Mono','Fira Code',monospace; }
         .seq-blocks { display:flex; flex-wrap:nowrap; font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.4; letter-spacing:0.5px; }
         .seq-res { display:inline-block; width:0.75em; text-align:center; cursor:default; color:#333; }
         .seq-res.clir { color:white; font-weight:700; }
+        .seq-domain-bar { display:flex; flex-wrap:nowrap; font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1; letter-spacing:0.5px; }
+        .seq-domain-cell { display:inline-block; width:0.75em; height:6px; }
         .seq-tooltip { position:fixed; background:#333; color:white; padding:2px 6px; border-radius:4px; font-size:0.72rem; pointer-events:none; z-index:200; display:none; font-family:'SF Mono',monospace; }
 
         /* Autocomplete */
@@ -256,9 +259,18 @@
         <div class="card result-card" id="seq-viewer-card" style="display:none;">
             <h2>Sequence Viewer</h2>
             <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
-                Light background = LIR (PAE &le; 12 &Aring;). Dark background with white text = cLIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;). Each region uses its own color.
+                Light background = LIR (PAE &le; 12 &Aring;). Dark background with white text = cLIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;). Each region uses its own color. Colored bars below each row show UniProt domain annotations.
             </div>
             <div id="seq-viewer" style="font-family:'SF Mono','Fira Code',monospace; overflow-x:auto;"></div>
+        </div>
+
+        <!-- Domain Comparison -->
+        <div class="card result-card" id="domain-comparison-card" style="display:none;">
+            <h2>Auto-detected Regions vs UniProt Domains</h2>
+            <div style="font-size:0.75rem; color:#888; margin-bottom:0.5rem;">
+                Compares auto-detected subdomains (from pLDDT segmentation) with annotated UniProt domains. Overlap shows the percentage of each auto-detected region covered by each UniProt domain.
+            </div>
+            <div id="domain-comparison-content"></div>
         </div>
 
         <!-- Region Pair Table -->
@@ -411,6 +423,17 @@ let monPairResults = [];    // calculated pair results
 let monCxcColorMode = '';   // '', 'plddt', 'bychain', 'bypolymer'
 let monRegionCounter = 0;   // for naming regions
 let viewer3dBlobUrl = null; // blob URL for current Mol* iframe page
+let monDomains = [];        // UniProt domain annotations [{name, start, end}]
+let domainCache = new Map(); // UniProt ID -> domain array cache
+
+const DOMAIN_PALETTE = [
+    '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'
+];
+const DOMAIN_PALETTE_LIGHT = [
+    'rgba(102,194,165,0.35)', 'rgba(252,141,98,0.35)', 'rgba(141,160,203,0.35)',
+    'rgba(231,138,195,0.35)', 'rgba(166,216,84,0.35)', 'rgba(255,217,47,0.35)',
+    'rgba(229,196,148,0.35)', 'rgba(179,179,179,0.35)'
+];
 
 const REGION_COLORS = [
     '#2471A3', '#E67E22', '#27ae60', '#c0392b', '#8e44ad',
@@ -558,7 +581,8 @@ async function fetchData() {
     document.getElementById('results').classList.remove('active');
     document.getElementById('regions-card').style.display = 'none';
     document.getElementById('score-matrix-inline').style.display = 'none';
-    // Reset Mol* viewer
+    // Reset domain data and Mol* viewer
+    monDomains = [];
     if (viewer3dBlobUrl) { URL.revokeObjectURL(viewer3dBlobUrl); viewer3dBlobUrl = null; }
     const v3frame = document.getElementById('viewer3d-frame');
     if (v3frame) v3frame.src = 'about:blank';
@@ -622,6 +646,13 @@ async function fetchData() {
         linksHtml += `<a href="https://www.uniprot.org/uniprot/${uniprotId}" target="_blank" style="color:#2471A3;">UniProt: ${uniprotId}</a> &middot; <a href="https://alphafold.ebi.ac.uk/entry/${uniprotId}" target="_blank" style="color:#2471A3;">AlphaFold Database</a>`;
         linksEl.innerHTML = linksHtml;
         linksEl.style.display = '';
+
+        // Fetch UniProt domain annotations
+        try {
+            monDomains = await fetchDomains(uniprotId);
+        } catch (e) {
+            monDomains = [];
+        }
 
         // Show regions card
         document.getElementById('regions-card').style.display = '';
@@ -700,6 +731,48 @@ function parseSequence(pdbText) {
         }
     }
     return [...residues.entries()].sort((a, b) => a[0] - b[0]).map(e => ({ resnum: e[0], aa: e[1] }));
+}
+
+// ============================================================================
+// UNIPROT DOMAIN ANNOTATIONS
+// ============================================================================
+async function fetchDomains(uniprotId) {
+    if (!uniprotId) return [];
+    if (domainCache.has(uniprotId)) return domainCache.get(uniprotId);
+    let domains = [];
+    try {
+        const resp = await fetch(`https://rest.uniprot.org/uniprotkb/${uniprotId}.json`);
+        if (resp.ok) {
+            const data = await resp.json();
+            domains = (data.features || [])
+                .filter(f => f.type === 'Domain')
+                .map(f => ({ name: f.description || 'Domain', start: f.location?.start?.value, end: f.location?.end?.value }))
+                .filter(d => d.start != null && d.end != null);
+        }
+        if (domains.length === 0) {
+            const iprResp = await fetch(`https://www.ebi.ac.uk/interpro/api/entry/pfam/protein/uniprot/${uniprotId}?format=json`);
+            if (iprResp.ok) {
+                const iprData = await iprResp.json();
+                for (const entry of (iprData.results || [])) {
+                    const name = entry.metadata?.name || 'Pfam domain';
+                    for (const prot of (entry.proteins || [])) {
+                        for (const loc of (prot.entry_protein_locations || [])) {
+                            for (const frag of (loc.fragments || [])) {
+                                if (frag.start != null && frag.end != null) {
+                                    domains.push({ name, start: frag.start, end: frag.end });
+                                }
+                            }
+                        }
+                    }
+                }
+                domains.sort((a, b) => a.start - b.start);
+            }
+        }
+    } catch (e) {
+        console.warn(`Failed to fetch domains for ${uniprotId}:`, e);
+    }
+    domainCache.set(uniprotId, domains);
+    return domains;
 }
 
 // ============================================================================
@@ -1285,6 +1358,18 @@ function buildSequenceViewer(validRegions) {
         }
     }
 
+    // Build per-residue domain lookup
+    const resDomain = new Map(); // resnum → {name, colorIdx}
+    const hasDomains = monDomains && monDomains.length > 0;
+    if (hasDomains) {
+        for (let di = 0; di < monDomains.length; di++) {
+            const d = monDomains[di];
+            for (let r = d.start; r <= d.end; r++) {
+                resDomain.set(r, { name: d.name, colorIdx: di });
+            }
+        }
+    }
+
     // Build rows (80 residues per row)
     const perRow = 80;
     const tooltip = document.createElement('div');
@@ -1307,12 +1392,16 @@ function buildSequenceViewer(validRegions) {
         for (let i = rowStart; i < rowEnd; i++) {
             const res = monSequence[i];
             const rc = resColor.get(res.resnum);
+            const dom = resDomain.get(res.resnum);
             const el = document.createElement('span');
             el.className = 'seq-res' + (rc && rc.level === 3 ? ' clir' : '');
             el.style.background = rc ? rc.color : 'transparent';
             el.textContent = res.aa;
             el.addEventListener('mouseenter', (e) => {
-                tooltip.textContent = `${res.aa}${res.resnum}` + (rc ? (rc.level === 3 ? ' (cLIR)' : rc.level === 2 ? ' (LIR)' : '') : '');
+                let tip = `${res.aa}${res.resnum}`;
+                if (rc) tip += rc.level === 3 ? ' (cLIR)' : rc.level === 2 ? ' (LIR)' : '';
+                if (dom) tip += ` [${dom.name}]`;
+                tooltip.textContent = tip;
                 tooltip.style.display = '';
                 tooltip.style.left = (e.clientX + 8) + 'px';
                 tooltip.style.top = (e.clientY - 20) + 'px';
@@ -1338,6 +1427,156 @@ function buildSequenceViewer(validRegions) {
         row.appendChild(endLabel);
 
         container.appendChild(row);
+
+        // Domain annotation bar below the sequence row
+        if (hasDomains) {
+            const domRow = document.createElement('div');
+            domRow.className = 'seq-domain-row';
+
+            const domNum = document.createElement('span');
+            domNum.className = 'seq-num';
+            domNum.textContent = '';
+            domRow.appendChild(domNum);
+
+            const domBar = document.createElement('span');
+            domBar.className = 'seq-domain-bar';
+
+            for (let i = rowStart; i < rowEnd; i++) {
+                const res = monSequence[i];
+                const dom = resDomain.get(res.resnum);
+                const cell = document.createElement('span');
+                cell.className = 'seq-domain-cell';
+                if (dom) {
+                    cell.style.background = DOMAIN_PALETTE[dom.colorIdx % DOMAIN_PALETTE.length];
+                    cell.title = `${dom.name} (${monDomains[dom.colorIdx].start}-${monDomains[dom.colorIdx].end})`;
+                }
+                domBar.appendChild(cell);
+
+                // Matching gap every 10 residues
+                if ((i - rowStart + 1) % 10 === 0 && i < rowEnd - 1) {
+                    const gap = document.createElement('span');
+                    gap.style.cssText = 'width:3px; display:inline-block;';
+                    domBar.appendChild(gap);
+                }
+            }
+            domRow.appendChild(domBar);
+            container.appendChild(domRow);
+        }
+    }
+
+    // Domain legend below sequence viewer
+    if (hasDomains) {
+        const legend = document.createElement('div');
+        legend.style.cssText = 'margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center; font-size:0.78rem;';
+        const legendLabel = document.createElement('span');
+        legendLabel.style.cssText = 'font-weight:600; color:#555;';
+        legendLabel.textContent = 'UniProt Domains:';
+        legend.appendChild(legendLabel);
+        for (let di = 0; di < monDomains.length; di++) {
+            const d = monDomains[di];
+            const item = document.createElement('span');
+            item.style.cssText = 'display:inline-flex; align-items:center; gap:0.25rem;';
+            const swatch = document.createElement('span');
+            swatch.style.cssText = `width:10px; height:10px; border-radius:2px; background:${DOMAIN_PALETTE[di % DOMAIN_PALETTE.length]}; flex-shrink:0;`;
+            item.appendChild(swatch);
+            const text = document.createElement('span');
+            text.style.color = '#555';
+            text.textContent = `${d.name} (${d.start}-${d.end})`;
+            item.appendChild(text);
+            legend.appendChild(item);
+        }
+        container.appendChild(legend);
+    }
+}
+
+function buildDomainComparison(validRegions) {
+    const card = document.getElementById('domain-comparison-card');
+    const content = document.getElementById('domain-comparison-content');
+    if (!card || !content) return;
+
+    if (!monDomains || monDomains.length === 0 || !validRegions || validRegions.length < 2) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = '';
+    content.innerHTML = '';
+
+    // Build comparison table
+    const table = document.createElement('table');
+    table.className = 'data-table';
+    table.style.fontSize = '0.82rem';
+
+    // Header
+    const thead = document.createElement('thead');
+    let headerHtml = '<tr><th>Auto-detected Region</th><th>Range</th>';
+    for (let di = 0; di < monDomains.length; di++) {
+        const d = monDomains[di];
+        headerHtml += `<th style="text-align:center;"><span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:${DOMAIN_PALETTE[di % DOMAIN_PALETTE.length]}; margin-right:3px;"></span>${d.name}</th>`;
+    }
+    headerHtml += '<th style="text-align:center;">Best Match</th></tr>';
+    thead.innerHTML = headerHtml;
+    table.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement('tbody');
+    for (const r of validRegions) {
+        const rStart = parseInt(r.start), rEnd = parseInt(r.end);
+        if (isNaN(rStart) || isNaN(rEnd)) continue;
+        const rLen = rEnd - rStart + 1;
+
+        let tr = `<tr><td><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:${r.color}; margin-right:4px;"></span><strong>${r.name}</strong></td>`;
+        tr += `<td>${rStart}-${rEnd} (${rLen} res)</td>`;
+
+        let bestOverlap = 0, bestName = '-';
+        for (let di = 0; di < monDomains.length; di++) {
+            const d = monDomains[di];
+            // Calculate overlap
+            const overlapStart = Math.max(rStart, d.start);
+            const overlapEnd = Math.min(rEnd, d.end);
+            const overlap = Math.max(0, overlapEnd - overlapStart + 1);
+            const pct = rLen > 0 ? (overlap / rLen * 100) : 0;
+
+            if (pct > bestOverlap) {
+                bestOverlap = pct;
+                bestName = d.name;
+            }
+
+            const bgIntensity = Math.round(pct / 100 * 40);
+            const bgColor = pct > 0 ? `rgba(${DOMAIN_PALETTE[di % DOMAIN_PALETTE.length].match(/\d+/g)?.join(',') || '100,100,100'},0.${Math.max(5, bgIntensity)})` : '';
+            const cellBg = pct > 0 ? `background:${DOMAIN_PALETTE_LIGHT[di % DOMAIN_PALETTE_LIGHT.length]};` : '';
+            tr += `<td style="text-align:center; ${cellBg}">${pct > 0 ? pct.toFixed(0) + '%' : '-'}</td>`;
+        }
+
+        tr += `<td style="text-align:center; font-weight:600;">${bestOverlap > 0 ? bestName + ' (' + bestOverlap.toFixed(0) + '%)' : '-'}</td>`;
+        tr += '</tr>';
+        tbody.innerHTML += tr;
+    }
+    table.appendChild(tbody);
+    content.appendChild(table);
+
+    // Also show UniProt domains not covered by any auto-detected region
+    const uncovered = [];
+    for (const d of monDomains) {
+        let totalOverlap = 0;
+        const dLen = d.end - d.start + 1;
+        for (const r of validRegions) {
+            const rStart = parseInt(r.start), rEnd = parseInt(r.end);
+            if (isNaN(rStart) || isNaN(rEnd)) continue;
+            const overlapStart = Math.max(rStart, d.start);
+            const overlapEnd = Math.min(rEnd, d.end);
+            totalOverlap += Math.max(0, overlapEnd - overlapStart + 1);
+        }
+        const covPct = dLen > 0 ? totalOverlap / dLen * 100 : 0;
+        if (covPct < 50) uncovered.push({ name: d.name, start: d.start, end: d.end, covPct });
+    }
+    if (uncovered.length > 0) {
+        const note = document.createElement('div');
+        note.style.cssText = 'margin-top:0.6rem; font-size:0.78rem; color:#888; padding:0.5rem 0.7rem; background:#f8f9fa; border-radius:6px;';
+        note.innerHTML = '<strong style="color:#555;">Note:</strong> The following UniProt domain(s) have low coverage by auto-detected regions: ' +
+            uncovered.map(u => `<em>${u.name}</em> (${u.start}-${u.end}, ${u.covPct.toFixed(0)}% covered)`).join(', ') +
+            '. Consider adjusting detection parameters (lower pLDDT cutoff or min length).';
+        content.appendChild(note);
     }
 }
 
@@ -1415,6 +1654,9 @@ function displayResults(validRegions) {
 
     // Sequence viewer
     buildSequenceViewer(validRegions);
+
+    // Domain comparison (auto-detected vs UniProt)
+    buildDomainComparison(validRegions);
 
     // Generate CXC script
     generateAndShowScript(validRegions);
