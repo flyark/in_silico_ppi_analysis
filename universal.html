@@ -1387,7 +1387,17 @@ function parseCifCoords(cifText) {
             const y = parseFloat(getCol('Cartn_y'));
             const z = parseFloat(getCol('Cartn_z'));
 
-            if (isNaN(resnum) || isNaN(x)) continue;
+            if (isNaN(x)) continue;
+
+            // Handle ions first (label_seq_id may be '.' for HETATM ions)
+            if (groupPDB === 'HETATM' && ION_NAMES.has(compId)) {
+                if (!residues.has(`${chain}:1`)) {
+                    residues.set(`${chain}:1`, { chain, resnum: 1, x, y, z, hasP: false });
+                }
+                continue;
+            }
+
+            if (isNaN(resnum)) continue;
             const key = `${chain}:${resnum}`;
 
             if (atomName === 'CB') {
@@ -1396,8 +1406,6 @@ function parseCifCoords(cifText) {
                 residues.set(key, { chain, resnum, x, y, z, hasP: false });
             } else if (atomName === 'P' && !residues.has(key)) {
                 residues.set(key, { chain, resnum, x, y, z, hasP: true });
-            } else if (groupPDB === 'HETATM' && ION_NAMES.has(compId) && !residues.has(`${chain}:1`)) {
-                residues.set(`${chain}:1`, { chain, resnum: 1, x, y, z, hasP: false });
             }
         }
     }
