@@ -189,6 +189,7 @@
         </div>
         <div class="status" id="status"></div>
         <div id="external-links" style="display:none; font-size:0.82rem; margin-top:0.3rem;"></div>
+        <div id="protein-info" style="display:none; margin-top:0.5rem; padding:0.6rem 0.8rem; background:#f8f9fa; border-radius:8px; font-size:0.82rem; line-height:1.5; border:1px solid #e8e8e8;"></div>
     </div>
 
     <!-- Step 2: Define Regions -->
@@ -595,6 +596,35 @@ function parseUniprotId(input) {
     return null;
 }
 
+async function showProteinInfo(uniprotId) {
+    const el = document.getElementById('protein-info');
+    el.style.display = 'none';
+    el.innerHTML = '';
+    try {
+        const resp = await fetch(`https://rest.uniprot.org/uniprotkb/${uniprotId}.json`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const entryName = data.uniProtkbId || '';
+        const protName = data.proteinDescription?.recommendedName?.fullName?.value
+                      || data.proteinDescription?.submissionNames?.[0]?.fullName?.value || '';
+        const org = data.organism?.scientificName || '';
+        const len = data.sequence?.length || '';
+        const funcComment = (data.comments || []).find(c => c.commentType === 'FUNCTION');
+        let funcText = funcComment?.texts?.[0]?.value || '';
+        funcText = funcText.replace(/\s*\(By similarity\)/gi, '').replace(/\s*\(PubMed:\d+\)/gi, '');
+
+        const lines = [];
+        lines.push(`<strong>${esc(entryName)}</strong> · ${esc(protName)}`);
+        const meta = [];
+        if (org) meta.push(`<strong>${esc(org)}</strong>`);
+        if (len) meta.push(`${len} aa`);
+        if (meta.length > 0) lines.push(`<span style="color:#666;">${meta.join(' · ')}</span>`);
+        if (funcText) lines.push(`<span style="color:#555;">${esc(funcText)}</span>`);
+        el.innerHTML = lines.join('<br>');
+        el.style.display = '';
+    } catch (e) { console.warn('Protein info error:', e); }
+}
+
 async function fetchData() {
     const input = document.getElementById('uniprot-input').value;
     const uniprotId = parseUniprotId(input);
@@ -672,6 +702,9 @@ async function fetchData() {
         linksHtml += `<a href="https://www.uniprot.org/uniprot/${uniprotId}" target="_blank" style="color:#2471A3;">UniProt: ${uniprotId}</a> &middot; <a href="https://alphafold.ebi.ac.uk/entry/${uniprotId}" target="_blank" style="color:#2471A3;">AlphaFold Database</a>`;
         linksEl.innerHTML = linksHtml;
         linksEl.style.display = '';
+
+        // Show protein info from UniProt
+        showProteinInfo(uniprotId);
 
         // Fetch UniProt domain annotations
         try {
