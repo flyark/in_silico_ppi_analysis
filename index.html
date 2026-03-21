@@ -48,24 +48,28 @@
         <div class="tool-info">
             <h2>FlyPredictome Analysis</h2>
             <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script.</p>
+            <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Analyze Drosophila Akt-foxo interaction from FlyPredictome database</p>
         </div>
     </a>
     <a class="tool-card" href="universal.html">
         <div class="tool-info">
             <h2>Universal Prediction Analysis</h2>
             <p>Upload prediction files from AlphaFold3, AlphaFold2, ColabFold, Boltz, Chai-1, or OpenFold. Calculate AFM-LIS metrics (iLIS, LIS, cLIS), view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
+            <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Upload your ColabFold .zip or AlphaFold3 output to get iLIS metrics and a ChimeraX script</p>
         </div>
     </a>
     <a class="tool-card" href="dimer.html">
         <div class="tool-info">
             <h2>AlphaFold DB Dimer Analysis</h2>
             <p>Search the AlphaFold Protein Structure Database for dimer predictions by UniProt ID, calculate iLIS between chains, view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
+            <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Search P69905 (Hemoglobin) to explore predicted dimer interfaces from AlphaFold DB</p>
         </div>
     </a>
     <a class="tool-card" href="monomer.html">
         <div class="tool-info">
             <h2>AlphaFold DB Monomer Subdomain Analysis</h2>
             <p>Fetch monomer predictions from the AlphaFold Protein Structure Database by UniProt ID. Auto-detect domains, view PAE/LIS/cLIS maps, and calculate intramolecular iLIS between domains.</p>
+            <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Fetch Q8TF76 (Haspin) to analyze intramolecular domain interactions</p>
         </div>
     </a>
     <a class="tool-card" href="guide.html">
@@ -79,6 +83,12 @@
         <a href="https://github.com/flyark/in_silico_ppi_analysis" target="_blank">GitHub</a>
         <a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank">Kim et al. 2024</a>
         <a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a>
+    </div>
+</div>
+<div style="max-width:1100px; margin:0 auto; padding:0 1.5rem 1rem;">
+    <div style="background:#f8f9fa; border-radius:8px; padding:0.8rem 1.2rem; font-size:0.78rem; color:#888; line-height:1.6;">
+        <strong style="color:#555;">Browser:</strong> Tested on Chrome and Safari (macOS/iOS). All analysis runs locally in your browser &mdash; no data is uploaded to any server.
+        &middot; <strong style="color:#555;">Note:</strong> Each prediction platform (AlphaFold3, ColabFold, Boltz, Chai-1, etc.) may produce different confidence calibrations. The iLIS &ge; 0.223 threshold was established using ColabFold/AlphaFold-Multimer predictions. Other platforms may require adjusted thresholds.
     </div>
 </div>
 <div class="footer">Made by Ah-Ram Kim &middot; <a href="https://github.com/flyark/AFM-LIS">AFM-LIS</a></div>

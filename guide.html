@@ -367,7 +367,7 @@
                 <strong>Suggested threshold:</strong> <strong>iLIS &ge; 0.223</strong> was established at 10% FDR using large-scale Y2H reference datasets in yeast (<a href="https://doi.org/10.1126/science.1158684" target="_blank" style="color:#2471A3;">Yu et al., 2008</a>), fly (<a href="https://doi.org/10.1038/s41467-023-37876-0" target="_blank" style="color:#2471A3;">Tang et al., 2023</a>), and human (<a href="https://doi.org/10.1038/nmeth.1280" target="_blank" style="color:#2471A3;">Braun et al., 2009</a>). This threshold was determined using AlphaFold-Multimer predictions (via ColabFold). See <a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672v4.supplementary-material" target="_blank" style="color:#2471A3;">Kim et al., 2025 supplementary text</a> for details.
             </p>
             <div style="background:#fff3cd; border-left:4px solid #ffc107; padding:0.8rem 1rem; border-radius:0 8px 8px 0; font-size:0.9rem; color:#856404; margin-top:0.8rem;">
-                <strong>Caution:</strong> Computational predictions should be interpreted with care. The iLIS &ge; 0.223 threshold was derived from AlphaFold-Multimer (ColabFold) predictions with specific reference datasets. <strong>AlphaFold 3 predictions may require a different cutoff</strong> due to differences in model architecture and confidence calibration. Optimal thresholds may also vary depending on the species, protein types, and experimental system. <strong>Experimental validation is highly recommended</strong> before drawing biological conclusions from predicted interactions.
+                <strong>Caution:</strong> Computational predictions should be interpreted with care. The iLIS &ge; 0.223 threshold was derived from AlphaFold-Multimer (ColabFold) predictions with specific reference datasets. <strong>Other prediction platforms (AlphaFold 3, Boltz, Chai-1, OpenFold) may require different cutoffs</strong> due to differences in model architecture, training data, and confidence calibration. Each platform produces distinct PAE distributions and ipTM scales, which can affect iLIS values. Optimal thresholds may also vary depending on the species, protein types, and experimental system. <strong>Experimental validation is highly recommended</strong> before drawing biological conclusions from predicted interactions.
             </div>
         </div>
     </div>
@@ -381,7 +381,7 @@
             <p><strong>AFM-LIS</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">Kim et al. 2024</a> &mdash; Enhanced Protein-Protein Interaction Discovery via AlphaFold-Multimer</li>
-                <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al. 2025</a> &mdash; <em>In silico</em> Kinase-TF atlas for human and fly</li>
+                <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al. 2025</a> &mdash; A Structure-Guided Kinase&ndash;Transcription Factor Interactome Atlas Reveals Docking Landscapes of the Kinome</li>
                 <li><a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS GitHub</a> &mdash; Code and documentation for calculating integrated Local Interaction Score (iLIS)</li>
             </ul>
             <p><strong>AlphaFold</strong></p>
@@ -397,10 +397,28 @@
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://doi.org/10.1002/pro.3943" target="_blank" style="color:#2471A3;">Pettersen et al. 2021</a> &mdash; UCSF ChimeraX: Structure visualization for researchers, educators, and developers. <em>Protein Science</em> 30, 70&ndash;82.</li>
             </ul>
+            <p><strong>Databases</strong></p>
+            <ul style="padding-left:1.2rem; margin-bottom:1rem;">
+                <li><a href="https://doi.org/10.1093/nar/gkac1052" target="_blank" style="color:#2471A3;">UniProt Consortium 2023</a> &mdash; UniProt: the Universal Protein Knowledgebase in 2023. <em>Nucleic Acids Research</em> 51, D523&ndash;D531.</li>
+                <li><a href="https://doi.org/10.1093/nar/gkab1061" target="_blank" style="color:#2471A3;">Varadi et al. 2022</a> &mdash; AlphaFold Protein Structure Database: massively expanding the structural coverage of protein-sequence space with high-accuracy models. <em>Nucleic Acids Research</em> 50, D439&ndash;D444.</li>
+            </ul>
             <p><strong>This Tool</strong></p>
             <ul style="padding-left:1.2rem;">
-                <li><a href="https://github.com/flyark/in_silico_ppi_analysis" target="_blank" style="color:#2471A3;">in_silico_ppi_analysis GitHub</a> &mdash; Source code for all ChimeraX visualization tools</li>
+                <li><a href="https://github.com/flyark/in_silico_ppi_analysis" target="_blank" style="color:#2471A3;">in_silico_ppi_analysis GitHub</a> &mdash; Source code for all visualization and analysis tools</li>
             </ul>
+            <div style="margin-top:1.5rem; padding:1rem; background:#eaf2f8; border-radius:8px;">
+                <p style="font-weight:600; color:#1a5276; margin-bottom:0.4rem;">Cite this tool</p>
+                <p style="font-size:0.82rem; color:#555; line-height:1.6;">If you use this tool in your research, please cite:</p>
+                <div style="background:white; border:1px solid #d0d8e0; border-radius:6px; padding:0.6rem 0.8rem; margin-top:0.4rem; font-size:0.78rem; font-family:'SF Mono','Fira Code',monospace; line-height:1.5; color:#333;">
+                    Kim, A.-R. et al. (2025). A Structure-Guided Kinase&ndash;Transcription Factor Interactome Atlas Reveals Docking Landscapes of the Kinome. <em>bioRxiv</em>. <a href="https://doi.org/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">https://doi.org/10.1101/2025.10.10.681672</a><br><br>
+                    Kim, A.-R. et al. (2024). Enhanced Protein-Protein Interaction Discovery via AlphaFold-Multimer. <em>bioRxiv</em>. <a href="https://doi.org/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">https://doi.org/10.1101/2024.02.19.580970</a>
+                </div>
+                <p style="font-size:0.78rem; color:#888; margin-top:0.5rem;">If you use the FlyPredictome data, please also cite:</p>
+                <div style="background:white; border:1px solid #d0d8e0; border-radius:6px; padding:0.6rem 0.8rem; margin-top:0.4rem; font-size:0.78rem; font-family:'SF Mono','Fira Code',monospace; line-height:1.5; color:#333;">
+                    Hu, Y. et al. (2025). FlyRNAi.org 2025 update &mdash; expanded resources for new technologies and species. <em>Nucleic Acids Res.</em> 53(D1), D958&ndash;D965. <a href="https://doi.org/10.1093/nar/gkae917" target="_blank" style="color:#2471A3;">doi:10.1093/nar/gkae917</a><br><br>
+                    Kim, A.-R. et al. (2024). Enhanced Protein-Protein Interaction Discovery via AlphaFold-Multimer. <em>bioRxiv</em>. <a href="https://doi.org/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">https://doi.org/10.1101/2024.02.19.580970</a>
+                </div>
+            </div>
         </div>
     </div>
 

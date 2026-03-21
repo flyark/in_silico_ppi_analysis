@@ -181,11 +181,11 @@
         <label>UniProt ID or AlphaFold DB URL</label>
         <div style="display:flex; gap:0.5rem; align-items:flex-start;">
             <div class="ac-wrap">
-                <input type="text" id="uniprot-input" value="P31749" placeholder="e.g. P31749, AKT1, or protein name" autocomplete="off" style="width:100%; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem;">
+                <input type="text" id="uniprot-input" value="Q8TF76" placeholder="e.g. Q8TF76, P31749, or protein name" autocomplete="off" style="width:100%; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem;">
                 <div class="ac-list" id="ac-list"></div>
             </div>
             <button class="btn btn-primary" style="margin:0;" id="btn-fetch" onclick="fetchData()">Fetch</button>
-            <button class="btn-secondary" style="white-space:nowrap;" onclick="loadExample()">Try Example (AKT1)</button>
+            <button class="btn-secondary" style="white-space:nowrap;" onclick="loadExample()">Try Example (Haspin)</button>
         </div>
         <div class="status" id="status"></div>
         <div id="external-links" style="display:none; font-size:0.82rem; margin-top:0.3rem;"></div>
@@ -303,7 +303,7 @@
             <div class="metrics-grid" id="pair-metrics"></div>
             <div style="overflow-x:auto;">
             <table class="data-table" id="pairs-table">
-                <thead><tr><th>Region Pair</th><th>iLIS</th><th>iLIA</th><th>iLISA</th><th>ipSAE</th><th>LIS</th><th>cLIS</th><th>LIR (i/j)</th><th>cLIR (i/j)</th></tr></thead>
+                <thead><tr><th>Region Pair</th><th>iLIS</th><th>iLIA</th><th>iLISA</th><th>LIS</th><th>cLIS</th><th>LIR (i/j)</th><th>cLIR (i/j)</th></tr></thead>
                 <tbody id="pairs-tbody"></tbody>
             </table>
             </div>
@@ -403,7 +403,7 @@
                 </ol>
             </div>
             <div>
-                <h4 style="font-size:0.9rem; color:#1a5276; margin-bottom:0.5rem;">Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS</a>)</h4>
+                <h4 style="font-size:0.9rem; color:#1a5276; margin-bottom:0.5rem;">AFM-LIS Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">Kim et al. 2024</a>)</h4>
                 <table style="font-size:0.85rem;">
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>iLIS</strong></td><td style="padding:0.25rem 0; color:#555;">integrated LIS &mdash; &radic;(LIS &times; cLIS)</td></tr>
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>iLIA</strong></td><td style="padding:0.25rem 0; color:#555;">integrated LIA &mdash; &radic;(LIA &times; cLIA), geometric mean of interface area counts</td></tr>
@@ -462,10 +462,9 @@ const DOMAIN_PALETTE_LIGHT = [
     'rgba(229,196,148,0.35)', 'rgba(179,179,179,0.35)'
 ];
 
-const REGION_COLORS = [
-    '#00897B', '#E64A19', '#27ae60', '#c0392b', '#8e44ad',
-    '#16a085', '#d35400', '#2c3e50', '#f39c12', '#1abc9c'
-];
+const TAB10 = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
+const TAB20 = ['#1f77b4','#aec7e8','#ff7f0e','#ffbb78','#2ca02c','#98df8a','#d62728','#ff9896','#9467bd','#c5b0d5','#8c564b','#c49c94','#e377c2','#f7b6d2','#7f7f7f','#c7c7c7','#bcbd22','#dbdb8d','#17becf','#9edae5'];
+const REGION_COLORS = TAB10;
 
 
 // ============================================================================
@@ -572,7 +571,7 @@ async function searchUniprot(query) {
 // ============================================================================
 
 function loadExample() {
-    document.getElementById('uniprot-input').value = 'P31749';
+    document.getElementById('uniprot-input').value = 'Q8TF76';
     // Reset regions so fetchData will apply the preset
     monRegions = [];
     monRegionCounter = 0;
@@ -808,7 +807,8 @@ async function fetchDomains(uniprotId) {
 
 function addRegion() {
     const name = String.fromCharCode(65 + monRegionCounter); // A, B, C, ...
-    const color = REGION_COLORS[monRegionCounter % REGION_COLORS.length];
+    const palette = monRegionCounter >= 10 ? TAB20 : TAB10;
+    const color = palette[monRegionCounter % palette.length];
     monRegionCounter++;
     monRegions.push({ name, start: '', end: '', color });
     renderRegions();
@@ -1003,7 +1003,8 @@ function detectRegions() {
     for (let k = 0; k < finalSegs.length; k++) {
         const seg = finalSegs[k];
         const name = String.fromCharCode(65 + k);
-        const color = REGION_COLORS[k % REGION_COLORS.length];
+        const palette = finalSegs.length > 10 ? TAB20 : TAB10;
+        const color = palette[k % palette.length];
         monRegions.push({ name, start: seg.start + 1, end: seg.end + 1, color });
         monRegionCounter++;
     }
@@ -1243,42 +1244,6 @@ function calculate() {
     displayResults(validRegions);
 }
 
-// ============================================================================
-// ipSAE CALCULATION
-// ============================================================================
-function calcIpSAE(pae, si, ei, sj, ej, paeCutoff) {
-    const lenI = ei - si, lenJ = ej - sj;
-    if (lenI === 0 || lenJ === 0) return 0;
-    function calcD0(L) { return L > 27 ? Math.max(1.0, 1.24 * Math.pow(L - 15, 1/3) - 1.8) : 1.0; }
-    function ptmFunc(x, d0) { return 1.0 / (1 + (x / d0) * (x / d0)); }
-
-    let maxScoreIJ = 0;
-    for (let ri = si; ri < ei; ri++) {
-        let goodCount = 0;
-        for (let rj = sj; rj < ej; rj++) { if ((pae[ri]?.[rj] ?? 31) < paeCutoff) goodCount++; }
-        if (goodCount > 0) {
-            const d0 = calcD0(goodCount);
-            let score = 0;
-            for (let rj = sj; rj < ej; rj++) { const v = pae[ri]?.[rj] ?? 31; if (v < paeCutoff) score += ptmFunc(v, d0); }
-            score /= goodCount;
-            if (score > maxScoreIJ) maxScoreIJ = score;
-        }
-    }
-    let maxScoreJI = 0;
-    for (let rj = sj; rj < ej; rj++) {
-        let goodCount = 0;
-        for (let ri = si; ri < ei; ri++) { if ((pae[rj]?.[ri] ?? 31) < paeCutoff) goodCount++; }
-        if (goodCount > 0) {
-            const d0 = calcD0(goodCount);
-            let score = 0;
-            for (let ri = si; ri < ei; ri++) { const v = pae[rj]?.[ri] ?? 31; if (v < paeCutoff) score += ptmFunc(v, d0); }
-            score /= goodCount;
-            if (score > maxScoreJI) maxScoreJI = score;
-        }
-    }
-    return (maxScoreIJ + maxScoreJI) / 2;
-}
-
 function calcRegionPair(ri, rj, paeCutoff, cbCutoff, coordMap, boundaryMargin) {
     const margin = boundaryMargin || 0;
     let lisSum = 0, lisCountAvg = 0;
@@ -1291,7 +1256,7 @@ function calcRegionPair(ri, rj, paeCutoff, cbCutoff, coordMap, boundaryMargin) {
     // Exclude boundary residues (margin from each edge)
     const startI = ri.start + margin, endI = ri.end - margin;
     const startJ = rj.start + margin, endJ = rj.end - margin;
-    if (startI > endI || startJ > endJ) return { iLIS: 0, iLIA: 0, iLISA: 0, ipSAE: 0, LIS: 0, cLIS: 0, lirI, lirJ, clirI, clirJ, lenI: ri.end - ri.start + 1, lenJ: rj.end - rj.start + 1 };
+    if (startI > endI || startJ > endJ) return { iLIS: 0, iLIA: 0, iLISA: 0, LIS: 0, cLIS: 0, lirI, lirJ, clirI, clirJ, lenI: ri.end - ri.start + 1, lenJ: rj.end - rj.start + 1 };
 
     for (let a = startI; a <= endI; a++) {
         for (let b = startJ; b <= endJ; b++) {
@@ -1349,11 +1314,11 @@ function calcRegionPair(ri, rj, paeCutoff, cbCutoff, coordMap, boundaryMargin) {
     const cliaCount = clisCountAB + clisCountBA;
     const ilia = Math.sqrt(liaCount * cliaCount);
     const ilisa = ilis * ilia;
-    const ipSAE = calcIpSAE(monPae, ri.start - 1, ri.end, rj.start - 1, rj.end, paeCutoff);
+
 
     return {
         ri, rj,
-        iLIS: ilis, iLIA: ilia, iLISA: ilisa, ipSAE, LIS: lis, cLIS: clis,
+        iLIS: ilis, iLIA: ilia, iLISA: ilisa, LIS: lis, cLIS: clis,
         lirI, lirJ, clirI, clirJ,
         lenI: ri.end - ri.start + 1,
         lenJ: rj.end - rj.start + 1,
@@ -1772,7 +1737,7 @@ function displayResults(validRegions) {
     for (const v of monPairResults) {
         if (v.iLIS === 0) continue; // skip non-interacting pairs
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${v.ri.name} (${v.ri.start}-${v.ri.end}) &mdash; ${v.rj.name} (${v.rj.start}-${v.rj.end})</td><td>${v.iLIS.toFixed(3)}</td><td>${v.iLIA.toFixed(1)}</td><td>${v.iLISA.toFixed(1)}</td><td>${v.ipSAE.toFixed(3)}</td><td>${v.LIS.toFixed(3)}</td><td>${v.cLIS.toFixed(3)}</td><td>${v.lirI.size} / ${v.lirJ.size}</td><td>${v.clirI.size} / ${v.clirJ.size}</td>`;
+        tr.innerHTML = `<td>${v.ri.name} (${v.ri.start}-${v.ri.end}) &mdash; ${v.rj.name} (${v.rj.start}-${v.rj.end})</td><td>${v.iLIS.toFixed(3)}</td><td>${v.iLIA.toFixed(1)}</td><td>${v.iLISA.toFixed(1)}</td><td>${v.LIS.toFixed(3)}</td><td>${v.cLIS.toFixed(3)}</td><td>${v.lirI.size} / ${v.lirJ.size}</td><td>${v.clirI.size} / ${v.clirJ.size}</td>`;
         tbody.appendChild(tr);
     }
 
@@ -1939,12 +1904,12 @@ function generateAndShowScript(validRegions) {
 
 function downloadCSV() {
     if (!monPairResults.length) return;
-    const header = 'name,model,protein_A,protein_B,chain_A,chain_B,iLIS,iLIA,iLISA,ipSAE,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
+    const header = 'name,model,protein_A,protein_B,chain_A,chain_B,iLIS,iLIA,iLISA,LIS,cLIS,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const rows = [header];
     for (const v of monPairResults) {
         rows.push([
             monUniprotId, 'monomer', v.ri.name, v.rj.name, v.ri.name, v.rj.name,
-            v.iLIS.toFixed(6), v.iLIA.toFixed(1), v.iLISA.toFixed(1), v.ipSAE.toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
+            v.iLIS.toFixed(6), v.iLIA.toFixed(1), v.iLISA.toFixed(1), v.LIS.toFixed(6), v.cLIS.toFixed(6),
             '', '', '',
             v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
             v.lenI, v.lenJ,

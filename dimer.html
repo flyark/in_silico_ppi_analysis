@@ -388,7 +388,7 @@
                 </ol>
             </div>
             <div>
-                <h4 style="font-size:0.9rem; color:#1a5276; margin-bottom:0.5rem;">Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS</a>)</h4>
+                <h4 style="font-size:0.9rem; color:#1a5276; margin-bottom:0.5rem;">AFM-LIS Metrics (<a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">Kim et al. 2024</a>)</h4>
                 <table style="font-size:0.85rem;">
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>iLIS</strong></td><td style="padding:0.25rem 0; color:#555;">integrated LIS &mdash; &radic;(LIS &times; cLIS)</td></tr>
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>iLIA</strong></td><td style="padding:0.25rem 0; color:#555;">integrated LIA &mdash; &radic;(LIA &times; cLIA), geometric mean of interface area counts</td></tr>
@@ -397,7 +397,11 @@
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>cLIS</strong></td><td style="padding:0.25rem 0; color:#555;">contact-filtered LIS &mdash; restricted to direct contacts</td></tr>
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>LIR</strong></td><td style="padding:0.25rem 0; color:#555;">Local Interaction Residues (PAE &le; 12 &Aring;)</td></tr>
                     <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>cLIR</strong></td><td style="padding:0.25rem 0; color:#555;">contact-filtered LIR (PAE &le; 12 &Aring; &amp; C&beta; &le; 8 &Aring;)</td></tr>
-                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>ipTM</strong></td><td style="padding:0.25rem 0; color:#555;">interface predicted TM-score</td></tr>
+                </table>
+                <h4 style="font-size:0.9rem; color:#1a5276; margin-top:0.8rem; margin-bottom:0.5rem;">Confidence Metrics (from AlphaFold DB)</h4>
+                <table style="font-size:0.85rem;">
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>ipTM</strong></td><td style="padding:0.25rem 0; color:#555;">interface predicted TM-score &mdash; global interface confidence from the prediction model</td></tr>
+                    <tr><td style="padding:0.25rem 0.5rem 0.25rem 0; vertical-align:top; color:#555;"><strong>ipSAE</strong></td><td style="padding:0.25rem 0; color:#555;">interface predicted Squared Aligned Error (<a href="https://www.biorxiv.org/content/10.1101/2025.02.10.637595" target="_blank" style="color:#2471A3;">Dunbrack, 2025</a>) &mdash; improved interface score derived from PAE</td></tr>
                 </table>
                 <p style="font-size:0.78rem; color:#888; margin-top:0.4rem; line-height:1.4;">PAE (Predicted Aligned Error) measures how confidently the model predicts the relative position of two residues &mdash; lower values indicate higher confidence.</p>
                 <h4 style="font-size:0.9rem; color:#1a5276; margin-top:0.8rem; margin-bottom:0.5rem;">References</h4>
