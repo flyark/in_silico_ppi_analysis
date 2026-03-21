@@ -1815,16 +1815,32 @@ async function init() {
 
     // Apply illustrative style AFTER loading
     setTimeout(function() {
-        if (viewer.plugin && viewer.plugin.canvas3d) {
+        try {
+            if (viewer.plugin.managers && viewer.plugin.managers.canvas3dContext) {
+                viewer.plugin.managers.canvas3dContext.setProps({ style: { name: 'illustrative' } });
+            }
+        } catch(e1) {}
+        try {
             var c3d = viewer.plugin.canvas3d;
-            c3d.setProps({
-                postprocessing: {
-                    occlusion: { name: 'on', params: { multiScale: { name: 'off', params: {} }, radius: 5, bias: 0.8, blurKernelSize: 15, resolutionScale: 1, color: 0x000000 } },
-                    outline: { name: 'on', params: { scale: 1, threshold: 0.33, color: 0x000000, includeTransparent: true } },
-                },
-                renderer: { ...c3d.props.renderer, style: { name: 'flat-shaded', params: {} } },
-            });
-        }
+            if (c3d) {
+                var rp = Object.assign({}, c3d.props.renderer);
+                rp.style = { name: 'flat-shaded', params: {} };
+                c3d.setProps({
+                    renderer: rp,
+                    postprocessing: {
+                        occlusion: { name: 'on', params: { multiScale: { name: 'off', params: {} }, radius: 5, bias: 0.8, blurKernelSize: 15, resolutionScale: 1, color: 0x000000 } },
+                        outline: { name: 'on', params: { scale: 1, threshold: 0.33, color: 0x000000, includeTransparent: true } },
+                    },
+                });
+                c3d.setProps({
+                    renderer: Object.assign({}, c3d.props.renderer, {
+                        lightIntensity: 0,
+                        ambientIntensity: 1,
+                        style: { name: 'flat-shaded', params: {} }
+                    })
+                });
+            }
+        } catch(e2) { console.warn('Illustrative style error:', e2); }
     }, 2000);
 }
 init().catch(function(e) { console.error('Mol* error:', e); });
