@@ -44,6 +44,8 @@
         .btn-primary { background: #2471A3; color: white; margin-top: 0.8rem; }
         .btn-primary:hover { background: #1a5276; }
         .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+        .example-btn { background: white; color: #2471A3; border: 1px solid #ccc; border-radius: 6px; padding: 0.3rem 0.7rem; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+        .example-btn:hover { background: #eaf2f8; border-color: #2471A3; }
         .btn-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
         .btn-download { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 2px solid; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
         .btn-download.cxc { background: #2471A3; color: white; border-color: #2471A3; }
@@ -210,11 +212,11 @@
             <div style="margin-top:0.8rem;">
                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                     <span style="color:#888; font-size:0.82rem;">p53&ndash;MDM2 examples:</span>
-                    <button onclick="loadExample('alphafold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">AlphaFold3</button>
-                    <button onclick="loadExample('colabfold')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">ColabFold</button>
-                    <button onclick="loadExample('boltz2')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Boltz-2</button>
-                    <button onclick="loadExample('chai-1')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Chai-1</button>
-                    <button onclick="loadExample('openfold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">OpenFold3</button>
+                    <button onclick="loadExample('alphafold3')" class="example-btn">AlphaFold3</button>
+                    <button onclick="loadExample('colabfold')" class="example-btn">ColabFold</button>
+                    <button onclick="loadExample('boltz2')" class="example-btn">Boltz-2</button>
+                    <button onclick="loadExample('chai-1')" class="example-btn">Chai-1</button>
+                    <button onclick="loadExample('openfold3')" class="example-btn">OpenFold3</button>
                 </div>
                 <div style="font-size:0.72rem; color:#aaa; margin-top:0.3rem;">AlphaFold3 predicted via <a href="https://alphafoldserver.com" target="_blank" style="color:#aaa;">AlphaFold Server</a>. ColabFold, Boltz-2, Chai-1, and OpenFold3 predicted via <a href="https://www.tamarind.bio" target="_blank" style="color:#aaa;">Tamarind Bio</a>.</div>
             </div>
