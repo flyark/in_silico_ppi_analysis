@@ -207,7 +207,14 @@
         </div>
         <div class="btn-row">
             <button class="btn btn-primary" id="btn-process" onclick="processFiles()" disabled>Process</button>
-            <button class="btn" onclick="loadExample()" style="background:white; color:#2471A3; border:2px solid #ccc; margin-top:0.8rem;">Example: Fly Chip &mdash; Apterous (AlphaFold3)</button>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.8rem;">
+                <span style="color:#888; font-size:0.82rem; align-self:center;">p53–MDM2 examples:</span>
+                <button onclick="loadExample('alphafold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">AlphaFold3</button>
+                <button onclick="loadExample('colabfold')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">ColabFold</button>
+                <button onclick="loadExample('boltz2')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Boltz-2</button>
+                <button onclick="loadExample('chai-1')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">Chai-1</button>
+                <button onclick="loadExample('openfold3')" style="background:white; color:#2471A3; border:1px solid #ccc; border-radius:6px; padding:0.3rem 0.7rem; font-size:0.82rem; cursor:pointer;">OpenFold3</button>
+            </div>
         </div>
         <div class="status" id="status"></div>
     </div>
@@ -576,24 +583,27 @@ function parseNpy(buffer) {
 
 // ============================================================================
 // DROP ZONE
-async function loadExample() {
-    setStatus('Downloading example (Fly Chip \u2014 Apterous, AlphaFold3)...', 'loading');
+const EXAMPLES = {
+    'alphafold3': { file: 'alphafold3_p53_mdm2.zip', label: 'p53–MDM2 (AlphaFold3)', size: '5 MB' },
+    'colabfold':  { file: 'colabfold_p53_mdm2.zip',  label: 'p53–MDM2 (ColabFold)',  size: '8 MB' },
+    'boltz2':     { file: 'boltz2_p53_mdm2.zip',     label: 'p53–MDM2 (Boltz-2)',    size: '26 MB' },
+    'chai-1':     { file: 'chai-1_p53_mdm2.zip',     label: 'p53–MDM2 (Chai-1)',     size: '63 MB' },
+    'openfold3':  { file: 'openfold3_p53_mdm2.zip',  label: 'p53–MDM2 (OpenFold3)',  size: '33 MB' },
+};
+
+async function loadExample(platform) {
+    const ex = EXAMPLES[platform];
+    if (!ex) return;
+    setStatus(`Downloading ${ex.label} (${ex.size})...`, 'loading');
     try {
-        // Use GitHub Pages URL when running from file:// or if relative fetch fails
-        const localUrl = 'examples/fold_chi_ap_example.zip';
-        const remoteUrl = 'https://flyark.github.io/in_silico_ppi_analysis/examples/fold_chi_ap_example.zip';
+        const localUrl = `examples/${ex.file}`;
+        const remoteUrl = `https://flyark.github.io/in_silico_ppi_analysis/examples/${ex.file}`;
         let resp;
-        try {
-            resp = await fetch(localUrl);
-        } catch (e) {
-            resp = null;
-        }
-        if (!resp || !resp.ok) {
-            resp = await fetch(remoteUrl);
-        }
+        try { resp = await fetch(localUrl); } catch (e) { resp = null; }
+        if (!resp || !resp.ok) resp = await fetch(remoteUrl);
         if (!resp.ok) throw new Error('Failed to download example file');
         const blob = await resp.blob();
-        const file = new File([blob], 'fold_chi_ap_example.zip', { type: 'application/zip' });
+        const file = new File([blob], ex.file, { type: 'application/zip' });
         await handleInputFiles([file]);
         processFiles();
     } catch (e) {
