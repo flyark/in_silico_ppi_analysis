@@ -2416,16 +2416,6 @@ function buildColorComponents(v) {
 
 function buildMolstarPage(structData, fmt, colorComponents) {
     const structureChildren = [];
-    // Add full polymer as hidden non-LIR (users can toggle via eye icon in Mol* panel)
-    structureChildren.push({
-        kind: 'component',
-        params: { selector: 'polymer' },
-        children: [{
-            kind: 'representation',
-            params: { type: 'cartoon' },
-            children: [{ kind: 'color', params: { color: 'white' } }]
-        }]
-    });
     for (const comp of colorComponents) {
         const selector = comp.ranges.map(r => ({
             label_asym_id: comp.chain,
@@ -2577,15 +2567,27 @@ function applyPreset(la, ca, lb, cb, el) {
     const s = document.getElementById('color-strip').children;
     s[0].style.background = la; s[1].style.background = ca; s[2].style.background = cb; s[3].style.background = lb;
     if (el) { document.querySelectorAll('.preset-chip').forEach(p => p.classList.remove('active')); el.classList.add('active'); }
-    // Re-render script and 3D viewer if results are visible
-    if (dimerPairResult) { generateAndDisplayScript(); updateViewer3d(); }
+    // Re-render all visualizations if results are visible
+    if (dimerPairResult) {
+        generateAndDisplayScript();
+        buildDimerSequenceViewer();
+        buildDimerContactMap();
+        buildChordDiagram();
+        updateViewer3d();
+    }
 }
 
 function applyCxcPreset(mode, el) {
     cxcColorMode = mode;
     document.querySelectorAll('.preset-chip').forEach(p => p.classList.remove('active'));
     if (el) el.classList.add('active');
-    if (dimerPairResult) { generateAndDisplayScript(); updateViewer3d(); }
+    if (dimerPairResult) {
+        generateAndDisplayScript();
+        buildDimerSequenceViewer();
+        buildDimerContactMap();
+        buildChordDiagram();
+        updateViewer3d();
+    }
 }
 
 function swapColors() {

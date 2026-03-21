@@ -1935,16 +1935,6 @@ function toRanges(positions) {
 
 function buildMolstarPage(structData, fmt, colorComponents) {
     const structureChildren = [];
-    // Add full polymer as hidden non-LIR (users can toggle via eye icon in Mol* panel)
-    structureChildren.push({
-        kind: 'component',
-        params: { selector: 'polymer' },
-        children: [{
-            kind: 'representation',
-            params: { type: 'cartoon' },
-            children: [{ kind: 'color', params: { color: 'white' } }]
-        }]
-    });
     for (const comp of colorComponents) {
         const selector = comp.ranges.map(r => ({
             label_asym_id: comp.chain,
