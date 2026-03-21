@@ -2160,9 +2160,10 @@ function buildColorComponents(v) {
     const mode = (!uniState.cxcColorMode && nc > 2) ? 'bychain' : uniState.cxcColorMode;
     const components = [];
     const types = uniState.chainTypes || [];
-    const isIonChain = (ch) => types[uniState.chainNames?.indexOf(ch)] === 'ion';
+    const isNonProteinChain = (ch) => { const t = types[uniState.chainNames?.indexOf(ch)]; return t === 'ion' || t === 'rna' || t === 'dna'; };
     const addComp = (chain, ranges, color) => {
-        components.push({ chain, ranges, color, isIon: isIonChain(chain) });
+        const t = types[uniState.chainNames?.indexOf(chain)];
+        components.push({ chain, ranges, color, isIon: t === 'ion' });
     };
 
     const lirIFilled = fillGaps(v.lirI);
@@ -2283,15 +2284,23 @@ function buildMolstarPage(structData, fmt, colorComponents) {
     // Non-LIR residues have no component = hidden
     const structureChildren = [];
     for (const comp of colorComponents) {
-        const selector = comp.ranges.map(r => ({
-            label_asym_id: comp.chain,
-            beg_label_seq_id: r.start,
-            end_label_seq_id: r.end,
-        }));
-        const repType = comp.isIon ? 'ball-and-stick' : 'cartoon';
+        let selectorParams, repType;
+        if (comp.isIon) {
+            // Ion: select entire chain (label_seq_id is '.' in CIF, so range selector won't work)
+            selectorParams = { selector: { label_asym_id: comp.chain } };
+            repType = 'ball_and_stick';
+        } else {
+            const selector = comp.ranges.map(r => ({
+                label_asym_id: comp.chain,
+                beg_label_seq_id: r.start,
+                end_label_seq_id: r.end,
+            }));
+            selectorParams = { selector: selector.length === 1 ? selector[0] : selector };
+            repType = 'cartoon';
+        }
         structureChildren.push({
             kind: 'component',
-            params: { selector: selector.length === 1 ? selector[0] : selector },
+            params: selectorParams,
             children: [{
                 kind: 'representation',
                 params: { type: repType },
@@ -2506,6 +2515,8 @@ function generateCxc(v, structFilename, colors) {
     const lirJSpec = resSpec(fillGaps(v.lirJ), v.cj);
     const clirISpec = resSpec(v.clirI, v.ci);
     const clirJSpec = resSpec(v.clirJ, v.cj);
+    const types = uniState.chainTypes || [];
+    const chainType = (ch) => types[uniState.chainNames?.indexOf(ch)] || 'protein';
 
     const paeCut = document.getElementById('pae-cutoff')?.value || '12';
     const cbCut = document.getElementById('cb-cutoff')?.value || '8';
@@ -2538,9 +2549,15 @@ function generateCxc(v, structFilename, colors) {
         '# \u2500\u2500 Show LIR regions \u2500\u2500',
         `# LIR ${v.ci}: ${v.lirI.size} residues`,
     );
-    if (lirISpec) lines.push(`show #1${lirISpec} cartoons`);
+    const showChain = (spec, ch) => {
+        const ct = chainType(ch);
+        if (ct === 'ion') return [`show #1/${ch} atoms`];
+        if (ct === 'rna' || ct === 'dna') return [`show #1${spec} cartoons`, `show #1${spec} atoms`];
+        return [`show #1${spec} cartoons`];
+    };
+    if (lirISpec) lines.push(...showChain(lirISpec, v.ci));
     lines.push('', `# LIR ${v.cj}: ${v.lirJ.size} residues`);
-    if (lirJSpec) lines.push(`show #1${lirJSpec} cartoons`);
+    if (lirJSpec) lines.push(...showChain(lirJSpec, v.cj));
     lines.push('', '# \u2500\u2500 Highlight cLIR \u2500\u2500');
     if (!uniState.cxcColorMode && v.clirI.size > 0) {
         lines.push(`# cLIR ${v.ci}: ${v.clirI.size} residues`);
@@ -2911,12 +2928,25 @@ function downloadAllChainsCxc() {
         '# \u2500\u2500 Show only LIR regions per chain \u2500\u2500',
     ];
 
-    for (const name of uniState.chainNames) {
+    const types = uniState.chainTypes || [];
+    for (let ci = 0; ci < uniState.chainNames.length; ci++) {
+        const name = uniState.chainNames[ci];
         const lir = allLIR[name];
-        if (lir.size === 0) continue;
-        const spec = resSpec(fillGaps(lir), name);
-        lines.push(`# Chain ${name}: ${lir.size} LIR residues`);
-        lines.push(`show #1${spec} cartoons`);
+        const ct = types[ci] || 'protein';
+        if (lir.size === 0 && ct === 'protein') continue;
+        if (ct === 'ion') {
+            lines.push(`# Chain ${name}: ion`);
+            lines.push(`show #1/${name} atoms`);
+        } else if (ct === 'rna' || ct === 'dna') {
+            const spec = lir.size > 0 ? resSpec(fillGaps(lir), name) : `/${name}`;
+            lines.push(`# Chain ${name}: ${ct}, ${lir.size} LIR residues`);
+            lines.push(`show #1${spec} cartoons`);
+            lines.push(`show #1${spec} atoms`);
+        } else {
+            const spec = resSpec(fillGaps(lir), name);
+            lines.push(`# Chain ${name}: ${lir.size} LIR residues`);
+            lines.push(`show #1${spec} cartoons`);
+        }
     }
 
     lines.push('', '# \u2500\u2500 Final \u2500\u2500', 'view', 'lighting soft depthCue true', '');
