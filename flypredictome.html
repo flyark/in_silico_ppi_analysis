@@ -1747,26 +1747,30 @@ async function queryMIST() {
             for (const [type, records] of Object.entries(byType)) {
                 for (const r of records) {
                     const rankColor = rankColors[r.Rank] || '#999';
-                    const evidence = [r.Exp_Direct, r.Exp_Indirect].filter(Boolean).join(', ') || '\u2014';
-                    const sources = r.Source_databases || '\u2014';
-                    // Build PMID links
+                    // Format evidence codes as separate lines
+                    const evParts = [r.Exp_Direct, r.Exp_Indirect].filter(Boolean).join(';').split(';').filter(Boolean);
+                    const evidenceHtml = evParts.length > 0 ? evParts.map(e => esc(e.trim())).join('<br>') : '\u2014';
+                    const sources = (r.Source_databases || '\u2014').split(';').join(', ');
+                    // Build PMID links — one per line
                     let pmidHtml = '\u2014';
                     if (r.Reference) {
                         const pmids = String(r.Reference).split(';').map(p => p.trim()).filter(Boolean);
-                        pmidHtml = pmids.map(p =>
+                        const count = pmids.length;
+                        pmidHtml = '<span style="color:#888; font-size:0.72rem;">(' + count + ')</span> ';
+                        pmidHtml += pmids.map(p =>
                             r.Reference_type?.includes('PMID')
                                 ? '<a href="https://pubmed.ncbi.nlm.nih.gov/' + p + '/" target="_blank" style="color:#2471A3;">' + p + '</a>'
                                 : p
-                        ).join(', ');
+                        ).join(' ');
                     }
-                    const interologNote = r.TaxID_interolog ? ' <span style="color:#999; font-size:0.75rem;">(from taxid:' + r.TaxID_interolog + ')</span>' : '';
+                    const interologNote = r.TaxID_interolog ? ' <span style="color:#999; font-size:0.72rem;">(taxid:' + r.TaxID_interolog + ')</span>' : '';
 
                     html += '<tr style="border-top:1px solid #eee;">';
-                    html += '<td style="padding:0.4rem 0.6rem;">' + typeLabels[type] + interologNote + '</td>';
+                    html += '<td style="padding:0.4rem 0.6rem; white-space:nowrap;">' + typeLabels[type] + interologNote + '</td>';
                     html += '<td style="padding:0.4rem 0.6rem; color:' + rankColor + '; font-weight:600;">' + (r.Rank || '\u2014') + '</td>';
-                    html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem; color:#666;">' + esc(evidence) + '</td>';
+                    html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem; color:#666;">' + evidenceHtml + '</td>';
                     html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem; color:#666;">' + esc(sources) + '</td>';
-                    html += '<td style="padding:0.4rem 0.6rem;">' + pmidHtml + '</td>';
+                    html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem; word-break:break-all;">' + pmidHtml + '</td>';
                     html += '</tr>';
                 }
             }
