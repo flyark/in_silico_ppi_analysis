@@ -756,11 +756,25 @@ async function searchGene() {
 
         statusEl.textContent = 'Found: ' + geneSymbol + ' (' + fbgnId + '). Loading interaction partners...';
 
-        // Step 2: Fetch famdb_summary to get all partners
+        // Step 2: Fetch protein info to get canonical lengths for partial detection
+        let canonicalLengths = {};
+        try {
+            const protInfoText = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/get_protein_info/' + fbgnId);
+            if (protInfoText) {
+                const protInfo = JSON.parse(protInfoText);
+                // Get max sequence length across all isoforms as canonical
+                for (const iso of protInfo) {
+                    const len = parseInt(iso.seq?.len) || 0;
+                    if (len > (canonicalLengths[fbgnId] || 0)) canonicalLengths[fbgnId] = len;
+                }
+            }
+        } catch (e) { /* non-critical */ }
+
+        // Step 3: Fetch famdb_summary to get all partners
         const summaryResp = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/famdb_summary/' + fbgnId + '/');
         if (!summaryResp) throw new Error('Could not fetch interaction data.');
 
-        // Step 3: Parse the HTML table
+        // Step 4: Parse the HTML table
         const partners = parseFamdbSummary(summaryResp, fbgnId, geneSymbol);
 
         if (partners.length === 0) {
@@ -769,10 +783,33 @@ async function searchGene() {
             return;
         }
 
+        // Step 5: Detect partial predictions by comparing predicted length vs canonical
+        const queryCanonical = canonicalLengths[fbgnId] || 0;
+        for (const p of partners) {
+            // Query protein length in this prediction
+            const queryLen = (p.fbgn1 === fbgnId) ? p.lenA : p.lenB;
+            const partnerLen = (p.fbgn1 === fbgnId) ? p.lenB : p.lenA;
+            p.isQueryPartial = queryCanonical > 0 && queryLen < queryCanonical * 0.9;
+            // Partner partial detection: check if partner length is significantly shorter than any prediction of it
+            // We approximate by comparing against the max length seen for this partner across all rows
+            p.queryLen = queryLen;
+            p.partnerLen = partnerLen;
+        }
+        // Detect partner partial: find max length per partner FBgn across all rows
+        const partnerMaxLen = {};
+        for (const p of partners) {
+            const key = p.partnerFbgn;
+            if (!partnerMaxLen[key] || p.partnerLen > partnerMaxLen[key]) partnerMaxLen[key] = p.partnerLen;
+        }
+        for (const p of partners) {
+            const maxLen = partnerMaxLen[p.partnerFbgn] || p.partnerLen;
+            p.isPartnerPartial = p.partnerLen < maxLen * 0.9;
+        }
+
         statusEl.textContent = geneSymbol + ' (' + fbgnId + '): ' + partners.length + ' predicted interaction partners. Click a row to analyze.';
         statusEl.style.color = '#27ae60';
 
-        // Step 4: Display partner table
+        // Step 6: Display partner table
         displayPartnerTable(partners, geneSymbol);
 
     } catch (e) {
@@ -949,8 +986,9 @@ function filterPartnerTable() {
         // Color code iLIS
         const ilisColor = p.ilisBest >= 0.223 ? '#27ae60' : p.ilisBest > 0 ? '#e67e22' : '#999';
 
+        const partialTag = p.isPartnerPartial ? ' <span style="color:#c0392b; font-size:0.7rem; font-weight:600;">(Partial)</span>' : '';
         tr.innerHTML =
-            '<td><strong>' + esc(p.partnerSymbol) + '</strong> <span style="color:#999; font-size:0.72rem;">' + esc(p.partnerFbgn) + '</span></td>' +
+            '<td><strong>' + esc(p.partnerSymbol) + '</strong> <span style="color:#999; font-size:0.72rem;">' + esc(p.partnerFbgn) + '</span>' + partialTag + '</td>' +
             '<td>' + p.ilisAvg.toFixed(3) + '</td>' +
             '<td style="color:' + ilisColor + '; font-weight:600;">' + p.ilisBest.toFixed(3) + '</td>' +
             '<td>' + p.iptmAvg.toFixed(2) + '</td>' +
