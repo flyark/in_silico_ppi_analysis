@@ -951,12 +951,15 @@ function parseFamdbSummary(html, queryFbgn, querySymbol) {
             const clisAvg = parseFloat(cells[20]?.textContent?.trim()) || 0;
             const clirAvg = parseFloat(cells[24]?.textContent?.trim()) || 0;
             const iptmAvg = parseFloat(cells[32]?.textContent?.trim()) || 0;
+            const iptmBest = parseFloat(cells[33]?.textContent?.trim()) || 0;
             const lenA = parseInt(cells[36]?.textContent?.trim()) || 0;
             const lenB = parseInt(cells[37]?.textContent?.trim()) || 0;
             const dirName = cells[38]?.textContent?.trim() || '';
 
             const mistPPI = parseInt(cells[39]?.textContent?.trim()) || 0;
             const mistGI = parseInt(cells[40]?.textContent?.trim()) || 0;
+            const mistInterologPPI = parseInt(cells[41]?.textContent?.trim()) || 0;
+            const mistInterologGI = parseInt(cells[42]?.textContent?.trim()) || 0;
 
             // Determine which is the partner
             const isQuery1 = (fbgn1 === queryFbgn || sym1.toLowerCase() === querySymbol.toLowerCase());
@@ -977,9 +980,9 @@ function parseFamdbSummary(html, queryFbgn, querySymbol) {
             partners.push({
                 sym1, sym2, fbgn1, fbgn2, ncbi1, ncbi2,
                 partnerSymbol, partnerFbgn, partnerNcbi,
-                ilisAvg, ilisBest, lisAvg, clisAvg, iptmAvg,
+                ilisAvg, ilisBest, lisAvg, clisAvg, iptmAvg, iptmBest,
                 lirAvg, clirAvg, liaAvg, lenA, lenB,
-                mistPPI, mistGI,
+                mistPPI, mistGI, mistInterologPPI, mistInterologGI,
                 detailUrl, dirName
             });
         } catch (e) {
@@ -1035,12 +1038,12 @@ function displayPartnerTable(partners, querySymbol) {
                 '<th>Partner</th>' +
                 '<th>iLIS (avg)</th>' +
                 '<th>iLIS (best)</th>' +
-                '<th>ipTM (avg)</th>' +
-                '<th>LIR (avg)</th>' +
-                '<th>cLIR (avg)</th>' +
+                '<th>ipTM (best)</th>' +
                 '<th>Len A/B</th>' +
-                '<th>MIST PPI</th>' +
-                '<th>MIST GI</th>' +
+                '<th>PPI</th>' +
+                '<th>GI</th>' +
+                '<th>Interolog PPI</th>' +
+                '<th>Interolog GI</th>' +
             '</tr>' +
         '</thead>' +
         '<tbody id="partner-tbody"></tbody>';
@@ -1072,7 +1075,7 @@ function filterPartnerTable() {
         if (positiveOnly && p.ilisBest <= 0) continue;
         if (thresholdOnly && p.ilisBest < 0.223) continue;
         if (fullLengthOnly && (p.isPartnerPartial || p.isQueryPartial)) continue;
-        if (mistOnly && p.mistPPI === 0 && p.mistGI === 0) continue;
+        if (mistOnly && p.mistPPI === 0 && p.mistGI === 0 && p.mistInterologPPI === 0 && p.mistInterologGI === 0) continue;
 
         count++;
         const tr = document.createElement('tr');
@@ -1087,12 +1090,12 @@ function filterPartnerTable() {
             '<td><strong>' + esc(p.partnerSymbol) + '</strong> <span style="color:#999; font-size:0.72rem;">' + esc(p.partnerFbgn) + '</span>' + partialTag + '</td>' +
             '<td>' + p.ilisAvg.toFixed(3) + '</td>' +
             '<td style="color:' + ilisColor + '; font-weight:600;">' + p.ilisBest.toFixed(3) + '</td>' +
-            '<td>' + p.iptmAvg.toFixed(2) + '</td>' +
-            '<td>' + Math.round(p.lirAvg) + '</td>' +
-            '<td>' + Math.round(p.clirAvg) + '</td>' +
+            '<td>' + p.iptmBest.toFixed(2) + '</td>' +
             '<td>' + p.lenA + ' / ' + p.lenB + '</td>' +
             '<td>' + (p.mistPPI || '\u2014') + '</td>' +
-            '<td>' + (p.mistGI || '\u2014') + '</td>';
+            '<td>' + (p.mistGI || '\u2014') + '</td>' +
+            '<td>' + (p.mistInterologPPI || '\u2014') + '</td>' +
+            '<td>' + (p.mistInterologGI || '\u2014') + '</td>';
 
         if (p.detailUrl) {
             tr.addEventListener('click', ((url) => (e) => {
