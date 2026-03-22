@@ -637,6 +637,7 @@ async function fetchData() {
     document.getElementById('results').classList.remove('active');
     document.getElementById('regions-card').style.display = 'none';
     document.getElementById('score-matrix-inline').style.display = 'none';
+    document.getElementById('monomer-maps-flex').innerHTML = '';
     // Reset domain data and Mol* viewer
     monDomains = [];
     if (viewer3dBlobUrl) { URL.revokeObjectURL(viewer3dBlobUrl); viewer3dBlobUrl = null; }
@@ -876,7 +877,77 @@ function resetDefaults() {
 
 function detectAndCalculate() {
     detectRegions();
+    // Always draw PAE/LIS/cLIS maps even with <2 regions
+    drawMonomerMaps();
     if (monRegions.length >= 2) calculate();
+}
+
+function drawMonomerMaps() {
+    if (!monPae) return;
+    const container = document.getElementById('monomer-maps-flex');
+    container.innerHTML = '';
+    const n = monPae.length;
+    const regions = monRegions.filter(r => {
+        const s = parseInt(r.start), e = parseInt(r.end);
+        return !isNaN(s) && !isNaN(e) && s >= 1 && e <= monProteinLen;
+    }).map(r => ({ name: r.name, start: parseInt(r.start), end: parseInt(r.end), color: r.color }));
+    const paeCutoff = parseFloat(document.getElementById('pae-cutoff')?.value) || 12;
+    const cbCutoff = parseFloat(document.getElementById('cb-cutoff')?.value) || 8;
+    // Build contact map
+    const coordMap = new Map();
+    for (const c of monCoords) coordMap.set(c.resnum, c);
+
+    // PAE map
+    const paeItem = document.createElement('div');
+    paeItem.className = 'map-item';
+    paeItem.innerHTML = '<div class="map-label">PAE</div>';
+    const paeCanvas = document.createElement('canvas');
+    paeItem.appendChild(paeCanvas);
+    container.appendChild(paeItem);
+    drawMapCanvasSingle(paeCanvas, monPae, n, bwrColor, 0, 30, regions);
+
+    // LIS map
+    const lisMap = [];
+    for (let i = 0; i < n; i++) {
+        const row = new Float32Array(n);
+        for (let j = 0; j < n; j++) {
+            const avg = (monPae[i][j] + monPae[j][i]) / 2;
+            row[j] = avg < paeCutoff ? 1 - avg / paeCutoff : 0;
+        }
+        lisMap.push(row);
+    }
+    const lisItem = document.createElement('div');
+    lisItem.className = 'map-item';
+    lisItem.innerHTML = '<div class="map-label">LIS</div>';
+    const lisCanvas = document.createElement('canvas');
+    lisItem.appendChild(lisCanvas);
+    container.appendChild(lisItem);
+    drawMapCanvasSingle(lisCanvas, lisMap, n, bluesColor, 0, 1, regions);
+
+    // cLIS map
+    const clisMap = [];
+    for (let i = 0; i < n; i++) {
+        const row = new Float32Array(n);
+        for (let j = 0; j < n; j++) {
+            const avg = (monPae[i][j] + monPae[j][i]) / 2;
+            if (avg >= paeCutoff) { row[j] = 0; continue; }
+            const ci = coordMap.get(i + 1), cj = coordMap.get(j + 1);
+            if (ci && cj) {
+                const dx = ci.x - cj.x, dy = ci.y - cj.y, dz = ci.z - cj.z;
+                if (Math.sqrt(dx*dx + dy*dy + dz*dz) < cbCutoff) {
+                    row[j] = 1 - avg / paeCutoff;
+                }
+            }
+        }
+        clisMap.push(row);
+    }
+    const clisItem = document.createElement('div');
+    clisItem.className = 'map-item';
+    clisItem.innerHTML = '<div class="map-label">cLIS</div>';
+    const clisCanvas = document.createElement('canvas');
+    clisItem.appendChild(clisCanvas);
+    container.appendChild(clisItem);
+    drawMapCanvasSingle(clisCanvas, clisMap, n, greensColor, 0, 1, regions);
 }
 
 function renderRegions() {
