@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVIA - Human Kinase-TF Interactome</title>
+    <title><span style="color:#2471A3;">LIVIA</span> &mdash; Human Kinase-TF Interactome</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scrollbar-gutter: stable; } * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f7fa;
             color: #333;
             min-height: 100vh;
         }
-        .header { background: white; color: #1a5276; padding: 2rem 2rem 1.2rem; border-bottom: 1px solid #e8e8e8; }
+        .header { background: white; color: #1a5276; padding: 0.8rem 2rem 0.8rem; border-bottom: 1px solid #e8e8e8; }
         .header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.15rem; color: #1a5276; letter-spacing: -0.02em; }
         .header p { font-size: 0.92rem; color: #888; margin-bottom: 0.8rem; font-weight: 400; }
         .header-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
@@ -32,7 +32,7 @@
         }
         .card label {
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #555;
             display: block;
             margin-bottom: 0.4rem;
@@ -48,7 +48,7 @@
             background: #2471A3;
             color: white;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             margin-right: 0.5rem;
             flex-shrink: 0;
         }
@@ -189,7 +189,7 @@
             background: white;
         }
         .fetch-status {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #666;
             min-height: 1.2rem;
             margin-bottom: 0.5rem;
@@ -223,7 +223,7 @@
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             margin-bottom: 1rem;
         }
         .data-table th {
@@ -279,9 +279,9 @@
         .info-box {
             background: #faf8f4;
             border-left: 4px solid #c4a35a;
-            padding: 0.8rem 1rem;
+            padding: 0.5rem 0.8rem;
             border-radius: 0 8px 8px 0;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #1a5276;
             margin-bottom: 1rem;
         }
@@ -304,12 +304,12 @@
             padding-left: 2.3rem;
         }
         .help-col h4 { font-size: 0.9rem; color: #1a5276; margin-bottom: 0.5rem; }
-        .help-col ol { padding-left: 1.2rem; font-size: 0.85rem; color: #555; line-height: 1.7; }
+        .help-col ol { padding-left: 1.2rem; font-size: 0.82rem; color: #555; line-height: 1.7; }
         .help-col a { color: #2471A3; text-decoration: none; }
         .help-col a:hover { text-decoration: underline; }
-        .help-table { font-size: 0.85rem; }
+        .help-table { font-size: 0.82rem; }
         .help-table td { padding: 0.25rem 0.5rem 0.25rem 0; vertical-align: top; color: #555; }
-        .ref-list { list-style: none; padding: 0; font-size: 0.85rem; }
+        .ref-list { list-style: none; padding: 0; font-size: 0.82rem; }
         .ref-list li { margin-bottom: 0.3rem; color: #555; }
         .ref-list a { color: #2471A3; text-decoration: none; font-weight: 600; }
         .ref-list a:hover { text-decoration: underline; }
@@ -408,15 +408,17 @@
 
 <div class="header">
     <div class="container" style="padding:0;">
-        <h1>LIVIA - Human Kinase-TF Interactome</h1>
-        <p>Precomputed PPI predictions for human proteins from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:rgba(255,255,255,0.9);">FlyPredictome</a> ortholog search</p>
+        <h1><span style="color:#2471A3;">LIVIA</span> &mdash; Human Kinase-TF Interactome</h1>
+        <p>Analyze human protein interactions from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:#2471A3;">FlyPredictome</a> ortholog predictions</p>
         <div class="header-links">
             <a href="index.html">Home</a>
             <a href="flypredictome.html">FlyPredictome</a>
+            <a href="human_kinase_tf.html">Human Kinase-TF</a>
             <a href="universal.html">Universal Prediction</a>
             <a href="dimer.html">AFDB Dimer</a>
             <a href="monomer.html">AFDB Monomer Subdomain</a>
             <a href="guide.html">Guide</a>
+        
         </div>
     </div>
 </div>
