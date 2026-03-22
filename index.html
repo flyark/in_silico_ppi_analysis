@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>In silico PPI Analysis Tools</title>
+    <title>LIVIA — Local Interaction VIsualization and Analysis</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
-        .header { background: linear-gradient(135deg, #2471A3, #1a5276); color: white; padding: 1.2rem 2rem 1rem; }
-        .header h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.3rem; }
-        .header p { font-size: 0.9rem; opacity: 0.85; margin-bottom: 0.6rem; }
-        .header-links { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .header-links a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.85rem; padding: 0.25rem 0.6rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; transition: all 0.2s; }
-        .header-links a:hover { background: rgba(255,255,255,0.15); color: white; }
+        .header { background: white; color: #1a5276; padding: 2rem 2rem 1.2rem; border-bottom: 1px solid #e8e8e8; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.15rem; color: #333; letter-spacing: -0.02em; }
+        .header h1 .livia { color: #2471A3; font-weight: 700; }
+        .header h1 .acro { color: #2471A3; }
+        .header .subtitle { font-size: 0.92rem; color: #888; margin-bottom: 0.8rem; font-weight: 400; }
+        .header-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .header-links a { color: #555; text-decoration: none; font-size: 0.82rem; padding: 0.3rem 0.7rem; border: 1px solid #ddd; border-radius: 6px; transition: all 0.2s; background: #f8f9fa; }
+        .header-links a:hover { background: #2471A3; color: white; border-color: #2471A3; }
         .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-        .tool-card { background: white; border-radius: 12px; padding: 1.2rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem; display: flex; gap: 1.2rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; width: 100%; }
+        .tool-card { background: white; border-radius: 12px; padding: 1.2rem 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1rem; display: flex; gap: 1.2rem; align-items: center; text-decoration: none; color: #333; transition: all 0.2s; border: 2px solid transparent; width: 100%; cursor: pointer; }
         .tool-card:hover { border-color: #2471A3; box-shadow: 0 4px 16px rgba(36,113,163,0.15); }
 
         .tool-info h2 { font-size: 1.1rem; color: #1a5276; margin-bottom: 0.2rem; }
@@ -28,15 +30,16 @@
 <body>
 <div class="header">
     <div class="container" style="padding:0;">
-        <h1><em>In silico</em> PPI Analysis Tools</h1>
-        <p>Analyze protein-protein interactions from structure predictions and generate visualization scripts</p>
+        <h1><span class="livia">LIVIA</span> &mdash; <span class="acro">L</span>ocal <span class="acro">I</span>nteraction <span class="acro">VI</span>sualization and <span class="acro">A</span>nalysis</h1>
+        <p class="subtitle">Analyze protein-protein interactions from structure predictions and generate visualization scripts</p>
         <div class="header-links">
             <a href="flypredictome.html">FlyPredictome</a>
+            <a href="human_kinase_tf.html">Human Kinase-TF</a>
             <a href="universal.html">Universal Prediction</a>
             <a href="dimer.html">AFDB Dimer</a>
             <a href="monomer.html">AFDB Monomer Subdomain</a>
             <a href="guide.html">Guide</a>
-            <a href="https://github.com/flyark/in_silico_ppi_analysis" target="_blank">GitHub</a>
+            <a href="https://github.com/flyark/LIVIA" target="_blank">GitHub</a>
         </div>
     </div>
 </div>
@@ -46,28 +49,35 @@
     </div>
     <a class="tool-card" href="flypredictome.html">
         <div class="tool-info">
-            <h2>FlyPredictome Analysis</h2>
+            <h2>FlyPredictome</h2>
             <p>Paste a FlyPredictome URL to automatically fetch interaction data, extract LIR/cLIR residue indices, and generate a ChimeraX .cxc visualization script.</p>
             <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Analyze Drosophila Akt-foxo interaction from FlyPredictome database</p>
         </div>
     </a>
+    <div class="tool-card" onclick="window.location='human_kinase_tf.html'">
+        <div class="tool-info">
+            <h2>Human Kinase-TF Interactome</h2>
+            <p>Search human kinase-transcription factor interactions from FlyPredictome ortholog predictions (<a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" onclick="event.stopPropagation()" style="color:#2471A3;">Kim et al. 2025</a>). Calculate iLIS metrics, view contact maps, and generate ChimeraX scripts.</p>
+            <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Search TP53 or CDK2 to explore predicted human protein interactions</p>
+        </div>
+    </div>
     <a class="tool-card" href="universal.html">
         <div class="tool-info">
-            <h2>Universal Prediction Analysis</h2>
+            <h2>Universal Prediction</h2>
             <p>Upload prediction files from AlphaFold3, AlphaFold2, ColabFold, Boltz, Chai-1, or OpenFold. Calculate AFM-LIS metrics (iLIS, LIS, cLIS), view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
             <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Upload your ColabFold .zip or AlphaFold3 output to get iLIS metrics and a ChimeraX script</p>
         </div>
     </a>
     <a class="tool-card" href="dimer.html">
         <div class="tool-info">
-            <h2>AlphaFold DB Dimer Analysis</h2>
+            <h2>AlphaFold DB Dimer</h2>
             <p>Search the AlphaFold Protein Structure Database for dimer predictions by UniProt ID, calculate iLIS between chains, view PAE/LIS/cLIS maps, and generate ChimeraX scripts.</p>
             <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Search Fiber protein 2 or pp71 to explore predicted dimer interfaces from AlphaFold DB</p>
         </div>
     </a>
     <a class="tool-card" href="monomer.html">
         <div class="tool-info">
-            <h2>AlphaFold DB Monomer Subdomain Analysis</h2>
+            <h2>AlphaFold DB Monomer Subdomain</h2>
             <p>Fetch monomer predictions from the AlphaFold Protein Structure Database by UniProt ID. Auto-detect domains, view PAE/LIS/cLIS maps, and calculate intramolecular iLIS between domains.</p>
             <p style="font-size:0.78rem; color:#999; margin-top:0.2rem;">e.g., Fetch Q8TF76 (Haspin) to analyze intramolecular domain interactions</p>
         </div>
@@ -80,7 +90,7 @@
     </a>
     <div class="links">
         <a href="https://github.com/flyark/AFM-LIS" target="_blank">AFM-LIS</a>
-        <a href="https://github.com/flyark/in_silico_ppi_analysis" target="_blank">GitHub</a>
+        <a href="https://github.com/flyark/LIVIA" target="_blank">GitHub</a>
         <a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank">Kim et al. 2024</a>
         <a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a>
     </div>

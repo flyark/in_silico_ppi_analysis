@@ -1,8 +1,8 @@
-# *In silico* PPI Analysis Tools
+# LIVIA — Local Interaction VIsualization and Analysis
 
-Web-based tools for analyzing protein-protein interactions from structure predictions.
+Browser-based tools for analyzing protein-protein interactions from structure predictions. Supports AlphaFold2, AlphaFold3, ColabFold, Boltz, Chai-1, and OpenFold with automatic platform detection.
 
-**https://flyark.github.io/in_silico_ppi_analysis/**
+**https://flyark.github.io/LIVIA/**
 
 ## References
 

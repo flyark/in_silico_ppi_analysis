@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVIA - FlyPredictome Analysis</title>
+    <title>LIVIA - Human Kinase-TF Interactome</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -408,10 +408,11 @@
 
 <div class="header">
     <div class="container" style="padding:0;">
-        <h1>LIVIA - FlyPredictome Analysis</h1>
-        <p>Generate ChimeraX visualization scripts from FlyPredictome interaction data</p>
+        <h1>LIVIA - Human Kinase-TF Interactome</h1>
+        <p>Precomputed PPI predictions for human proteins from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:rgba(255,255,255,0.9);">FlyPredictome</a> ortholog search</p>
         <div class="header-links">
             <a href="index.html">Home</a>
+            <a href="flypredictome.html">FlyPredictome</a>
             <a href="universal.html">Universal Prediction</a>
             <a href="dimer.html">AFDB Dimer</a>
             <a href="monomer.html">AFDB Monomer Subdomain</a>
@@ -424,8 +425,8 @@
 
     <!-- Input -->
     <div class="card">
-        <div class="step-header"><a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" class="step-link">FlyPredictome</a>&nbsp; Interaction Lookup</div>
-        <div style="font-size:0.8rem; color:#888; margin-bottom:0.6rem;">Precomputed PPI predictions for <em>Drosophila</em> from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:#2471A3;">FlyPredictome</a>. Search by gene name or paste a prediction page URL.</div>
+        <div class="step-header"><a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" class="step-link">FlyPredictome</a>&nbsp; Ortholog Interaction Lookup</div>
+        <div style="font-size:0.8rem; color:#888; margin-bottom:0.6rem;">Precomputed PPI predictions for human (and other species) from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:#2471A3;">FlyPredictome</a> ortholog search. Search by gene name or paste a prediction page URL.</div>
 
         <div class="input-tabs">
             <button class="input-tab active" data-tab="search" onclick="switchTab('search')">Search by Gene</button>
@@ -434,10 +435,21 @@
 
         <!-- Search by Gene panel -->
         <div id="search-panel">
+            <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; align-items:center;">
+                <label style="font-size:0.82rem; color:#555; margin:0;">Species:</label>
+                <select id="species-select" style="padding:0.35rem 0.5rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.82rem; background:white;">
+                    <option value="9606" selected>Human</option>
+                    <option value="10090">Mouse</option>
+                    <option value="10116">Rat</option>
+                    <option value="7955">Zebrafish</option>
+                    <option value="6239">Worm</option>
+                    <option value="4932">Yeast</option>
+                </select>
+            </div>
             <div class="url-row" style="position:relative;">
                 <div style="position:relative; flex:1;">
                     <input type="text" id="gene-search-input"
-                           placeholder="e.g., Akt1, foxo, Dl, sgg..."
+                           placeholder="e.g., TP53, CDK2, AKT1, BRAF..."
                            autocomplete="off"
                            oninput="geneAcIdx=-1;searchUniprotAc(this.value)"
                            onkeydown="handleGeneAcKey(event)">
@@ -447,12 +459,12 @@
             </div>
             <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
                 <span style="font-size:0.8rem; color:#888;">Examples:</span>
-                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='Akt1';searchGene()">Akt1</button>
-                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='foxo';searchGene()">foxo</button>
-                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='Dl';searchGene()">Dl</button>
-                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='dpp';searchGene()">dpp</button>
-                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='Egfr';searchGene()">Egfr</button>
-                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='wg';searchGene()">wg</button>
+                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='TP53';searchGene()">TP53</button>
+                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='CDK2';searchGene()">CDK2</button>
+                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='AKT1';searchGene()">AKT1</button>
+                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='BRAF';searchGene()">BRAF</button>
+                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='EGFR';searchGene()">EGFR</button>
+                <button class="example-btn" onclick="document.getElementById('gene-search-input').value='MAPK1';searchGene()">MAPK1</button>
             </div>
             <div id="search-status" style="font-size:0.85rem; color:#666; min-height:1.2rem; margin-top:0.5rem; margin-bottom:0.5rem;"></div>
             <div id="search-results" style="display:none;"></div>
@@ -462,24 +474,20 @@
         <div id="url-panel" style="display:none;">
             <div class="url-row">
                 <input type="text" id="url-input"
-                       placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/..."
+                       placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/..."
                        value="">
                 <button class="btn btn-primary" id="btn-generate" onclick="generate()">Generate</button>
             </div>
             <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
                 <span style="font-size:0.8rem; color:#888;">Examples:</span>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Akt1/foxo/SET_47/';generate()">Akt1–Foxo</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0283499/FBgn0036046/SET_487/';generate()">Ilp2–InR</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0003731/FBgn0005672/SET_590/';generate()">Spi–Egfr</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Dl/N/SET_71/';generate()">Dl–N</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/yki/sd/SET_49/';generate()">Yki–Sd</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/dsh/Axn/SET_69/';generate()">Dsh–Axn</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0004644/FBgn0031872/SET_585/';generate()">Hh–Ihog</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0004107/FBgn0010382/SET_119/';generate()">Cdk2–CycE</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/Mad/Med/SET_69/';generate()">Mad–Med</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0011706/FBgn0260635/SET_563/';generate()">Rpr–Diap1</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/spz/Tl/SET_69/';generate()">Spz–Tl</button>
-                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details/FBgn0032006/FBgn0030964/SET_454/';generate()">Pvr–Pvf1</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/P53_HUMAN/MDM2_HUMAN/SET_393/';generate()">TP53&ndash;MDM2</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/AKT1_HUMAN/P53_HUMAN/SET_1954/';generate()">AKT1&ndash;TP53</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/CDK2_HUMAN/P53_HUMAN/SET_1965/';generate()">CDK2&ndash;TP53</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/CHK2_HUMAN/P53_HUMAN/SET_1977/';generate()">CHK2&ndash;TP53</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/GSK3B_HUMAN/P53_HUMAN/SET_1979/';generate()">GSK3B&ndash;TP53</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/SRC_HUMAN/P53_HUMAN/SET_2000/';generate()">SRC&ndash;TP53</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/PLK1_HUMAN/P53_HUMAN/SET_1998/';generate()">PLK1&ndash;TP53</button>
+                <button class="example-btn" onclick="document.getElementById('url-input').value='https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/P04637/P24941/SET_181/';generate()">TP53&ndash;CDK2</button>
             </div>
             <div id="fetch-status" class="fetch-status"></div>
             <textarea id="html-input" style="display:none"></textarea>
@@ -496,7 +504,7 @@
         <div class="card result-card">
             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
                 <h2 id="result-title" style="margin-bottom:0;">Interaction Analysis Summary</h2>
-                <a style="font-size:0.8rem; color:#2471A3; cursor:pointer; text-decoration:none; border-bottom:1px dashed #2471A3;" onclick="downloadFlyCSV()">&#8595; Download CSV</a>
+                <a style="font-size:0.8rem; color:#2471A3; cursor:pointer; text-decoration:none; border-bottom:1px dashed #2471A3;" onclick="downloadCSV()">&#8595; Download CSV</a>
             </div>
             <div class="info-box">Click a row to switch between ranks. This updates all visualizations, metrics, and the ChimeraX script.</div>
             <div style="overflow-x:auto;">
@@ -561,7 +569,7 @@
             <div id="fly-domain-legend" style="margin-top:0.4rem; font-size:0.72rem; color:#666; display:flex; gap:0.8rem; flex-wrap:wrap;"></div>
         </div>
 
-        <!-- Circular Contact Map (circular) -->
+        <!-- Circular Contact Map -->
         <div class="card result-card" id="chord-card" style="display:none;">
             <h2>Circular Contact Map <span class="model-badge" id="chord-model-badge"></span></h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
@@ -586,8 +594,6 @@
                 Interactive 3D preview matching ChimeraX script output. LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom, right-click to translate.
             </div>
             <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin"></iframe>
-            <div style="text-align:center; margin-top:0.3rem;">
-            </div>
         </div>
 
         <!-- Script -->
@@ -692,11 +698,11 @@
                 <h4>Quick Start</h4>
                 <ol start="0">
                     <li>Install <a href="https://www.cgl.ucsf.edu/chimerax/download.html" target="_blank">UCSF ChimeraX</a></li>
-                    <li>Go to <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank">FlyPredictome</a> and search for a protein pair</li>
-                    <li>Copy the FlyPredictome result page URL</li>
-                    <li>Paste the URL above and click <strong>Generate</strong></li>
+                    <li>Go to <a href="https://www.flyrnai.org/tools/fly_predictome/web/famdb_ortho_search/9606" target="_blank">FlyPredictome Ortholog Search</a> and search for a human gene</li>
+                    <li>Click a predicted interaction pair to open the detail page</li>
+                    <li>Copy the detail page URL and paste it above</li>
                     <li>Download the <code>.cxc</code> script and <code>.pdb</code> file, place both in the same folder</li>
-                    <li>Double-click the <code>.cxc</code> file — ChimeraX will launch automatically</li>
+                    <li>Double-click the <code>.cxc</code> file &mdash; ChimeraX will launch automatically</li>
                 </ol>
             </div>
             <div class="help-col">
@@ -717,8 +723,8 @@
                 <p style="font-size:0.78rem; color:#888; margin-top:0.4rem; line-height:1.4;">PAE (Predicted Aligned Error) measures how confidently the model predicts the relative position of two residues &mdash; lower values indicate higher confidence.</p>
                 <h4 style="margin-top: 0.8rem">References</h4>
                 <ul class="ref-list">
-                    <li><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank">Kim et al. 2024</a> — Enhanced PPI Discovery via AlphaFold-Multimer</li>
-                    <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a> — <em>In silico</em> Kinase-TF atlas for human and fly</li>
+                    <li><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank">Kim et al. 2024</a> &mdash; Enhanced PPI Discovery via AlphaFold-Multimer</li>
+                    <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank">Kim et al. 2025</a> &mdash; <em>In silico</em> Kinase-TF atlas for human and fly</li>
                 </ul>
             </div>
         </div>
@@ -727,6 +733,7 @@
     <div class="footer">
         Made by Ah-Ram Kim &middot;
         <a href="https://github.com/flyark/AFM-LIS" style="color:#2471A3; text-decoration:none;">AFM-LIS</a> &middot;
+        <a href="flypredictome.html" style="color:#2471A3; text-decoration:none;">FlyPredictome</a> &middot;
         <a href="universal.html" style="color:#2471A3; text-decoration:none;">Universal Prediction</a> &middot;
         <a href="dimer.html" style="color:#2471A3; text-decoration:none;">AFDB Dimer</a> &middot;
         <a href="monomer.html" style="color:#2471A3; text-decoration:none;">AFDB Monomer Subdomain</a> &middot;
@@ -786,13 +793,18 @@ function handleGeneAcKey(e) {
     }
 }
 
+function getSpeciesId() {
+    return document.getElementById('species-select')?.value || '9606';
+}
+
 async function searchUniprotAc(query) {
     clearTimeout(geneAcDebounce);
     const list = document.getElementById('gene-ac-list');
     if (query.length < 2) { list.style.display = 'none'; return; }
     geneAcDebounce = setTimeout(async () => {
         try {
-            const url = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}+AND+organism_id:7227&fields=accession,gene_names,protein_name,organism_name,xref_flybase&size=8&format=json`;
+            const speciesId = getSpeciesId();
+            const url = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}+AND+organism_id:${speciesId}&fields=accession,gene_names,protein_name,organism_name&size=8&format=json`;
             const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
@@ -805,23 +817,19 @@ async function searchUniprotAc(query) {
                 const synonyms = (r.genes || [{}])[0]?.synonyms?.map(s => s.value).join(', ') || '';
                 const name = r.proteinDescription?.recommendedName?.fullName?.value
                           || r.proteinDescription?.submissionNames?.[0]?.fullName?.value || '';
-                // Extract FBgn from FlyBase cross-reference
-                const flybaseXref = (r.uniProtKBCrossReferences || []).find(x => x.database === 'FlyBase');
-                const fbgn = flybaseXref?.id || '';
                 const item = document.createElement('div');
                 item.style.cssText = 'padding:0.5rem 0.8rem; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:0.85rem;';
                 item.innerHTML = '<strong style="color:#2471A3;">' + esc(gene) + '</strong>' +
                     (synonyms ? ' <span style="color:#999; font-size:0.75rem;">(' + esc(synonyms) + ')</span>' : '') +
-                    (fbgn ? ' <span style="color:#bbb; font-size:0.7rem;">' + esc(fbgn) + '</span>' : '') +
                     '<br><span style="color:#555; font-size:0.78rem;">' + esc(name.substring(0, 60)) + '</span>' +
                     ' <span style="color:#aaa; font-size:0.72rem;">' + esc(acc) + '</span>';
                 item.addEventListener('mouseenter', () => { item.style.background = '#eaf2f8'; });
                 item.addEventListener('mouseleave', () => { item.style.background = ''; });
-                item.addEventListener('click', ((g, f) => () => {
+                item.addEventListener('click', ((g) => () => {
                     document.getElementById('gene-search-input').value = g;
                     list.style.display = 'none';
-                    searchGene(f); // pass FBgn directly
-                })(gene, fbgn));
+                    searchGene();
+                })(gene));
                 list.appendChild(item);
             }
             list.style.display = '';
@@ -833,113 +841,131 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('#search-panel')) hideGeneAc();
 });
 
-async function searchGene(presetFbgn) {
+// ── Ortho search ──
+const ORTHO_BASE = 'https://www.flyrnai.org/tools/fly_predictome/web/famdb_ortho_search/';
+
+// Google Apps Script proxy — handles CSRF + session cookies server-side
+let ORTHO_PROXY_URL = 'https://script.google.com/macros/s/AKfycbwPxNUJq8elIPLAmSdBLEe4oWQyUMiGXmcnyWmOqGmMaDUR--d2q50oNzcRIEZ3MRaGuQ/exec';
+
+function setProxyUrl(url) {
+    url = (url || '').trim();
+    ORTHO_PROXY_URL = url;
+    if (url) localStorage.setItem('ortho_proxy_url', url);
+    else localStorage.removeItem('ortho_proxy_url');
+}
+
+async function searchGene() {
     const query = document.getElementById('gene-search-input').value.trim();
     if (!query) return;
 
+    const speciesId = getSpeciesId();
     const statusEl = document.getElementById('search-status');
     const resultsEl = document.getElementById('search-results');
-    statusEl.textContent = 'Searching...';
+    statusEl.textContent = 'Searching for ' + query + '...';
     statusEl.style.color = '#2471A3';
     resultsEl.style.display = 'none';
 
     try {
-        let fbgnId, geneSymbol;
+        let resultHtml = null;
 
-        if (presetFbgn) {
-            // FBgn provided from UniProt autocomplete — skip get_fbgns lookup
-            fbgnId = presetFbgn;
-            geneSymbol = query;
-        } else {
-            // Resolve gene symbol to FBgn via FlyPredictome
-            const fbgnText = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/get_fbgns/' + encodeURIComponent(query));
-            if (!fbgnText) throw new Error('Could not reach FlyPredictome. Try again.');
-            const fbgnData = JSON.parse(fbgnText);
-
-            if (!fbgnData.data || fbgnData.data.length === 0) {
-                statusEl.textContent = 'No genes found for "' + query + '".';
-                statusEl.style.color = '#c0392b';
-                return;
-            }
-
-            // Find exact gene symbol match (case-sensitive), fall back to first result
-            let bestRow = fbgnData.data[0];
-            for (const row of fbgnData.data) {
-                if (row[2] === query) { bestRow = row; break; }
-            }
-            if (bestRow[2] !== query) {
-                for (const row of fbgnData.data) {
-                    if (row[2].toLowerCase() === query.toLowerCase()) { bestRow = row; break; }
+        // Try Google Apps Script proxy first
+        if (ORTHO_PROXY_URL) {
+            try {
+                statusEl.textContent = 'Searching FlyPredictome for ' + query + '...';
+                const proxyUrl = ORTHO_PROXY_URL + '?gene=' + encodeURIComponent(query) + '&species=' + speciesId + '&type=Gene+Symbol';
+                const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(30000) });
+                if (resp.ok) {
+                    const text = await resp.text();
+                    if (text.includes('fam_summary_table')) {
+                        resultHtml = text;
+                    } else {
+                        // Check if it's a JSON error
+                        try {
+                            const err = JSON.parse(text);
+                            if (err.error) throw new Error(err.error);
+                        } catch (e) {
+                            if (e.message && !e.message.includes('JSON')) throw e;
+                        }
+                    }
                 }
+            } catch (e) {
+                console.warn('Proxy search failed:', e);
             }
-            const fbgnHtml = bestRow[1];
-            const fbgnMatch = fbgnHtml.match(/FBgn\d+/);
-            if (!fbgnMatch) {
-                statusEl.textContent = 'Could not resolve gene ID.';
-                statusEl.style.color = '#c0392b';
-                return;
-            }
-            fbgnId = fbgnMatch[0];
-            geneSymbol = bestRow[2] || query;
         }
 
-        statusEl.textContent = 'Found: ' + geneSymbol + ' (' + fbgnId + '). Loading interaction partners...';
+        if (!resultHtml) {
+            const orthoUrl = ORTHO_BASE + speciesId;
+            const hasProxy = !!ORTHO_PROXY_URL;
+            statusEl.innerHTML = '';
+            resultsEl.style.display = '';
 
-        // Step 2: Fetch protein info to get canonical lengths for partial detection
-        let canonicalLengths = {};
-        try {
-            const protInfoText = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/get_protein_info/' + fbgnId);
-            if (protInfoText) {
-                const protInfo = JSON.parse(protInfoText);
-                // Get max sequence length across all isoforms as canonical
-                for (const iso of protInfo) {
-                    const len = parseInt(iso.seq?.len) || 0;
-                    if (len > (canonicalLengths[fbgnId] || 0)) canonicalLengths[fbgnId] = len;
-                }
-            }
-        } catch (e) { /* non-critical */ }
+            resultsEl.innerHTML =
+                '<div style="background:white; border:1px solid #e0e0e0; border-radius:12px; padding:1.2rem 1.5rem; font-size:0.88rem; color:#333;">' +
 
-        // Step 3: Fetch famdb_summary to get all partners
-        const summaryResp = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/famdb_summary/' + fbgnId + '/');
-        if (!summaryResp) throw new Error('Could not fetch interaction data.');
+                // Step 1
+                '<div style="display:flex; gap:0.8rem; margin-bottom:1rem; align-items:flex-start;">' +
+                '<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#2471A3; color:white; font-weight:700; font-size:0.82rem; flex-shrink:0;">1</span>' +
+                '<div>' +
+                '<div style="font-weight:600; color:#1a5276; margin-bottom:0.2rem;">Search on FlyPredictome</div>' +
+                '<div style="font-size:0.82rem; color:#666;">Select <strong>Gene name</strong> identifier, type <code style="background:#f0f0f0; padding:0.1rem 0.3rem; border-radius:3px;">' + esc(query.toLowerCase()) + '</code>, and click <strong>Submit</strong>.</div>' +
+                '<a href="' + orthoUrl + '" target="_blank" class="btn btn-primary" style="text-decoration:none; font-size:0.82rem; padding:0.35rem 0.8rem; display:inline-block; margin-top:0.4rem;">Open FlyPredictome Ortholog Search</a>' +
+                '</div></div>' +
 
-        // Step 4: Parse the HTML table
-        const partners = parseFamdbSummary(summaryResp, fbgnId, geneSymbol);
+                // Step 2
+                '<div style="display:flex; gap:0.8rem; margin-bottom:1rem; align-items:flex-start;">' +
+                '<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#2471A3; color:white; font-weight:700; font-size:0.82rem; flex-shrink:0;">2</span>' +
+                '<div>' +
+                '<div style="font-weight:600; color:#1a5276; margin-bottom:0.2rem;">Copy the detail URL</div>' +
+                '<div style="font-size:0.82rem; color:#666;">In the results table, right-click <strong>See Details</strong> on any pair &rarr; <strong>Copy Link Address</strong>.</div>' +
+                '</div></div>' +
+
+                // Step 3
+                '<div style="display:flex; gap:0.8rem; align-items:flex-start;">' +
+                '<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:#2471A3; color:white; font-weight:700; font-size:0.82rem; flex-shrink:0;">3</span>' +
+                '<div style="flex:1;">' +
+                '<div style="font-weight:600; color:#1a5276; margin-bottom:0.3rem;">Paste URL here</div>' +
+                '<div class="url-row" style="margin:0;">' +
+                '<input type="text" id="inline-url-input" placeholder="https://www.flyrnai.org/tools/fly_predictome/web/famdb_details_ortho/..." style="flex:1; padding:0.6rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.85rem;" onkeydown="if(event.key===\'Enter\'){var u=this.value.trim();if(u){document.getElementById(\'url-input\').value=u;switchTab(\'url\');generate();}}">' +
+                '<button class="btn btn-primary" style="font-size:0.85rem;" onclick="var u=document.getElementById(\'inline-url-input\').value.trim();if(u){document.getElementById(\'url-input\').value=u;switchTab(\'url\');generate();}">Analyze</button>' +
+                '</div>' +
+                '</div></div>' +
+
+                // Proxy setup (collapsible)
+                '<details style="margin-top:1rem; border-top:1px solid #eee; padding-top:0.8rem;">' +
+                '<summary style="font-size:0.82rem; color:#2471A3; cursor:pointer; font-weight:600;">Enable automatic search (optional, one-time setup)</summary>' +
+                '<div style="font-size:0.8rem; color:#666; line-height:1.7; margin-top:0.5rem;">' +
+                'Deploy a small proxy to search FlyPredictome directly from this page:' +
+                '<ol style="padding-left:1.2rem; margin:0.3rem 0;">' +
+                '<li>Go to <a href="https://script.google.com" target="_blank" style="color:#2471A3;">script.google.com</a> &rarr; New Project</li>' +
+                '<li>Paste the code from <a href="proxy/ortho_search_proxy.gs" target="_blank" style="color:#2471A3;">ortho_search_proxy.gs</a></li>' +
+                '<li>Deploy &rarr; New Deployment &rarr; Web App (Execute as: Me, Access: Anyone)</li>' +
+                '<li>Paste the URL below:</li>' +
+                '</ol>' +
+                '<div class="url-row" style="margin:0.3rem 0 0;">' +
+                '<input type="text" id="proxy-url-input" value="' + esc(ORTHO_PROXY_URL) + '" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1; padding:0.4rem 0.6rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.8rem;">' +
+                '<button class="btn btn-primary" style="font-size:0.8rem; padding:0.4rem 0.8rem;" onclick="setProxyUrl(document.getElementById(\'proxy-url-input\').value);searchGene();">Save &amp; Search</button>' +
+                '</div>' +
+                '</div>' +
+                '</details>' +
+
+                '</div>';
+            return;
+        }
+
+        // Step 3: Parse the results
+        const partners = parseOrthoSummary(resultHtml, query);
 
         if (partners.length === 0) {
-            statusEl.textContent = 'No interaction partners found for ' + geneSymbol + '.';
+            statusEl.textContent = 'No interaction partners found for ' + query + '.';
             statusEl.style.color = '#c0392b';
             return;
         }
 
-        // Step 5: Detect partial predictions by comparing predicted length vs canonical
-        const queryCanonical = canonicalLengths[fbgnId] || 0;
-        for (const p of partners) {
-            // Query protein length in this prediction
-            const queryLen = (p.fbgn1 === fbgnId) ? p.lenA : p.lenB;
-            const partnerLen = (p.fbgn1 === fbgnId) ? p.lenB : p.lenA;
-            p.isQueryPartial = queryCanonical > 0 && queryLen < queryCanonical * 0.9;
-            // Partner partial detection: check if partner length is significantly shorter than any prediction of it
-            // We approximate by comparing against the max length seen for this partner across all rows
-            p.queryLen = queryLen;
-            p.partnerLen = partnerLen;
-        }
-        // Detect partner partial: find max length per partner FBgn across all rows
-        const partnerMaxLen = {};
-        for (const p of partners) {
-            const key = p.partnerFbgn;
-            if (!partnerMaxLen[key] || p.partnerLen > partnerMaxLen[key]) partnerMaxLen[key] = p.partnerLen;
-        }
-        for (const p of partners) {
-            const maxLen = partnerMaxLen[p.partnerFbgn] || p.partnerLen;
-            p.isPartnerPartial = p.partnerLen < maxLen * 0.9;
-        }
-
-        statusEl.textContent = geneSymbol + ' (' + fbgnId + '): ' + partners.length + ' predicted interaction partners. Click a row to analyze.';
+        statusEl.textContent = query + ': ' + partners.length + ' predicted interaction partners. Click a row to analyze.';
         statusEl.style.color = '#27ae60';
 
-        // Step 6: Display partner table
-        displayPartnerTable(partners, geneSymbol);
+        // Display partner table
+        displayPartnerTable(partners, query);
 
     } catch (e) {
         statusEl.textContent = 'Error: ' + e.message;
@@ -947,20 +973,27 @@ async function searchGene(presetFbgn) {
     }
 }
 
-function parseFamdbSummary(html, queryFbgn, querySymbol) {
-    // Column indices (0-based) from the actual famdb_summary table:
-    // 0: id (link), 1: ranks counts, 2: Protein 1, 3: Protein 2
-    // 4: fbgn1, 5: fbgn2, 6: ncbi_gene_id1, 7: ncbi_gene_id2
-    // 8: Symbol 1, 9: Symbol 2
-    // 10: iLIS avg, 11: iLIS best
-    // 12: LIS avg, 13: LIS best, 14: LIA avg, 15: LIA best
-    // 16: LIR avg, 17: LIR best, 18: LIpLDDT avg, 19: LIpLDDT best
-    // 20: cLIS avg, 21: cLIS best, 22: cLIA avg, 23: cLIA best
-    // 24: cLIR avg, 25: cLIR best, 26: cLIpLDDT avg, 27: cLIpLDDT best
-    // 28: pLDDT avg, 29: pLDDT best, 30: pTM avg, 31: pTM best
-    // 32: ipTM avg, 33: ipTM best, 34: Confidence avg, 35: Confidence best
-    // 36: Protein Len A, 37: Protein Len B, 38: directory name
-    // 39: MIST PPI, 40: MIST GI, 41: MIST Interlog PPI, 42: MIST Interlog GI
+function parseOrthoSummary(html, querySymbol) {
+    // Ortho search table (#fam_summary_table) columns:
+    // 0: ID (link to famdb_details_ortho), 1: rank counts (hidden)
+    // 2: protein_1 (UniProt acc), 3: protein_2 (UniProt acc)
+    // 4: ncbi_gene_id1, 5: ncbi_gene_id2
+    // 6: gene_symbol1, 7: gene_symbol2
+    // 8: iLIS avg, 9: iLIS best
+    // 10: LIS avg, 11: LIS best
+    // 12: LIA avg, 13: LIA best
+    // 14: LIR avg, 15: LIR best
+    // 16: LIpLDDT avg, 17: LIpLDDT best
+    // 18: cLIS avg, 19: cLIS best
+    // 20: cLIA avg, 21: cLIA best
+    // 22: cLIR avg, 23: cLIR best
+    // 24: cLIpLDDT avg, 25: cLIpLDDT best
+    // 26: pLDDT avg, 27: pLDDT best
+    // 28: pTM avg, 29: pTM best
+    // 30: ipTM avg, 31: ipTM best
+    // 32: Confidence avg, 33: Confidence best
+    // 34: Protein Len A, 35: Protein Len B
+    // 36: directory name (hidden)
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -972,42 +1005,37 @@ function parseFamdbSummary(html, queryFbgn, querySymbol) {
 
     for (const row of rows) {
         const cells = row.querySelectorAll('td');
-        if (cells.length < 38) continue;
+        if (cells.length < 36) continue;
 
         try {
-            const sym1 = cells[8]?.textContent?.trim() || '';
-            const sym2 = cells[9]?.textContent?.trim() || '';
-            const fbgn1 = cells[4]?.textContent?.trim() || '';
-            const fbgn2 = cells[5]?.textContent?.trim() || '';
-            const ncbi1 = cells[6]?.textContent?.trim() || '';
-            const ncbi2 = cells[7]?.textContent?.trim() || '';
+            const sym1 = cells[6]?.textContent?.trim() || '';
+            const sym2 = cells[7]?.textContent?.trim() || '';
+            const prot1 = cells[2]?.textContent?.trim() || '';
+            const prot2 = cells[3]?.textContent?.trim() || '';
+            const ncbi1 = cells[4]?.textContent?.trim() || '';
+            const ncbi2 = cells[5]?.textContent?.trim() || '';
 
-            const ilisAvg = parseFloat(cells[10]?.textContent?.trim()) || 0;
-            const ilisBest = parseFloat(cells[11]?.textContent?.trim()) || 0;
-            const lisAvg = parseFloat(cells[12]?.textContent?.trim()) || 0;
-            const liaAvg = parseFloat(cells[14]?.textContent?.trim()) || 0;
-            const lirAvg = parseFloat(cells[16]?.textContent?.trim()) || 0;
-            const clisAvg = parseFloat(cells[20]?.textContent?.trim()) || 0;
-            const clirAvg = parseFloat(cells[24]?.textContent?.trim()) || 0;
-            const iptmAvg = parseFloat(cells[32]?.textContent?.trim()) || 0;
-            const iptmBest = parseFloat(cells[33]?.textContent?.trim()) || 0;
-            const lenA = parseInt(cells[36]?.textContent?.trim()) || 0;
-            const lenB = parseInt(cells[37]?.textContent?.trim()) || 0;
-            const dirName = cells[38]?.textContent?.trim() || '';
-
-            const mistPPI = parseInt(cells[39]?.textContent?.trim()) || 0;
-            const mistGI = parseInt(cells[40]?.textContent?.trim()) || 0;
-            const mistInterologPPI = parseInt(cells[41]?.textContent?.trim()) || 0;
-            const mistInterologGI = parseInt(cells[42]?.textContent?.trim()) || 0;
+            const ilisAvg = parseFloat(cells[8]?.textContent?.trim()) || 0;
+            const ilisBest = parseFloat(cells[9]?.textContent?.trim()) || 0;
+            const lisAvg = parseFloat(cells[10]?.textContent?.trim()) || 0;
+            const liaAvg = parseFloat(cells[12]?.textContent?.trim()) || 0;
+            const lirAvg = parseFloat(cells[14]?.textContent?.trim()) || 0;
+            const clisAvg = parseFloat(cells[18]?.textContent?.trim()) || 0;
+            const clirAvg = parseFloat(cells[22]?.textContent?.trim()) || 0;
+            const iptmAvg = parseFloat(cells[30]?.textContent?.trim()) || 0;
+            const iptmBest = parseFloat(cells[31]?.textContent?.trim()) || 0;
+            const lenA = parseInt(cells[34]?.textContent?.trim()) || 0;
+            const lenB = parseInt(cells[35]?.textContent?.trim()) || 0;
 
             // Determine which is the partner
-            const isQuery1 = (fbgn1 === queryFbgn || sym1.toLowerCase() === querySymbol.toLowerCase());
+            const isQuery1 = sym1.toLowerCase() === querySymbol.toLowerCase();
             const partnerSymbol = isQuery1 ? sym2 : sym1;
-            const partnerFbgn = isQuery1 ? fbgn2 : fbgn1;
+            const partnerProt = isQuery1 ? prot2 : prot1;
             const partnerNcbi = isQuery1 ? ncbi2 : ncbi1;
+            const queryNcbi = isQuery1 ? ncbi1 : ncbi2;
 
             // Extract detail URL from link in first cell
-            const detailLink = cells[0]?.querySelector('a[href*="famdb_details"]');
+            const detailLink = cells[0]?.querySelector('a[href*="famdb_details_ortho"]');
             let detailUrl = '';
             if (detailLink) {
                 detailUrl = detailLink.getAttribute('href') || '';
@@ -1017,12 +1045,11 @@ function parseFamdbSummary(html, queryFbgn, querySymbol) {
             }
 
             partners.push({
-                sym1, sym2, fbgn1, fbgn2, ncbi1, ncbi2,
-                partnerSymbol, partnerFbgn, partnerNcbi,
+                sym1, sym2, prot1, prot2, ncbi1, ncbi2,
+                partnerSymbol, partnerProt, partnerNcbi, queryNcbi,
                 ilisAvg, ilisBest, lisAvg, clisAvg, iptmAvg, iptmBest,
                 lirAvg, clirAvg, liaAvg, lenA, lenB,
-                mistPPI, mistGI, mistInterologPPI, mistInterologGI,
-                detailUrl, dirName
+                detailUrl
             });
         } catch (e) {
             continue;
@@ -1052,14 +1079,6 @@ function displayPartnerTable(partners, querySymbol) {
             '<input type="checkbox" id="filter-threshold" onchange="filterPartnerTable()"> ' +
             'iLIS &ge; 0.223' +
         '</label>' +
-        '<label style="font-size:0.82rem; color:#555;">' +
-            '<input type="checkbox" id="filter-mist" onchange="filterPartnerTable()"> ' +
-            'Has experimental evidence (MIST)' +
-        '</label>' +
-        '<label style="font-size:0.82rem; color:#555;">' +
-            '<input type="checkbox" id="filter-fulllength" onchange="filterPartnerTable()"> ' +
-            'Full-length only' +
-        '</label>' +
         '<span style="font-size:0.78rem; color:#999;" id="filter-count"></span>';
     container.appendChild(filterDiv);
 
@@ -1075,15 +1094,11 @@ function displayPartnerTable(partners, querySymbol) {
         '<thead style="position:sticky; top:0; z-index:1;">' +
             '<tr>' +
                 '<th>Partner</th>' +
-                '<th>iLIS (avg)</th>' +
+                '<th>iLIS (best)</th>' +
                 '<th>iLIS (avg)</th>' +
                 '<th>ipTM (avg)</th>' +
                 '<th>ipTM (best)</th>' +
                 '<th>Len A/B</th>' +
-                '<th>PPI</th>' +
-                '<th>GI</th>' +
-                '<th>Interolog PPI</th>' +
-                '<th>Interolog GI</th>' +
             '</tr>' +
         '</thead>' +
         '<tbody id="partner-tbody"></tbody>';
@@ -1105,8 +1120,6 @@ function filterPartnerTable() {
 
     const positiveOnly = document.getElementById('filter-positive')?.checked;
     const thresholdOnly = document.getElementById('filter-threshold')?.checked;
-    const mistOnly = document.getElementById('filter-mist')?.checked;
-    const fullLengthOnly = document.getElementById('filter-fulllength')?.checked;
 
     tbody.innerHTML = '';
     let count = 0;
@@ -1114,34 +1127,23 @@ function filterPartnerTable() {
     for (const p of partners) {
         if (positiveOnly && p.ilisBest <= 0) continue;
         if (thresholdOnly && p.ilisBest < 0.223) continue;
-        if (fullLengthOnly && (p.isPartnerPartial || p.isQueryPartial)) continue;
-        if (mistOnly && p.mistPPI === 0 && p.mistGI === 0 && p.mistInterologPPI === 0 && p.mistInterologGI === 0) continue;
 
         count++;
         const tr = document.createElement('tr');
         tr.className = 'clickable';
         tr.style.cursor = 'pointer';
 
-        // Color code iLIS
-        const ilisColor = p.ilisBest >= 0.551 ? '#C0392B' : p.ilisBest >= 0.339 ? '#27ae60' : p.ilisBest >= 0.223 ? '#e67e22' : '#999';
-
-        const partialTag = p.isPartnerPartial ? ' <span style="color:#c0392b; font-size:0.7rem; font-weight:600;">(Partial)</span>' : '';
         tr.innerHTML =
-            '<td><strong>' + esc(p.partnerSymbol) + '</strong> <span style="color:#999; font-size:0.72rem;">' + esc(p.partnerFbgn) + '</span>' + partialTag + '</td>' +
-            '<td>' + p.ilisAvg.toFixed(3) + '</td>' +
-            '<td style="color:' + ilisColor + '; font-weight:600;">' + p.ilisBest.toFixed(3) + '</td>' +
+            '<td><strong>' + esc(p.partnerSymbol) + '</strong> <span style="color:#999; font-size:0.72rem;">' + esc(p.partnerProt) + '</span></td>' +
+            '<td>' + ilisColor(p.ilisBest) + '</td>' +
+            '<td>' + ilisColor(p.ilisAvg, true) + '</td>' +
             '<td>' + p.iptmAvg.toFixed(2) + '</td>' +
             '<td>' + p.iptmBest.toFixed(2) + '</td>' +
-            '<td>' + p.lenA + ' / ' + p.lenB + '</td>' +
-            '<td>' + (p.mistPPI || '\u2014') + '</td>' +
-            '<td>' + (p.mistGI || '\u2014') + '</td>' +
-            '<td>' + (p.mistInterologPPI || '\u2014') + '</td>' +
-            '<td>' + (p.mistInterologGI || '\u2014') + '</td>';
+            '<td>' + p.lenA + ' / ' + p.lenB + '</td>';
 
         if (p.detailUrl) {
             tr.addEventListener('click', ((url) => (e) => {
                 if (e.ctrlKey || e.metaKey) {
-                    // Ctrl/Cmd+click: open in new tab with URL pre-filled
                     const pageUrl = window.location.pathname + '?url=' + encodeURIComponent(url);
                     window.open(pageUrl, '_blank');
                 } else {
@@ -1174,7 +1176,65 @@ function updateColorStrip() {
     s[3].style.background = document.getElementById('color-lir-b').value;
 }
 
-// ── Parse residue ranges: '["107-114","117","120-121"]' → Set of ints ──
+// ── Utility functions ──
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function ilisColor(val, isAvg) {
+    const color = isAvg
+        ? (val >= 0.303 ? '#6B21A8' : val >= 0.120 ? '#0e8a6e' : val >= 0.073 ? '#bf8700' : '#8b949e')
+        : (val >= 0.551 ? '#6B21A8' : val >= 0.339 ? '#0e8a6e' : val >= 0.223 ? '#bf8700' : '#8b949e');
+    return '<span style="color:' + color + '; font-weight:700;">' + val.toFixed(3) + '</span>';
+}
+
+// ── Global state for rank switching ──
+let cxcColorMode = '';
+let flyParsed = null;
+let flyChainSeqs = null;
+let flyPdbText = null;
+let flyPdbPerRank = {};
+let flyBaseUrl = '';
+let flyCurrentRank = 1;
+let flyAverageRow = null;
+let flyDomains = { A: [], B: [] };
+let flyDomainInfo = { A: null, B: null };
+let domainCache = new Map();
+let viewer3dBlobUrl = null;
+
+// ── CORS proxy fetch ──
+const CORS_PROXIES = [
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+async function fetchViaProxy(url) {
+    return new Promise(resolve => {
+        let resolved = false;
+        let pending = CORS_PROXIES.length;
+
+        CORS_PROXIES.forEach(makeProxy => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000);
+
+            fetch(makeProxy(url), { signal: controller.signal })
+                .then(resp => resp.ok ? resp.text() : '')
+                .then(text => {
+                    clearTimeout(timeout);
+                    if (!resolved && text.includes('rank_table')) {
+                        resolved = true;
+                        resolve(text);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => {
+                    pending--;
+                    if (pending === 0 && !resolved) resolve(null);
+                });
+        });
+    });
+}
+
+// ── Parse residue ranges ──
 function parseResidueRanges(raw) {
     if (!raw || raw === '[]') return new Set();
     let items;
@@ -1195,7 +1255,7 @@ function parseResidueRanges(raw) {
     return positions;
 }
 
-// ── Parse HTML table ──
+// ── Parse HTML table (rank_table from famdb_details_ortho) ──
 function parseTable(html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -1220,7 +1280,7 @@ function parseTable(html) {
         }
     });
 
-    // Extract PDB URL from page
+    // Extract PDB URL
     let pdbUrl = '';
     const pdbMatch = html.match(/["']([^"']*colabfold-output[^"']*\.pdb)["']/);
     if (pdbMatch) {
@@ -1228,7 +1288,7 @@ function parseTable(html) {
         if (!pdbUrl.startsWith('http')) pdbUrl = 'https://www.flyrnai.org' + pdbUrl;
     }
 
-    // Extract NCBI gene IDs (try class selector first, then regex fallback)
+    // Extract NCBI gene IDs
     const ncbi1El = doc.querySelector('.ncbi_gene_id1');
     const ncbi2El = doc.querySelector('.ncbi_gene_id2');
     let ncbiGeneId1 = ncbi1El ? ncbi1El.textContent.trim() : '';
@@ -1242,13 +1302,12 @@ function parseTable(html) {
         if (m2) ncbiGeneId2 = m2[1];
     }
 
-    // Extract PAE image URL (prefer colabfold-output path which is publicly accessible)
+    // Extract PAE image URL
     let paeImgUrl = '';
     const paeImgMatch = html.match(/["'](\/tools\/fly_predictome\/web\/colabfold-output\/[^"']*_pae\.png)["']/);
     if (paeImgMatch) {
         paeImgUrl = 'https://www.flyrnai.org' + paeImgMatch[1];
     } else {
-        // Fallback: try data/extracted path
         const paeImgMatch2 = html.match(/["'](\/tools\/fly_predictome\/web\/data\/extracted\/png\/[^"']*_pae\.png)["']/);
         if (paeImgMatch2) paeImgUrl = 'https://www.flyrnai.org' + paeImgMatch2[1];
     }
@@ -1326,7 +1385,7 @@ function generateCxc(row, pdbFilename, colors) {
     const xposB = (0.03 + partA.length * 0.009 + 0.015).toFixed(3);
     const xposC = (parseFloat(xposB) + partB.length * 0.009 + 0.015).toFixed(3);
 
-    // Add partial protein info if available
+    // Partial protein info
     const infoA = flyDomainInfo?.A;
     const infoB = flyDomainInfo?.B;
     const partialNoteA = infoA?.isPartial ? ` [partial: aa ${infoA.startInFull}-${infoA.endInFull} of ${infoA.fullLength}]` : '';
@@ -1336,7 +1395,7 @@ function generateCxc(row, pdbFilename, colors) {
         `# ChimeraX visualization: ${sym1} \u2014 ${sym2} (iLIS=${iLIS}, ipTM=${ipTM})`,
         `# Chain /A: ${sym1} (${lenA} residues, LIR: ${lirAStr})${partialNoteA}`,
         `# Chain /B: ${sym2} (${lenB} residues, LIR: ${lirBStr})${partialNoteB}`,
-        `# Generated by FlyPredictome-ChimeraX Tool`,
+        `# Generated by In silico PPI Analysis Tools`,
         ``,
         `close`,
         `open ${pdbFilename}`,
@@ -1365,7 +1424,6 @@ function generateCxc(row, pdbFilename, colors) {
         `2dlabels create title2 text "${partB}" xpos ${xposB} ypos 0.95 size 16 color ${colors.clir_b} bold true`,
         `2dlabels create title3 text "${partC}" xpos ${xposC} ypos 0.95 size 16 color black bold true`,
     );
-    // Add partial protein subtitle if applicable
     const partialParts = [];
     if (infoA?.isPartial) partialParts.push(`${sym1}: aa ${infoA.startInFull}-${infoA.endInFull} of ${infoA.fullLength}`);
     if (infoB?.isPartial) partialParts.push(`${sym2}: aa ${infoB.startInFull}-${infoB.endInFull} of ${infoB.fullLength}`);
@@ -1403,7 +1461,6 @@ function generateCxc(row, pdbFilename, colors) {
     lines.push(`save ${sym1}_${sym2}.png transparentBackground true`);
     lines.push(`save ${sym1}_${sym2}_session.cxs`);
     lines.push('');
-    // Legend
     lines.push(`# \u2500\u2500 Color Legend \u2500\u2500`);
     lines.push(`# LIR  = Local Interaction Region (PAE <= 12)`);
     lines.push(`# cLIR = contact LIR (PAE <= 12 & C-beta distance <= 8 \u00c5)`);
@@ -1413,98 +1470,30 @@ function generateCxc(row, pdbFilename, colors) {
     lines.push(`# LIR cartoons  (${colors.lir_b}) = ${sym2} LIR (chain B)`);
     lines.push(`# cLIR cartoons (${colors.clir_b}) = ${sym2} cLIR (chain B)`);
     lines.push(`# Non-LIR regions are HIDDEN`);
-    lines.push(`#`);
-    if (LIR_A.size > 0) { const s = [...LIR_A].sort((a,b)=>a-b); lines.push(`# LIR_A: ${sym1} ${s[0]}-${s[s.length-1]} (${LIR_A.size} residues)`); }
-    if (LIR_B.size > 0) { const s = [...LIR_B].sort((a,b)=>a-b); lines.push(`# LIR_B: ${sym2} ${s[0]}-${s[s.length-1]} (${LIR_B.size} residues)`); }
-    if (cLIR_A.size > 0) lines.push(`# cLIR_A: ${sym1} ${cLIR_A.size} residues`);
-    if (cLIR_B.size > 0) lines.push(`# cLIR_B: ${sym2} ${cLIR_B.size} residues`);
-    lines.push('');
-    lines.push('# \u2500\u2500 Alternative: color by pLDDT (uncomment below) \u2500\u2500');
-    lines.push('# color bfactor palette #FF7D45:#FFDB13:#65CBF3:#0053D6 range 50,90');
-    lines.push('# # Very high (>90): dark blue, High (70-90): light blue, Low (50-70): yellow, Very low (<50): orange');
 
     return lines.join('\n');
 }
 
-// ── Syntax highlight ──
 function highlightCxc(text) {
     return text.split('\n').map(line => {
         if (line.startsWith('#')) return `<span class="comment">${esc(line)}</span>`;
         line = esc(line).replace(/(#[0-9A-Fa-f]{6})/g, '<span class="color-val">$1</span>');
         const m = line.match(/^(\w+)/);
-        if (m) line = `<span class="command">${m[1]}</span>` + line.slice(m[1].length);
+        if (m) return `<span class="command">${m[0]}</span>${line.substring(m[0].length)}`;
         return line;
     }).join('\n');
-}
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function ilisColor(val, isAvg) {
-    const color = isAvg
-        ? (val >= 0.303 ? '#6B21A8' : val >= 0.120 ? '#0e8a6e' : val >= 0.073 ? '#bf8700' : '#8b949e')
-        : (val >= 0.551 ? '#6B21A8' : val >= 0.339 ? '#0e8a6e' : val >= 0.223 ? '#bf8700' : '#8b949e');
-    return '<span style="color:' + color + '; font-weight:700;">' + val.toFixed(3) + '</span>';
-}
-
-// ── Global state for rank switching ──
-let cxcColorMode = '';       // ChimeraX color command preset
-let flyParsed = null;      // parsed table data
-let flyChainSeqs = null;   // parsed PDB sequences
-let flyPdbText = null;     // raw PDB text for connection diagram
-let flyPdbPerRank = {};    // cached PDB text per rank
-let flyBaseUrl = '';       // base FlyPredictome URL for per-rank fetching
-let flyCurrentRank = 1;    // currently selected rank
-let flyAverageRow = null;  // averaged metrics across all ranks
-let flyDomains = { A: [], B: [] }; // UniProt domain annotations per chain
-let flyDomainInfo = { A: null, B: null }; // { accession, offset, fullLength, predLength, isPartial }
-let domainCache = new Map();       // cache UniProt domain results
-let viewer3dBlobUrl = null; // blob URL for current Mol* iframe page
-
-// ── CORS proxy fetch ──
-const CORS_PROXIES = [
-    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-];
-
-async function fetchViaProxy(url) {
-    // Race all proxies in parallel — use whichever responds first with valid data
-    return new Promise(resolve => {
-        let resolved = false;
-        let pending = CORS_PROXIES.length;
-
-        CORS_PROXIES.forEach(makeProxy => {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 12000);
-
-            fetch(makeProxy(url), { signal: controller.signal })
-                .then(resp => resp.ok ? resp.text() : '')
-                .then(text => {
-                    clearTimeout(timeout);
-                    if (!resolved && text.includes('rank_table')) {
-                        resolved = true;
-                        resolve(text);
-                    }
-                })
-                .catch(() => {})
-                .finally(() => {
-                    pending--;
-                    if (pending === 0 && !resolved) resolve(null);
-                });
-        });
-    });
 }
 
 // ── Main generate ──
 async function generate() {
     const urlInput = document.getElementById('url-input').value.trim();
     let html = document.getElementById('html-input').value.trim();
-    const rank = 1; // always start with rank 1, user clicks table to switch
+    const rank = 1;
     const status = document.getElementById('fetch-status');
 
     document.getElementById('error-msg').classList.remove('active');
     document.getElementById('results').classList.remove('active');
 
-    // If URL is provided, try fetching it
     if (urlInput && urlInput.startsWith('http') && urlInput.includes('flyrnai.org')) {
         status.textContent = 'Fetching page from FlyPredictome... (can take several seconds)';
         status.className = 'fetch-status loading';
@@ -1540,7 +1529,6 @@ async function generate() {
     if (v3card) v3card.style.display = 'none';
 
     // Store base URL for per-rank PDB fetching
-    // Pattern: famdb_details/X/Y/SET_N/ → famdb_details_with_rank/X/Y/SET_N/{rank}
     flyBaseUrl = urlInput || '';
     flyPdbPerRank = {};
 
@@ -1553,15 +1541,14 @@ async function generate() {
             if (pdbText && pdbText.includes('ATOM')) {
                 flyChainSeqs = parsePdbSequence(pdbText);
                 flyPdbText = pdbText;
-                flyPdbPerRank[1] = pdbText; // cache rank 1
+                flyPdbPerRank[1] = pdbText;
             }
         } catch (e) { console.warn('Could not fetch PDB for sequence:', e); }
     }
 
-    // Fetch domain annotations (non-blocking — runs in background)
+    // Fetch domain annotations
     if (flyChainSeqs) {
-        fetchFlyDomains(flyChainSeqs, urlInput).then(() => {
-            // Redraw contact map and sequence viewer with domain/partial info
+        fetchDomains(flyChainSeqs, urlInput).then(() => {
             const target = flyParsed.rows.find(r => parseInt(r['Rank']) === flyCurrentRank);
             if (target && flyPdbText) {
                 const sym1 = target['Symbol 1'] || 'Protein1';
@@ -1570,28 +1557,16 @@ async function generate() {
                 if (flyDomains.A.length > 0 || flyDomains.B.length > 0) {
                     buildConnectionDiagram(target, sym1, sym2, colors, flyPdbText);
                 }
-                // Rebuild sequence viewer to show partial protein info and UniProt links
-                buildFlySeqViewer(target, sym1, sym2, colors, flyChainSeqs);
-            }
-            // Populate UniProt links in sequence viewer
-            const seqLink = document.getElementById('seq-uniprot-link');
-            if (seqLink) {
-                const links = [];
-                if (flyDomainInfo.A?.accession) links.push(`<a href="https://www.uniprot.org/uniprot/${flyDomainInfo.A.accession}" target="_blank" style="color:#2471A3;">UniProt: ${flyDomainInfo.A.accession}</a>`);
-                if (flyDomainInfo.B?.accession && flyDomainInfo.B.accession !== flyDomainInfo.A?.accession) links.push(`<a href="https://www.uniprot.org/uniprot/${flyDomainInfo.B.accession}" target="_blank" style="color:#2471A3;">UniProt: ${flyDomainInfo.B.accession}</a>`);
-                seqLink.innerHTML = links.join(' &middot; ');
+                buildSeqViewer(target, sym1, sym2, colors, flyChainSeqs);
             }
         });
     }
 
     flyCurrentRank = rank;
 
-    // Build All Ranks table (clickable rows)
+    // Build All Ranks table
     document.getElementById('ranks-tbody').innerHTML = flyParsed.rows.map(r => {
         const rk = r['Rank'] || '?';
-        // Compute iLIA from LIA/cLIA columns
-        // LIA = LIA_AB + LIA_BA (sum, not average — area is additive)
-        // FlyPredictome columns: "LIA (AB)", "LIA (BA)", "LIA", "cLIA (AB)", "cLIA (BA)", "cLIA"
         const liaVal = parseFloat(r['LIA'] || 0) || (parseFloat(r['LIA (AB)'] || 0) + parseFloat(r['LIA (BA)'] || 0));
         const cliaVal = parseFloat(r['cLIA'] || 0) || (parseFloat(r['cLIA (AB)'] || 0) + parseFloat(r['cLIA (BA)'] || 0));
         const iliaVal = Math.sqrt(liaVal * cliaVal);
@@ -1608,7 +1583,7 @@ async function generate() {
         </tr>`;
     }).join('');
 
-    // Compute and append Average row
+    // Average row
     const rows = flyParsed.rows;
     const n = rows.length;
     if (n > 1) {
@@ -1640,7 +1615,6 @@ async function generate() {
         const iliaStr = avgILIA > 0 ? avgILIA.toFixed(1) : '';
         const ilisaStr = avgILISA > 0 ? avgILISA.toFixed(1) : '';
 
-        // Store average data for loadRank('avg')
         flyAverageRow = {
             'Rank': 'Avg', 'Symbol 1': rows[0]['Symbol 1'], 'Symbol 2': rows[0]['Symbol 2'],
             'iLIS': avgILIS, 'ipTM': avgIpTM,
@@ -1665,18 +1639,11 @@ async function generate() {
 
     makeSortable(document.getElementById('ranks-table'));
 
-    // Load the selected rank
     loadRank(rank);
-
     document.getElementById('results').classList.add('active');
 
-    // Background: fetch all other rank PDBs and progressively update combined chord
     fetchAllRankPdbs();
-
-    // Show PAE map
     showPaeMap();
-
-    // Background: query MIST for known interactions
     queryMIST();
 }
 
@@ -1686,15 +1653,12 @@ async function showPaeMap() {
     if (!card || !img || !flyParsed?.paeImgUrl) { if (card) card.style.display = 'none'; return; }
 
     card.style.display = '';
-    // Fetch image as blob via proxy (same approach as PDB download)
     try {
         let blob = null;
-        // Try direct first
         try {
             const resp = await fetch(flyParsed.paeImgUrl);
             if (resp.ok) blob = await resp.blob();
         } catch {}
-        // Try proxies
         if (!blob) {
             for (const makeProxy of CORS_PROXIES) {
                 try {
@@ -1728,12 +1692,11 @@ async function queryMIST() {
     const sym1 = flyParsed.rows[0]?.['Symbol 1'] || '';
     const sym2 = flyParsed.rows[0]?.['Symbol 2'] || '';
 
-    // Fallback: if NCBI IDs not found from HTML, try to get them via UniProt → FBgn → NCBI
+    // Fallback: try UniProt → GeneID
     if (!id1 || !id2) {
         try {
             const lookupId = async (sym) => {
-                // Search UniProt for FBgn, then use NCBI to convert
-                const uniResp = await fetch(`https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(sym)}+AND+organism_id:7227&fields=xref_flybase,xref_geneid&size=1&format=json`);
+                const uniResp = await fetch(`https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(sym)}+AND+organism_id:9606&fields=xref_geneid&size=1&format=json`);
                 if (!uniResp.ok) return null;
                 const uniData = await uniResp.json();
                 const entry = uniData.results?.[0];
@@ -1752,13 +1715,11 @@ async function queryMIST() {
     card.style.display = '';
 
     try {
-        // Query gene 1 — find interactions with gene 2
         const types = 'ppi,interolog,genetic,interolog-genetic';
         const resp = await fetchTextViaProxy(`https://www.flyrnai.org/tools/mist/api/get_interactions/${id1}/${types}`);
         const data = resp ? JSON.parse(resp) : null;
         const allResults = data?.mist_data?.results || [];
 
-        // Filter to only interactions between this pair, deduplicate by type+rank+reference
         const seen = new Set();
         const pairResults = allResults.filter(r => {
             if (r.GeneA != id2 && r.GeneB != id2) return false;
@@ -1768,7 +1729,6 @@ async function queryMIST() {
             return true;
         });
 
-        // Group by type
         const byType = { ppi: [], genetic: [], interolog: [], 'interolog-genetic': [] };
         for (const r of pairResults) byType[r.Interaction_type]?.push(r);
 
@@ -1785,7 +1745,6 @@ async function queryMIST() {
             html += '<strong>No reported interaction</strong> between ' + esc(sym1) + ' and ' + esc(sym2) + ' in MIST.';
             html += '</div>';
         } else {
-            // Build a table of evidence
             html += '<table style="font-size:0.82rem; width:100%; border-collapse:collapse;">';
             html += '<thead><tr style="background:#f8f9fa;"><th style="padding:0.4rem 0.6rem; text-align:left;">Type</th><th style="padding:0.4rem 0.6rem; text-align:center;">Papers</th><th style="padding:0.4rem 0.6rem; text-align:left;">PMID</th></tr></thead>';
             html += '<tbody>';
@@ -1795,7 +1754,6 @@ async function queryMIST() {
 
             for (const [type, records] of Object.entries(byType)) {
                 if (records.length === 0) continue;
-                // Merge all PMIDs across records of this type
                 const allPmids = new Set();
                 for (const r of records) {
                     if (r.Reference) String(r.Reference).split(';').map(p => p.trim()).filter(Boolean).forEach(p => allPmids.add(p));
@@ -1823,8 +1781,6 @@ async function queryMIST() {
         }
 
         content.innerHTML = html;
-
-        // MIST link
         linkEl.innerHTML = '';
 
     } catch (e) {
@@ -1835,7 +1791,13 @@ async function queryMIST() {
 async function fetchRankPdb(rankNum) {
     if (flyPdbPerRank[rankNum] || !flyBaseUrl) return false;
     try {
-        const rankUrl = flyBaseUrl.replace('famdb_details/', 'famdb_details_with_rank/').replace(/\/$/, '') + '/' + rankNum;
+        // Handle both famdb_details/ and famdb_details_ortho/ URLs
+        let rankUrl = flyBaseUrl;
+        if (rankUrl.includes('famdb_details_ortho/')) {
+            rankUrl = rankUrl.replace('famdb_details_ortho/', 'famdb_details_ortho_with_rank/').replace(/\/$/, '') + '/' + rankNum;
+        } else {
+            rankUrl = rankUrl.replace('famdb_details/', 'famdb_details_with_rank/').replace(/\/$/, '') + '/' + rankNum;
+        }
         const rankHtml = await fetchTextViaProxy(rankUrl);
         if (rankHtml) {
             const pdbMatch = rankHtml.match(/["']([^"']*colabfold-output[^"']*\.pdb)["']/);
@@ -1859,10 +1821,7 @@ async function fetchAllRankPdbs() {
         const rankNum = parseInt(r['Rank']);
         if (flyPdbPerRank[rankNum]) continue;
         const fetched = await fetchRankPdb(rankNum);
-        if (fetched) {
-            // Update combined chord diagram with newly available data
-            updateCombinedChord();
-        }
+        if (fetched) updateCombinedChord();
     }
 }
 
@@ -1884,7 +1843,6 @@ function updateCombinedChord() {
         clir_b: document.getElementById('color-clir-b').value,
     };
 
-    // Collect contacts from all available rank PDBs
     const contactDist = 8;
     const allContacts = new Map();
     for (const r of flyParsed.rows) {
@@ -1913,7 +1871,7 @@ function updateCombinedChord() {
     const unionContacts = [...allContacts.values()];
     if (unionContacts.length > 0) {
         chordAllWrap.style.display = '';
-        drawFlyChordFromContacts(canvasAll, unionContacts, lenA, lenB, sym1, sym2, colors);
+        drawChordFromContacts(canvasAll, unionContacts, lenA, lenB, sym1, sym2, colors);
     }
 }
 
@@ -1923,13 +1881,10 @@ async function loadRank(rankNum) {
 
     const isAvg = rankNum === 'avg';
 
-    // Fetch per-rank PDB if not cached (skip for average)
     if (!isAvg && !flyPdbPerRank[rankNum]) {
         await fetchRankPdb(rankNum);
     }
-    // Use rank-specific PDB if available, else fall back to rank 1
     if (!isAvg) flyPdbText = flyPdbPerRank[rankNum] || flyPdbPerRank[1] || flyPdbText;
-    // For average, use rank 1 PDB
     if (isAvg) flyPdbText = flyPdbPerRank[1] || flyPdbText;
 
     const target = isAvg ? flyAverageRow : (flyParsed.rows.find(r => parseInt(r['Rank']) === rankNum) || flyParsed.rows[0]);
@@ -1943,34 +1898,24 @@ async function loadRank(rankNum) {
         clir_b: document.getElementById('color-clir-b').value,
     };
 
-    // PDB filename — use original from page (FlyPredictome only provides rank 1 PDB)
     const pdbFilename = flyParsed.pdbUrl ? flyParsed.pdbUrl.split('/').pop() : `${sym1}___${sym2}.pdb`;
-
-    // Generate script
     const cxcScript = generateCxc(target, pdbFilename, colors);
 
-    // Populate UI
     const titleLabel = isAvg ? 'Average' : `Rank ${rankNum}`;
     document.getElementById('result-title').textContent = `${sym1} \u2014 ${sym2} (${titleLabel})`;
-
-    // Update model badges on visualization headers
     document.querySelectorAll('.model-badge').forEach(el => { el.textContent = titleLabel; });
 
-    // Highlight selected rank row
     document.querySelectorAll('#ranks-tbody tr').forEach(tr => {
         tr.classList.toggle('selected', tr.cells[0].textContent.trim() === String(isAvg ? 'Avg' : rankNum));
     });
 
-    // Script preview
     document.getElementById('script-preview').innerHTML = highlightCxc(cxcScript);
 
-    // CXC download
     const cxcBlob = new Blob([cxcScript], { type: 'text/plain' });
     const dlCxc = document.getElementById('dl-cxc');
     dlCxc.href = URL.createObjectURL(cxcBlob);
     dlCxc.download = `${sym1}_${sym2}_${isAvg ? 'average' : 'rank' + rankNum}_interface.cxc`;
 
-    // PDB download link
     const dlPdb = document.getElementById('dl-pdb');
     if (flyParsed.pdbUrl) {
         dlPdb.href = flyParsed.pdbUrl;
@@ -1979,16 +1924,9 @@ async function loadRank(rankNum) {
         dlPdb.style.display = 'none';
     }
 
-    // Sequence viewer
-    buildFlySeqViewer(target, sym1, sym2, colors, flyChainSeqs);
-
-    // Interaction connection diagram (needs PDB coordinates)
+    buildSeqViewer(target, sym1, sym2, colors, flyChainSeqs);
     buildConnectionDiagram(target, sym1, sym2, colors, flyPdbText);
-
-    // Circular Contact Map (circular chord diagram)
     buildChordDiagram(target, sym1, sym2, colors, flyPdbText);
-
-    // 3D Structure Viewer (Mol*)
     updateViewer3d(target, colors, flyPdbText);
 }
 
@@ -2001,7 +1939,6 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r},${g},${b},${alpha})`;
 }
 
-
 function lightenColor(hex, amount) {
     hex = hex.replace('#', '');
     if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
@@ -2011,14 +1948,12 @@ function lightenColor(hex, amount) {
     return `rgb(${Math.round(r+(255-r)*amount)},${Math.round(g+(255-g)*amount)},${Math.round(b+(255-b)*amount)})`;
 }
 
-// Generic proxy fetch (unlike fetchViaProxy which checks for rank_table)
+// Generic proxy fetch
 async function fetchTextViaProxy(url) {
-    // Try direct first
     try {
         const resp = await fetch(url);
         if (resp.ok) return await resp.text();
     } catch {}
-    // Try proxies
     for (const makeProxy of CORS_PROXIES) {
         try {
             const resp = await fetch(makeProxy(url), { signal: AbortSignal.timeout(10000) });
@@ -2034,8 +1969,7 @@ async function fetchTextViaProxy(url) {
 const AA3TO1 = {ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLN:'Q',GLU:'E',GLY:'G',HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',THR:'T',TRP:'W',TYR:'Y',VAL:'V'};
 
 function parsePdbSequence(pdbText) {
-    // Extract per-chain sequences from PDB CA atoms
-    const chains = new Map(); // chain -> [{resnum, aa}]
+    const chains = new Map();
     for (const line of pdbText.split('\n')) {
         if (!line.startsWith('ATOM')) continue;
         const atomName = line.substring(12, 16).trim();
@@ -2053,22 +1987,16 @@ function parsePdbSequence(pdbText) {
     return chains;
 }
 
-// ── Domain lookup for FlyPredictome ──
-// Match predicted sequence against UniProt isoforms to find domain annotations
-async function fetchFlyDomains(chainSeqs, urlInput) {
+// ── Domain lookup (human/ortho) ──
+async function fetchDomains(chainSeqs, urlInput) {
     flyDomains = { A: [], B: [] };
     flyDomainInfo = { A: null, B: null };
     if (!chainSeqs || !flyParsed) return;
 
-    // Get gene symbols from parsed table data (more reliable than URL)
     const row0 = flyParsed.rows[0];
     const symbols = [row0?.['Symbol 1'] || '', row0?.['Symbol 2'] || ''];
-
-    // Also extract identifiers from URL as fallback
     const urlMatch = (urlInput || '').match(/famdb_details(?:_ortho)?\/([^/]+)\/([^/]+)\//);
     const urlIds = urlMatch ? [urlMatch[1], urlMatch[2]] : ['', ''];
-    // Detect if ortho (non-fly): URL IDs like AKT1_HUMAN contain underscore with species
-    const isOrtho = (urlInput || '').includes('famdb_details_ortho');
 
     const chainKeys = ['A', 'B'];
 
@@ -2083,48 +2011,46 @@ async function fetchFlyDomains(chainSeqs, urlInput) {
         try {
             let results = [];
 
-            // For ortho (non-fly): URL ID is like AKT1_HUMAN — try as UniProt mnemonic
-            if (isOrtho && urlId && urlId.includes('_')) {
+            // Try UniProt mnemonic (e.g., AKT1_HUMAN)
+            if (urlId && urlId.includes('_')) {
                 const url = `https://rest.uniprot.org/uniprotkb/search?query=id:${urlId}&format=json&fields=accession,sequence&size=5`;
                 const resp = await fetch(url);
                 if (resp.ok) { const data = await resp.json(); results = data.results || []; }
             }
 
-            // Try gene symbol search (detect organism from URL or default to fly)
+            // Try UniProt accession (e.g., P04637)
+            if (results.length === 0 && urlId && /^[A-Z0-9]{6,10}$/.test(urlId)) {
+                const url = `https://rest.uniprot.org/uniprotkb/search?query=accession:${urlId}&format=json&fields=accession,sequence&size=5`;
+                const resp = await fetch(url);
+                if (resp.ok) { const data = await resp.json(); results = data.results || []; }
+            }
+
+            // Try gene symbol search (human by default)
             if (results.length === 0 && symbol) {
-                const orgQuery = isOrtho ? '' : '+AND+organism_id:7227';
-                const url = `https://rest.uniprot.org/uniprotkb/search?query=gene:${symbol}${orgQuery}&format=json&fields=accession,sequence&size=20`;
+                const url = `https://rest.uniprot.org/uniprotkb/search?query=gene:${symbol}+AND+organism_id:9606&format=json&fields=accession,sequence&size=20`;
                 const resp = await fetch(url);
                 if (resp.ok) { const data = await resp.json(); results = data.results || []; }
             }
-            if (results.length === 0 && urlId && urlId.startsWith('FBgn')) {
-                const url = `https://rest.uniprot.org/uniprotkb/search?query=xref:flybase-${urlId}+AND+organism_id:7227&format=json&fields=accession,sequence&size=20`;
-                const resp = await fetch(url);
-                if (resp.ok) { const data = await resp.json(); results = data.results || []; }
-            }
+
             if (results.length === 0) continue;
 
-            // Try to match by sequence: exact match or substring
+            // Match by sequence
             let matched = null;
             let offset = 0;
             for (const entry of results) {
                 const uniSeq = entry.sequence?.value || '';
                 if (uniSeq.length === predLen && uniSeq === predSeq) {
-                    // Exact full-length match
                     matched = entry;
                     offset = 0;
                     break;
                 }
                 const idx = uniSeq.indexOf(predSeq);
                 if (idx >= 0) {
-                    // Predicted sequence is a substring (partial prediction)
                     matched = entry;
-                    offset = idx; // domain positions need to be shifted
+                    offset = idx;
                     break;
                 }
             }
-
-            // Fallback: match by length only (for full-length predictions)
             if (!matched) {
                 for (const entry of results) {
                     if (entry.sequence?.length === predLen) {
@@ -2134,7 +2060,6 @@ async function fetchFlyDomains(chainSeqs, urlInput) {
                     }
                 }
             }
-
             if (!matched) continue;
 
             const fullLength = matched.sequence?.length || 0;
@@ -2146,7 +2071,7 @@ async function fetchFlyDomains(chainSeqs, urlInput) {
                 endInFull: offset + predLen,
             };
 
-            // Fetch domains from the full UniProt entry (search API doesn't include features)
+            // Fetch domains
             const accession = matched.primaryAccession;
             let domains = [];
             try {
@@ -2160,12 +2085,10 @@ async function fetchFlyDomains(chainSeqs, urlInput) {
                 }
             } catch (e) { /* ignore */ }
 
-            // Fallback to InterPro/Pfam if no curated domains
             if (domains.length === 0) {
                 domains = await fetchDomainsFromPfam(accession);
             }
 
-            // Adjust domain positions for partial predictions and filter to within prediction range
             if (offset > 0 || domains.length > 0) {
                 domains = domains
                     .map(d => ({ name: d.name, start: d.start - offset, end: d.end - offset }))
@@ -2175,7 +2098,7 @@ async function fetchFlyDomains(chainSeqs, urlInput) {
 
             flyDomains[chainKeys[ci]] = domains;
         } catch (e) {
-            console.warn(`Domain lookup failed for ${geneId}:`, e);
+            console.warn(`Domain lookup failed for chain ${chainKeys[ci]}:`, e);
         }
     }
 }
@@ -2209,8 +2132,7 @@ async function fetchDomainsFromPfam(uniprotId) {
 }
 
 function parsePdbCbCoords(pdbText) {
-    // Extract Cβ (or CA for GLY) coordinates per chain
-    const chains = new Map(); // chain -> Map(resnum -> {x,y,z})
+    const chains = new Map();
     for (const line of pdbText.split('\n')) {
         if (!line.startsWith('ATOM')) continue;
         const atomName = line.substring(12, 16).trim();
@@ -2242,17 +2164,14 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
     const lenA = parseInt(row['Len A'] || row['protein_1_size']) || 0;
     const lenB = parseInt(row['Len B'] || row['protein_2_size']) || 0;
     if (lenA === 0 || lenB === 0 || cLIR_A.size === 0 || cLIR_B.size === 0) {
-        card.style.display = 'none';
-        return;
+        card.style.display = 'none'; return;
     }
 
-    // Parse 3D coordinates
     const coordChains = parsePdbCbCoords(pdbText);
     const coordA = coordChains.get('A');
     const coordB = coordChains.get('B');
     if (!coordA || !coordB) { card.style.display = 'none'; return; }
 
-    // Find cLIR-cLIR contact pairs (Cβ distance < 8 Å)
     const contactDist = 8;
     const contacts = [];
     for (const resA of cLIR_A) {
@@ -2263,17 +2182,13 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
             if (!cB) continue;
             const dx = cA.x - cB.x, dy = cA.y - cB.y, dz = cA.z - cB.z;
             const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-            if (dist < contactDist) {
-                contacts.push({ resA, resB, dist });
-            }
+            if (dist < contactDist) contacts.push({ resA, resB, dist });
         }
     }
-
     if (contacts.length === 0) { card.style.display = 'none'; return; }
     card.style.display = '';
 
-    // Drawing
-    const S = 2; // HiDPI
+    const S = 2;
     const hasDomains = (flyDomains.A.length > 0 || flyDomains.B.length > 0);
     const domRowH = hasDomains ? 20 : 0;
     const width = 900, height = 300 + domRowH * 2;
@@ -2282,161 +2197,92 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
     const barLeft = 60, barRight = width - 20;
     const barW = barRight - barLeft;
 
-    canvas.width = width * S;
-    canvas.height = height * S;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
+    canvas.width = width * S; canvas.height = height * S;
+    canvas.style.width = width + 'px'; canvas.style.height = height + 'px';
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.scale(S, S);
+    ctx.save(); ctx.scale(S, S);
 
-    // Helper: residue to x position
     const xA = (res) => barLeft + ((res - 1) / Math.max(1, lenA - 1)) * barW;
     const xB = (res) => barLeft + ((res - 1) / Math.max(1, lenB - 1)) * barW;
 
-    // Draw Chain A bar
-    ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(barLeft, barY_A, barW, barH);
-    // LIR highlights
-    for (const res of LIR_A) {
-        const x = xA(res);
-        ctx.fillStyle = colors.lir_a;
-        ctx.fillRect(x - 0.5, barY_A, 1.5, barH);
-    }
-    // cLIR highlights
-    for (const res of cLIR_A) {
-        const x = xA(res);
-        ctx.fillStyle = colors.clir_a;
-        ctx.fillRect(x - 0.5, barY_A, 1.5, barH);
-    }
-    // Border
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(barLeft, barY_A, barW, barH);
+    // Chain A bar
+    ctx.fillStyle = '#f0f0f0'; ctx.fillRect(barLeft, barY_A, barW, barH);
+    for (const res of LIR_A) { ctx.fillStyle = colors.lir_a; ctx.fillRect(xA(res) - 0.5, barY_A, 1.5, barH); }
+    for (const res of cLIR_A) { ctx.fillStyle = colors.clir_a; ctx.fillRect(xA(res) - 0.5, barY_A, 1.5, barH); }
+    ctx.strokeStyle = '#999'; ctx.lineWidth = 0.5; ctx.strokeRect(barLeft, barY_A, barW, barH);
 
-    // Draw Chain B bar
-    ctx.fillStyle = '#f0f0f0';
-    ctx.fillRect(barLeft, barY_B, barW, barH);
-    for (const res of LIR_B) {
-        const x = xB(res);
-        ctx.fillStyle = colors.lir_b;
-        ctx.fillRect(x - 0.5, barY_B, 1.5, barH);
-    }
-    for (const res of cLIR_B) {
-        const x = xB(res);
-        ctx.fillStyle = colors.clir_b;
-        ctx.fillRect(x - 0.5, barY_B, 1.5, barH);
-    }
-    ctx.strokeStyle = '#999';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(barLeft, barY_B, barW, barH);
+    // Chain B bar
+    ctx.fillStyle = '#f0f0f0'; ctx.fillRect(barLeft, barY_B, barW, barH);
+    for (const res of LIR_B) { ctx.fillStyle = colors.lir_b; ctx.fillRect(xB(res) - 0.5, barY_B, 1.5, barH); }
+    for (const res of cLIR_B) { ctx.fillStyle = colors.clir_b; ctx.fillRect(xB(res) - 0.5, barY_B, 1.5, barH); }
+    ctx.strokeStyle = '#999'; ctx.lineWidth = 0.5; ctx.strokeRect(barLeft, barY_B, barW, barH);
 
     // Labels
-    ctx.fillStyle = colors.clir_a;
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.clir_a; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     ctx.fillText(`${sym1} (A)`, barLeft - 5, barY_A + barH / 2);
-    ctx.fillStyle = colors.clir_b;
-    ctx.fillText(`${sym2} (B)`, barLeft - 5, barY_B + barH / 2);
+    ctx.fillStyle = colors.clir_b; ctx.fillText(`${sym2} (B)`, barLeft - 5, barY_B + barH / 2);
 
-    // Residue number ticks
-    ctx.fillStyle = '#888';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
+    // Residue ticks
+    ctx.fillStyle = '#888'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    for (const t of [1, Math.round(lenA/2), lenA]) {
-        ctx.fillText(t, xA(t), barY_A + barH + 3);
-    }
+    for (const t of [1, Math.round(lenA/2), lenA]) ctx.fillText(t, xA(t), barY_A + barH + 3);
     ctx.textBaseline = 'bottom';
-    for (const t of [1, Math.round(lenB/2), lenB]) {
-        ctx.fillText(t, xB(t), barY_B - 3);
-    }
+    for (const t of [1, Math.round(lenB/2), lenB]) ctx.fillText(t, xB(t), barY_B - 3);
 
-    // Draw connection lines
+    // Connection lines
     const minDist = Math.min(...contacts.map(c => c.dist));
     const maxDist = Math.max(...contacts.map(c => c.dist));
-
-    // Parse colors to rgba
     const colA = colors.clir_a || '#00897B';
     const colB = colors.clir_b || '#E64A19';
 
     for (const c of contacts) {
-        const ax = xA(c.resA);
-        const bx = xB(c.resB);
+        const ax = xA(c.resA); const bx = xB(c.resB);
         const t = maxDist > minDist ? 1 - (c.dist - minDist) / (maxDist - minDist) : 1;
         const alpha = 0.08 + t * 0.2;
-
-        ctx.beginPath();
-        ctx.moveTo(ax, barY_A + barH);
+        ctx.beginPath(); ctx.moveTo(ax, barY_A + barH);
         const midY = (barY_A + barH + barY_B) / 2;
         ctx.bezierCurveTo(ax, midY, bx, midY, bx, barY_B);
-
-        // Gradient from chain A color to chain B color
         const grad = ctx.createLinearGradient(0, barY_A + barH, 0, barY_B);
         grad.addColorStop(0, hexToRgba(colA, alpha));
         grad.addColorStop(1, hexToRgba(colB, alpha));
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        ctx.strokeStyle = grad; ctx.lineWidth = 1; ctx.stroke();
     }
 
-    // Contact count label (below the diagram, not overlapping)
-    ctx.fillStyle = '#888';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#888'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText(`${contacts.length} cLIR contact pairs (C\u03B2 < ${contactDist} \u00C5)`, width / 2, barY_B + barH + (hasDomains ? 22 : 18));
 
     // Domain annotations
-    const domPalette = [
-        'rgba(102,194,165,0.35)', 'rgba(252,141,98,0.35)', 'rgba(141,160,203,0.35)',
-        'rgba(231,138,195,0.35)', 'rgba(166,216,84,0.35)', 'rgba(255,217,47,0.35)',
-        'rgba(229,196,148,0.35)', 'rgba(179,179,179,0.35)'
-    ];
-    const domBorderPalette = [
-        'rgba(102,194,165,0.7)', 'rgba(252,141,98,0.7)', 'rgba(141,160,203,0.7)',
-        'rgba(231,138,195,0.7)', 'rgba(166,216,84,0.7)', 'rgba(255,217,47,0.7)',
-        'rgba(229,196,148,0.7)', 'rgba(179,179,179,0.7)'
-    ];
+    const domPalette = ['rgba(102,194,165,0.35)','rgba(252,141,98,0.35)','rgba(141,160,203,0.35)','rgba(231,138,195,0.35)','rgba(166,216,84,0.35)','rgba(255,217,47,0.35)','rgba(229,196,148,0.35)','rgba(179,179,179,0.35)'];
+    const domBorderPalette = ['rgba(102,194,165,0.7)','rgba(252,141,98,0.7)','rgba(141,160,203,0.7)','rgba(231,138,195,0.7)','rgba(166,216,84,0.7)','rgba(255,217,47,0.7)','rgba(229,196,148,0.7)','rgba(179,179,179,0.7)'];
     if (hasDomains) {
         const domBlockH = 14, domGap = 2;
-        // Chain A domains above bar
         for (let di = 0; di < flyDomains.A.length; di++) {
             const d = flyDomains.A[di];
             const x1 = xA(Math.max(1, d.start)), x2 = xA(Math.min(lenA, d.end));
             const dw = x2 - x1, dy = barY_A - domGap - domBlockH;
-            ctx.fillStyle = domPalette[di % domPalette.length];
-            ctx.fillRect(x1, dy, dw, domBlockH);
-            ctx.strokeStyle = domBorderPalette[di % domBorderPalette.length];
-            ctx.lineWidth = 0.8;
-            ctx.strokeRect(x1, dy, dw, domBlockH);
+            ctx.fillStyle = domPalette[di % domPalette.length]; ctx.fillRect(x1, dy, dw, domBlockH);
+            ctx.strokeStyle = domBorderPalette[di % domBorderPalette.length]; ctx.lineWidth = 0.8; ctx.strokeRect(x1, dy, dw, domBlockH);
             ctx.fillStyle = '#444'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             const label = d.name, labelW = ctx.measureText(label).width;
             if (labelW < dw - 2) ctx.fillText(label, x1 + dw/2, dy + domBlockH/2);
             else { const abbr = label.length > 6 ? label.substring(0,5)+'..' : label; if (ctx.measureText(abbr).width < dw-2) ctx.fillText(abbr, x1+dw/2, dy+domBlockH/2); }
         }
-        // Chain B domains below bar
         for (let di = 0; di < flyDomains.B.length; di++) {
             const d = flyDomains.B[di];
             const x1 = xB(Math.max(1, d.start)), x2 = xB(Math.min(lenB, d.end));
             const dw = x2 - x1, dy = barY_B + barH + domGap;
-            ctx.fillStyle = domPalette[di % domPalette.length];
-            ctx.fillRect(x1, dy, dw, domBlockH);
-            ctx.strokeStyle = domBorderPalette[di % domBorderPalette.length];
-            ctx.lineWidth = 0.8;
-            ctx.strokeRect(x1, dy, dw, domBlockH);
+            ctx.fillStyle = domPalette[di % domPalette.length]; ctx.fillRect(x1, dy, dw, domBlockH);
+            ctx.strokeStyle = domBorderPalette[di % domBorderPalette.length]; ctx.lineWidth = 0.8; ctx.strokeRect(x1, dy, dw, domBlockH);
             ctx.fillStyle = '#444'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             const label = d.name, labelW = ctx.measureText(label).width;
             if (labelW < dw - 2) ctx.fillText(label, x1 + dw/2, dy + domBlockH/2);
             else { const abbr = label.length > 6 ? label.substring(0,5)+'..' : label; if (ctx.measureText(abbr).width < dw-2) ctx.fillText(abbr, x1+dw/2, dy+domBlockH/2); }
         }
     }
-
     ctx.restore();
 
-    // Domain legend — each chain on its own row, with partial protein note
+    // Domain legend
     const legendEl = document.getElementById('fly-domain-legend');
     if (legendEl) {
         legendEl.innerHTML = '';
@@ -2454,28 +2300,22 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
             chainLabel.style.cssText = 'font-weight:600; color:#444;';
             chainLabel.textContent = cl.label + ':';
             row.appendChild(chainLabel);
-            // Partial protein note
             if (cl.info && cl.info.isPartial) {
                 const note = document.createElement('span');
                 note.style.cssText = 'font-size:0.68rem; color:#c0392b; font-style:italic;';
                 note.textContent = `partial (aa ${cl.info.startInFull}\u2013${cl.info.endInFull} of ${cl.info.fullLength})`;
                 row.appendChild(note);
             }
-            // Domain items with full-length positions
             for (let di = 0; di < cl.domains.length; di++) {
                 const d = cl.domains[di];
                 const item = document.createElement('span');
-                // Show predicted positions, and full-length positions if partial
                 let posText = `${d.start}\u2013${d.end}`;
                 if (cl.info && cl.info.offset > 0) {
-                    const fullStart = d.start + cl.info.offset;
-                    const fullEnd = d.end + cl.info.offset;
-                    posText += ` [${fullStart}\u2013${fullEnd} in full]`;
+                    posText += ` [${d.start + cl.info.offset}\u2013${d.end + cl.info.offset} in full]`;
                 }
                 item.innerHTML = `<span style="display:inline-block; width:10px; height:10px; background:${domPalette[di % domPalette.length]}; border:1px solid ${domBorderPalette[di % domBorderPalette.length]}; vertical-align:middle; margin-right:3px; border-radius:2px;"></span>${d.name} (${posText})`;
                 row.appendChild(item);
             }
-            // UniProt link
             if (cl.info && cl.info.accession) {
                 const link = document.createElement('a');
                 link.href = `https://www.uniprot.org/uniprot/${cl.info.accession}`;
@@ -2489,15 +2329,13 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
     }
 }
 
-function drawFlyChord(canvas, cLIR_A, cLIR_B, lenA, lenB, sym1, sym2, colors, coordA, coordB, skipDistFilter) {
-    const S = 2;
-    const size = 350;
+function drawChord(canvas, cLIR_A, cLIR_B, lenA, lenB, sym1, sym2, colors, coordA, coordB, skipDistFilter) {
+    const S = 2, size = 350;
     canvas.width = size * S; canvas.height = size * S;
     canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.scale(S, S);
+    ctx.save(); ctx.scale(S, S);
 
     const cx = size / 2, cy = size / 2;
     const outerR = size / 2 - 30, innerR = outerR - 18, chordR = innerR - 4;
@@ -2506,35 +2344,27 @@ function drawFlyChord(canvas, cLIR_A, cLIR_B, lenA, lenB, sym1, sym2, colors, co
     const totalAngle = 2 * Math.PI - 2 * gap;
     const angleA = (lenA / totalLen) * totalAngle;
     const angleB = (lenB / totalLen) * totalAngle;
-
     const startA = -Math.PI / 2;
     const endA = startA + angleA;
     const startB = endA + gap;
     const endB = startB + angleB;
-
     const colA = colors.clir_a || '#00897B';
     const colB = colors.clir_b || '#E64A19';
-
     const resAngleA = (res) => startA + ((res - 1) / Math.max(1, lenA - 1)) * angleA;
     const resAngleB = (res) => startB + ((res - 1) / Math.max(1, lenB - 1)) * angleB;
 
-    // Draw contact lines
     if (skipDistFilter) {
-        // All cLIR pairs without distance filtering
         for (const resA of cLIR_A) {
             for (const resB of cLIR_B) {
                 const aA = resAngleA(resA), aB = resAngleB(resB);
                 const xA = cx + Math.cos(aA) * chordR, yA = cy + Math.sin(aA) * chordR;
                 const xB = cx + Math.cos(aB) * chordR, yB = cy + Math.sin(aB) * chordR;
-                ctx.beginPath();
-                ctx.moveTo(xA, yA);
+                ctx.beginPath(); ctx.moveTo(xA, yA);
                 ctx.quadraticCurveTo(cx, cy, xB, yB);
                 const grad = ctx.createLinearGradient(xA, yA, xB, yB);
                 grad.addColorStop(0, hexToRgba(colA, 0.12));
                 grad.addColorStop(1, hexToRgba(colB, 0.12));
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = 1;
-                ctx.stroke();
+                ctx.strokeStyle = grad; ctx.lineWidth = 1; ctx.stroke();
             }
         }
     } else {
@@ -2562,64 +2392,37 @@ function drawFlyChord(canvas, cLIR_A, cLIR_B, lenA, lenB, sym1, sym2, colors, co
             const grad = ctx.createLinearGradient(pA.x, pA.y, pB.x, pB.y);
             grad.addColorStop(0, hexToRgba(colA, alpha));
             grad.addColorStop(1, hexToRgba(colB, alpha));
-            ctx.beginPath();
-            ctx.moveTo(pA.x, pA.y);
+            ctx.beginPath(); ctx.moveTo(pA.x, pA.y);
             ctx.quadraticCurveTo(cx, cy, pB.x, pB.y);
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1.2;
-            ctx.stroke();
+            ctx.strokeStyle = grad; ctx.lineWidth = 1.2; ctx.stroke();
         }
     }
 
-    // Draw arcs
+    // Arcs
     for (const [sA, eA, col] of [[startA, endA, colA], [startB, endB, colB]]) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, outerR, sA, eA);
-        ctx.arc(cx, cy, innerR, eA, sA, true);
-        ctx.closePath();
-        ctx.fillStyle = col;
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, outerR, sA, eA); ctx.arc(cx, cy, innerR, eA, sA, true); ctx.closePath();
+        ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
     }
 
     // Labels
-    for (const arc of [
-        { mid: (startA + endA) / 2, name: `${sym1} (A)`, size: lenA },
-        { mid: (startB + endB) / 2, name: `${sym2} (B)`, size: lenB }
-    ]) {
+    for (const arc of [{mid:(startA+endA)/2, name:`${sym1} (A)`, size:lenA}, {mid:(startB+endB)/2, name:`${sym2} (B)`, size:lenB}]) {
         const labelR = outerR + 14;
         const lx = cx + Math.cos(arc.mid) * labelR;
         const ly = cy + Math.sin(arc.mid) * labelR;
         let textAngle = arc.mid + Math.PI / 2;
         const normA = ((textAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
         if (normA > Math.PI/2 && normA < 3*Math.PI/2) textAngle += Math.PI;
-        ctx.save();
-        ctx.translate(lx, ly);
-        ctx.rotate(textAngle);
-        ctx.fillStyle = '#333';
-        ctx.font = 'bold 9px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(arc.name, 0, 0);
-        ctx.restore();
-        const rx = cx + Math.cos(arc.mid) * (outerR + 24);
-        const ry = cy + Math.sin(arc.mid) * (outerR + 24);
-        ctx.save();
-        ctx.translate(rx, ry);
-        ctx.rotate(textAngle);
-        ctx.fillStyle = '#888';
-        ctx.font = '7px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`${arc.size}`, 0, 0);
-        ctx.restore();
+        ctx.save(); ctx.translate(lx, ly); ctx.rotate(textAngle);
+        ctx.fillStyle = '#333'; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(arc.name, 0, 0); ctx.restore();
+        ctx.save(); ctx.translate(cx+Math.cos(arc.mid)*(outerR+24), cy+Math.sin(arc.mid)*(outerR+24));
+        ctx.rotate(textAngle); ctx.fillStyle = '#888'; ctx.font = '7px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${arc.size}`, 0, 0); ctx.restore();
     }
     ctx.restore();
 }
 
-function drawFlyChordFromContacts(canvas, contacts, lenA, lenB, sym1, sym2, colors) {
+function drawChordFromContacts(canvas, contacts, lenA, lenB, sym1, sym2, colors) {
     const S = 2, size = 350;
     canvas.width = size * S; canvas.height = size * S;
     canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
@@ -2638,7 +2441,6 @@ function drawFlyChordFromContacts(canvas, contacts, lenA, lenB, sym1, sym2, colo
     const resAngleA = r => startA + ((r-1)/Math.max(1,lenA-1)) * angleA;
     const resAngleB = r => startB + ((r-1)/Math.max(1,lenB-1)) * angleB;
 
-    // Draw contact lines
     const minDist = Math.min(...contacts.map(c => c.dist));
     const maxDist = Math.max(...contacts.map(c => c.dist));
     for (const c of contacts) {
@@ -2655,13 +2457,11 @@ function drawFlyChordFromContacts(canvas, contacts, lenA, lenB, sym1, sym2, colo
         ctx.strokeStyle = grad; ctx.lineWidth = 1.2; ctx.stroke();
     }
 
-    // Arcs
     for (const [sA, eA, col] of [[startA,endA,colA],[startB,endB,colB]]) {
         ctx.beginPath(); ctx.arc(cx,cy,outerR,sA,eA); ctx.arc(cx,cy,innerR,eA,sA,true); ctx.closePath();
         ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
     }
 
-    // Labels
     for (const arc of [{mid:(startA+endA)/2, name:`${sym1} (A)`, size:lenA}, {mid:(startB+endB)/2, name:`${sym2} (B)`, size:lenB}]) {
         let textAngle = arc.mid + Math.PI/2;
         const normA = ((textAngle%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
@@ -2696,18 +2496,14 @@ function buildChordDiagram(row, sym1, sym2, colors, pdbText) {
     if (!coordA || !coordB) { card.style.display = 'none'; return; }
 
     card.style.display = '';
+    drawChord(canvas, cLIR_A, cLIR_B, lenA, lenB, sym1, sym2, colors, coordA, coordB, false);
 
-    // Draw selected rank chord
-    drawFlyChord(canvas, cLIR_A, cLIR_B, lenA, lenB, sym1, sym2, colors, coordA, coordB, false);
-
-    // Draw combined all-ranks chord — union of contacts from each rank's own PDB
     const hasMultipleRanks = flyParsed && flyParsed.rows && flyParsed.rows.length > 1;
     if (chordAllWrap) chordAllWrap.style.display = hasMultipleRanks ? '' : 'none';
 
     if (hasMultipleRanks && canvasAll && flyAverageRow) {
-        // Collect contacts from each rank using its own PDB structure
         const contactDist = 8;
-        const allContacts = new Map(); // "resA-resB" → {resA, resB, dist}
+        const allContacts = new Map();
         for (const r of flyParsed.rows) {
             const rankNum = parseInt(r['Rank']);
             const rankPdb = flyPdbPerRank[rankNum];
@@ -2730,16 +2526,12 @@ function buildChordDiagram(row, sym1, sym2, colors, pdbText) {
                 }
             }
         }
-        // Draw using rank 1 coordinates for positioning, but with union of all contacts
         const unionContacts = [...allContacts.values()];
-        if (unionContacts.length > 0) {
-            // Use a modified draw that takes pre-computed contacts
-            drawFlyChordFromContacts(canvasAll, unionContacts, lenA, lenB, sym1, sym2, colors);
-        }
+        if (unionContacts.length > 0) drawChordFromContacts(canvasAll, unionContacts, lenA, lenB, sym1, sym2, colors);
     }
 }
 
-function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
+function buildSeqViewer(row, sym1, sym2, colors, chainSeqs) {
     const container = document.getElementById('seq-viewer');
     const card = document.getElementById('seq-viewer-card');
     if (!container) return;
@@ -2766,7 +2558,7 @@ function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
         if (cc.len === 0) continue;
         const label = document.createElement('div');
         label.className = 'seq-chain-label';
-        const chainKey = cc.name.includes('A') || cc === chainConfigs[0] ? 'A' : 'B';
+        const chainKey = cc === chainConfigs[0] ? 'A' : 'B';
         const dInfo = flyDomainInfo ? flyDomainInfo[chainKey] : null;
         let labelHtml = `${cc.name} (${cc.len} residues)`;
         if (dInfo && dInfo.isPartial) {
@@ -2785,16 +2577,13 @@ function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
         for (let rowStart = 0; rowStart < totalRes; rowStart += perRow) {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'seq-row';
-
             const startNum = hasSeq ? cc.seq[rowStart].resnum : rowStart + 1;
             const numLabel = document.createElement('span');
             numLabel.className = 'seq-num';
             numLabel.textContent = startNum;
             rowDiv.appendChild(numLabel);
-
             const blocks = document.createElement('span');
             blocks.className = 'seq-blocks';
-
             const rowEnd = Math.min(rowStart + perRow, totalRes);
             for (let i = rowStart; i < rowEnd; i++) {
                 const resnum = hasSeq ? cc.seq[i].resnum : i + 1;
@@ -2813,7 +2602,6 @@ function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
                 });
                 el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
                 blocks.appendChild(el);
-
                 if ((i - rowStart + 1) % 10 === 0 && i < rowEnd - 1) {
                     const gap = document.createElement('span');
                     gap.style.cssText = 'width:3px; display:inline-block;';
@@ -2821,21 +2609,18 @@ function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
                 }
             }
             rowDiv.appendChild(blocks);
-
-            const endNum = hasSeq ? cc.seq[rowEnd - 1].resnum : rowEnd;
             const endLabel = document.createElement('span');
             endLabel.className = 'seq-num';
             endLabel.style.textAlign = 'left';
             endLabel.style.paddingLeft = '3px';
             endLabel.textContent = rowEnd;
             rowDiv.appendChild(endLabel);
-
             container.appendChild(rowDiv);
         }
     }
 }
 
-function downloadFlyCSV() {
+function downloadCSV() {
     if (!flyParsed || flyParsed.rows.length === 0) return;
     const header = 'name,model,chain_A,chain_B,iLIS,iLIA,iLISA,LIS,cLIS,ipTM,pLDDT,pTM,LIR_A,LIR_B,cLIR_A,cLIR_B,len_A,len_B,LIR_indices_A,LIR_indices_B,cLIR_indices_A,cLIR_indices_B';
     const rows = [header];
@@ -2875,7 +2660,7 @@ function showError(msg) {
     el.classList.add('active');
 }
 
-// ── Apply color preset ──
+// ── Presets ──
 function applyPreset(lirA, clirA, lirB, clirB, el) {
     cxcColorMode = '';
     document.getElementById('color-lir-a').value = lirA;
@@ -2887,12 +2672,10 @@ function applyPreset(lirA, clirA, lirB, clirB, el) {
     document.getElementById('hex-lir-b').textContent = lirB;
     document.getElementById('hex-clir-b').textContent = clirB;
     updateColorStrip();
-    // Update active state
     if (el) {
         document.querySelectorAll('.preset-chip, .preset').forEach(p => p.classList.remove('active'));
         el.classList.add('active');
     }
-    // Regenerate CXC with new colors
     if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
 }
 
@@ -2911,7 +2694,6 @@ function swapColors() {
     applyPreset(lb, cb, la, ca, null);
 }
 
-// Enter key triggers generate
 document.getElementById('url-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') generate();
 });
@@ -2925,26 +2707,19 @@ function makeSortable(table) {
             const tbody = table.querySelector('tbody');
             if (!tbody) return;
             const rows = Array.from(tbody.querySelectorAll('tr'));
-            // Separate pinned rows (Average, selected) from sortable rows
             const sortableRows = rows.filter(r => !r.dataset.pinned && r.textContent.trim() !== '');
             const pinnedRows = rows.filter(r => r.dataset.pinned);
-
             const isAsc = th.classList.contains('sort-asc');
             headers.forEach(h => { h.classList.remove('sort-asc', 'sort-desc'); });
             th.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
-
             sortableRows.sort((a, b) => {
                 const aVal = a.cells[colIdx]?.textContent.trim() || '';
                 const bVal = b.cells[colIdx]?.textContent.trim() || '';
                 const aNum = parseFloat(aVal);
                 const bNum = parseFloat(bVal);
-                if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return isAsc ? bNum - aNum : aNum - bNum;
-                }
+                if (!isNaN(aNum) && !isNaN(bNum)) return isAsc ? bNum - aNum : aNum - bNum;
                 return isAsc ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
             });
-
-            // Re-append: sortable rows first, then pinned rows at bottom
             sortableRows.forEach(r => tbody.appendChild(r));
             pinnedRows.forEach(r => tbody.appendChild(r));
         });
@@ -2975,14 +2750,13 @@ function plddtColor(b) {
     return '#FF7D45';
 }
 
-function buildFlyColorComponents(row, colors, pdbText) {
+function buildColorComponents(row, colors, pdbText) {
     const components = [];
     const LIR_A = row._LIR_A, LIR_B = row._LIR_B;
     const cLIR_A = row._cLIR_A, cLIR_B = row._cLIR_B;
     const lirAFilled = fillGaps(LIR_A);
     const lirBFilled = fillGaps(LIR_B);
 
-    // Helper: convert Set to array of {start, end} ranges
     function toRanges(positions) {
         const sorted = [...positions].sort((a, b) => a - b);
         if (sorted.length === 0) return [];
@@ -3016,7 +2790,6 @@ function buildFlyColorComponents(row, colors, pdbText) {
         components.push({ chain: 'A', ranges: toRanges(lirAFilled), color: colors.clir_a });
         components.push({ chain: 'B', ranges: toRanges(lirBFilled), color: colors.clir_b });
     } else {
-        // Gradient: LIR-only in light, cLIR in dark (separate components)
         const lirOnlyA = new Set([...lirAFilled].filter(r => !cLIR_A.has(r)));
         const lirOnlyB = new Set([...lirBFilled].filter(r => !cLIR_B.has(r)));
         components.push({ chain: 'A', ranges: toRanges(lirOnlyA), color: colors.lir_a });
@@ -3113,13 +2886,7 @@ async function init() {
         viewer.loadStructureFromData(structData, fmt);
     }
 
-    // Apply illustrative style AFTER loading
     setTimeout(function() {
-        try {
-            if (viewer.plugin.managers && viewer.plugin.managers.canvas3dContext) {
-                viewer.plugin.managers.canvas3dContext.setProps({ style: { name: 'illustrative' } });
-            }
-        } catch(e1) {}
         try {
             var c3d = viewer.plugin.canvas3d;
             if (c3d) {
@@ -3132,7 +2899,6 @@ async function init() {
                         outline: { name: 'on', params: { scale: 1, threshold: 0.33, color: 0x000000, includeTransparent: true } },
                     },
                 });
-
             }
         } catch(e2) { console.warn('Illustrative style error:', e2); }
     }, 2000);
@@ -3148,11 +2914,7 @@ function updateViewer3d(row, colors, pdbText) {
     if (!pdbText || !frame) { if (card) card.style.display = 'none'; return; }
 
     card.style.display = '';
-
-    // Build separate components per colored group (non-LIR = hidden)
-    const colorComponents = buildFlyColorComponents(row, colors, pdbText);
-
-    // Build iframe page with structure + coloring
+    const colorComponents = buildColorComponents(row, colors, pdbText);
     const page = buildMolstarPage(pdbText, 'pdb', colorComponents);
     const blob = new Blob([page], { type: 'text/html' });
     if (viewer3dBlobUrl) URL.revokeObjectURL(viewer3dBlobUrl);
@@ -3169,7 +2931,7 @@ function copyScript() {
     });
 }
 
-// Auto-load from URL parameter (for Ctrl+click new tab support)
+// Auto-load from URL parameter
 (function() {
     const params = new URLSearchParams(window.location.search);
     const url = params.get('url');
