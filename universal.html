@@ -2392,9 +2392,10 @@ var fmt = "${fmt}";
 var mvsTemplate = ${JSON.stringify(JSON.stringify(mvsJson))};
 
 async function init() {
+    var isMobile = window.innerWidth < 768;
     var viewer = await molstar.Viewer.create('viewer1', {
         layoutIsExpanded: false,
-        layoutShowControls: true,
+        layoutShowControls: !isMobile,
         layoutShowRemoteState: false,
         layoutShowSequence: false,
         layoutShowLog: false,
