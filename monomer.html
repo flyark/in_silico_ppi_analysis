@@ -197,7 +197,7 @@
     <div class="card" id="regions-card" style="display:none;">
         <div class="step-header">Define Regions</div>
 
-        <!-- Top row: Regions+Settings (left) | iLIS/cLIR Matrix (right) -->
+        <!-- Top row: Regions+Settings (left) | iLIS/iLIA Matrix (right) -->
         <div style="display:flex; gap:1.5rem; align-items:flex-start; flex-wrap:wrap;">
             <!-- Left: Regions, buttons, settings -->
             <div style="flex:1; min-width:280px;">
@@ -231,9 +231,9 @@
                     <div style="margin-top:0.3rem; color:#999; font-size:0.72rem;">Default: min length 15, merge LIS 0.35, pLDDT 50, boundary margin 2. Boundary margin excludes N residues at each region edge from iLIS calculation.</div>
                 </div>
             </div>
-            <!-- Right: iLIS / cLIR Matrix -->
+            <!-- Right: iLIS / iLIA Matrix -->
             <div id="score-matrix-inline" style="display:none; text-align:center; max-width:55%; overflow:auto;">
-                <div class="map-label">iLIS / cLIR Matrix</div>
+                <div class="map-label">iLIS / iLIA Matrix</div>
                 <canvas id="score-matrix-canvas"></canvas>
                 <div style="display:flex; justify-content:center; gap:1rem; margin-top:0.3rem; font-size:0.7rem;">
                     <div style="display:flex; align-items:center; gap:0.3rem;">
@@ -242,7 +242,7 @@
                     </div>
                     <div style="display:flex; align-items:center; gap:0.3rem;">
                         <canvas id="colorbar-clir" width="60" height="8"></canvas>
-                        <span style="color:#888;">cLIR</span>
+                        <span style="color:#888;">iLIA</span>
                     </div>
                 </div>
             </div>
@@ -878,76 +878,20 @@ function resetDefaults() {
 function detectAndCalculate() {
     detectRegions();
     // Always draw PAE/LIS/cLIS maps even with <2 regions
-    drawMonomerMaps();
-    if (monRegions.length >= 2) calculate();
-}
-
-function drawMonomerMaps() {
-    if (!monPae) return;
-    const container = document.getElementById('monomer-maps-flex');
-    container.innerHTML = '';
-    const n = monPae.length;
-    const regions = monRegions.filter(r => {
-        const s = parseInt(r.start), e = parseInt(r.end);
-        return !isNaN(s) && !isNaN(e) && s >= 1 && e <= monProteinLen;
-    }).map(r => ({ name: r.name, start: parseInt(r.start), end: parseInt(r.end), color: r.color }));
-    const paeCutoff = parseFloat(document.getElementById('pae-cutoff')?.value) || 12;
-    const cbCutoff = parseFloat(document.getElementById('cb-cutoff')?.value) || 8;
-    // Build contact map
-    const coordMap = new Map();
-    for (const c of monCoords) coordMap.set(c.resnum, c);
-
-    // PAE map
-    const paeItem = document.createElement('div');
-    paeItem.className = 'map-item';
-    paeItem.innerHTML = '<div class="map-label">PAE</div>';
-    const paeCanvas = document.createElement('canvas');
-    paeItem.appendChild(paeCanvas);
-    container.appendChild(paeItem);
-    drawMapCanvasSingle(paeCanvas, monPae, n, bwrColor, 0, 30, regions);
-
-    // LIS map
-    const lisMap = [];
-    for (let i = 0; i < n; i++) {
-        const row = new Float32Array(n);
-        for (let j = 0; j < n; j++) {
-            const avg = (monPae[i][j] + monPae[j][i]) / 2;
-            row[j] = avg < paeCutoff ? 1 - avg / paeCutoff : 0;
-        }
-        lisMap.push(row);
+    drawPaeMap();
+    if (monRegions.length >= 2) {
+        calculate();
+    } else {
+        // Even with <2 regions, show sequence viewer and domain info
+        const validRegions = monRegions.filter(r => {
+            const s = parseInt(r.start), e = parseInt(r.end);
+            return !isNaN(s) && !isNaN(e) && s >= 1 && e <= monProteinLen;
+        }).map(r => ({ name: r.name, start: parseInt(r.start), end: parseInt(r.end), color: r.color }));
+        monPairResults = [];
+        buildSequenceViewer(validRegions);
+        buildDomainComparison(validRegions);
+        document.getElementById('results').classList.add('active');
     }
-    const lisItem = document.createElement('div');
-    lisItem.className = 'map-item';
-    lisItem.innerHTML = '<div class="map-label">LIS</div>';
-    const lisCanvas = document.createElement('canvas');
-    lisItem.appendChild(lisCanvas);
-    container.appendChild(lisItem);
-    drawMapCanvasSingle(lisCanvas, lisMap, n, bluesColor, 0, 1, regions);
-
-    // cLIS map
-    const clisMap = [];
-    for (let i = 0; i < n; i++) {
-        const row = new Float32Array(n);
-        for (let j = 0; j < n; j++) {
-            const avg = (monPae[i][j] + monPae[j][i]) / 2;
-            if (avg >= paeCutoff) { row[j] = 0; continue; }
-            const ci = coordMap.get(i + 1), cj = coordMap.get(j + 1);
-            if (ci && cj) {
-                const dx = ci.x - cj.x, dy = ci.y - cj.y, dz = ci.z - cj.z;
-                if (Math.sqrt(dx*dx + dy*dy + dz*dz) < cbCutoff) {
-                    row[j] = 1 - avg / paeCutoff;
-                }
-            }
-        }
-        clisMap.push(row);
-    }
-    const clisItem = document.createElement('div');
-    clisItem.className = 'map-item';
-    clisItem.innerHTML = '<div class="map-label">cLIS</div>';
-    const clisCanvas = document.createElement('canvas');
-    clisItem.appendChild(clisCanvas);
-    container.appendChild(clisItem);
-    drawMapCanvasSingle(clisCanvas, clisMap, n, greensColor, 0, 1, regions);
 }
 
 function renderRegions() {
@@ -1720,7 +1664,7 @@ function buildDomainComparison(validRegions) {
     const content = document.getElementById('domain-comparison-content');
     if (!card || !content) return;
 
-    if (!monDomains || monDomains.length === 0 || !validRegions || validRegions.length < 2) {
+    if (!monDomains || monDomains.length === 0 || !validRegions || validRegions.length < 1) {
         card.style.display = 'none';
         return;
     }
@@ -1838,7 +1782,7 @@ function displayResults(validRegions) {
         metricsDiv.innerHTML = '<div style="color:#888; font-size:0.9rem; padding:0.5rem 0;">No intramolecular interaction detected between the defined regions.</div>';
         document.getElementById('pairs-tbody').innerHTML = '';
         // Still show other results (maps, etc.)
-        buildMonomerSeqViewer(validRegions);
+        buildSequenceViewer(validRegions);
         buildDomainComparison(validRegions);
         makeSortable(document.getElementById('pairs-table'));
         document.getElementById('results').classList.add('active');
@@ -2714,13 +2658,14 @@ function drawMapCanvasSingle(canvas, map2d, n, colorFn, vmin, vmax, regions, ove
         }
 
         // Y-axis: staggered boundary residue numbers at region starts
+        // Skip positions at 1 or n to avoid overlap with axis endpoints
         const boundaryPositions = [];
         for (const r of regions) {
             const s = parseInt(r.start);
-            if (!isNaN(s) && s >= 1 && s <= n) boundaryPositions.push(s);
+            if (!isNaN(s) && s > 1 && s < n) boundaryPositions.push(s);
         }
         const lastEnd = parseInt(regions[regions.length - 1]?.end);
-        if (!isNaN(lastEnd) && lastEnd <= n) boundaryPositions.push(lastEnd);
+        if (!isNaN(lastEnd) && lastEnd > 1 && lastEnd < n) boundaryPositions.push(lastEnd);
 
         // Auto-size font based on smallest gap
         let minGapPx = plotPx;
@@ -2938,25 +2883,25 @@ function drawScoreMatrix(validRegions) {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Build iLIS and cLIR grids
+    // Build iLIS and iLIA grids
     const ilisGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
-    const clirGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
+    const iliaGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
     for (const v of monPairResults) {
         const i = validRegions.indexOf(v.ri);
         const j = validRegions.indexOf(v.rj);
         if (i >= 0 && j >= 0) {
             ilisGrid[i][j] = v.iLIS;
             ilisGrid[j][i] = v.iLIS;
-            clirGrid[i][j] = v.clirI.size + v.clirJ.size;
-            clirGrid[j][i] = v.clirI.size + v.clirJ.size;
+            iliaGrid[i][j] = v.iLIA;
+            iliaGrid[j][i] = v.iLIA;
         }
     }
 
-    // Find max cLIR for color scaling
-    let maxClir = 1;
+    // Find max iLIA for color scaling
+    let maxIlia = 1;
     for (let i = 0; i < nc; i++)
         for (let j = 0; j < nc; j++)
-            if (i !== j && clirGrid[i][j] > maxClir) maxClir = clirGrid[i][j];
+            if (i !== j && iliaGrid[i][j] > maxIlia) maxIlia = iliaGrid[i][j];
 
     // Draw cells: bottom-left = iLIS (Oranges), top-right = cLIR (Greens), diagonal = gray
     for (let i = 0; i < nc; i++) {
@@ -2986,12 +2931,12 @@ function drawScoreMatrix(validRegions) {
                 ctx.fillStyle = val > 0.5 ? 'white' : '#333';
                 ctx.fillText(val.toFixed(3), x + cPx / 2, y + cPx / 2);
             } else {
-                // Top-right triangle: cLIR (white → strong green, 0 = pure white)
-                const val = clirGrid[i][j];
+                // Top-right triangle: iLIA (white → strong green, 0 = pure white)
+                const val = iliaGrid[i][j];
                 if (val === 0) {
                     ctx.fillStyle = '#ffffff';
                 } else {
-                    const t = maxClir > 0 ? Math.min(1, val / maxClir) : 0;
+                    const t = maxIlia > 0 ? Math.min(1, val / maxIlia) : 0;
                     const r2 = Math.round(255 * (1 - t));
                     const g2 = Math.round(255 - t * 85);
                     const b2 = Math.round(255 * (1 - t));
@@ -3003,9 +2948,9 @@ function drawScoreMatrix(validRegions) {
                 ctx.font = `bold ${fontSize}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                const t = maxClir > 0 ? val / maxClir : 0;
+                const t = maxIlia > 0 ? val / maxIlia : 0;
                 ctx.fillStyle = t > 0.6 ? 'white' : '#333';
-                ctx.fillText(val.toFixed(0), x + cPx / 2, y + cPx / 2);
+                ctx.fillText(val.toFixed(1), x + cPx / 2, y + cPx / 2);
             }
         }
     }
@@ -3018,7 +2963,7 @@ function drawScoreMatrix(validRegions) {
         ctx.beginPath(); ctx.moveTo(leftPx + i * cPx, 0); ctx.lineTo(leftPx + i * cPx, nc * cPx); ctx.stroke();
     }
 
-    // Diagonal line to separate iLIS / cLIR
+    // Diagonal line to separate iLIS / iLIA
     ctx.strokeStyle = '#999';
     ctx.lineWidth = 1.5 * HIRES;
     ctx.beginPath();
