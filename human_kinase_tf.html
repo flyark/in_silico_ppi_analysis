@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVIA — Human Kinase-TF Interactome</title>
+    <title>LIVIA — Ortholog Interactome</title>
     <style>
         html { scrollbar-gutter: stable; } * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -408,13 +408,13 @@
 
 <div class="header">
     <div class="container">
-        <h1><span style="color:#2471A3;">LIVIA</span> &mdash; Human Kinase-TF Interactome</h1>
+        <h1><span style="color:#2471A3;">LIVIA</span> &mdash; Ortholog Interactome</h1>
         <p>Analyze human protein interactions from <a href="https://www.flyrnai.org/tools/fly_predictome" target="_blank" style="color:#2471A3;">FlyPredictome</a> ortholog predictions</p>
         <div class="header-links">
             <a href="index.html">Home</a>
             <a href="universal.html">Prediction Analysis</a>
             <a href="flypredictome.html">FlyPredictome</a>
-            <a href="human_kinase_tf.html">Human Kinase-TF</a>
+            <a href="human_kinase_tf.html">Ortholog Interactome</a>
             <a href="dimer.html">AFDB Dimer</a>
             <a href="monomer.html">AFDB Monomer Subdomain</a>
             <a href="guide.html">Guide</a>
@@ -602,7 +602,11 @@
 
         <!-- Script -->
         <div class="card result-card">
-            <div class="step-header">ChimeraX Script <span class="model-badge" id="script-model-badge"></span></div>
+            <div class="step-header">Visualization Script <span class="model-badge" id="script-model-badge"></span></div>
+            <div class="input-tabs" style="margin-bottom:0.8rem;">
+                <button class="input-tab active" data-tab="chimerax" onclick="switchScriptTab('chimerax')">ChimeraX</button>
+                <button class="input-tab" data-tab="pymol" onclick="switchScriptTab('pymol')">PyMOL</button>
+            </div>
 
             <!-- Options -->
             <div style="margin-bottom:1rem;">
@@ -696,12 +700,12 @@
 
             <div class="script-preview" id="script-preview"></div>
             <div class="download-row">
-                <a class="btn-download cxc" id="dl-cxc" download>&#8595; Download .cxc</a>
+                <a class="btn-download cxc" id="dl-script" download>&#8595; Download <span id="dl-script-ext">.cxc</span></a>
                 <a class="btn-download pdb" id="dl-pdb" target="_blank">&#8595; Download .pdb</a>
                 <button class="btn-download" id="btn-copy" style="background:white; color:#2471A3; border:2px solid #2471A3; cursor:pointer;" onclick="copyScript()">Copy to Clipboard</button>
             </div>
             <div class="info-box" style="margin-top: 1rem;">
-                The .pdb link opens the file from FlyPredictome. Save it in the same folder as the .cxc file, then double-click the .cxc to launch ChimeraX automatically.
+                Download the structure file (.pdb) and the script, place both in the same folder. Double-click the script to launch the viewer automatically.
             </div>
         </div>
 
@@ -748,7 +752,7 @@
     </div>
 
     <div class="footer">
-        Made by Ah-Ram Kim &middot;
+        LIVIA v0.1 · Ah-Ram Kim, Harvard Medical School &middot;
         <a href="https://github.com/flyark/AFM-LIS" style="color:#2471A3; text-decoration:none;">AFM-LIS</a> &middot;
         <a href="flypredictome.html" style="color:#2471A3; text-decoration:none;">FlyPredictome</a> &middot;
         <a href="universal.html" style="color:#2471A3; text-decoration:none;">Prediction Analysis</a> &middot;
@@ -1205,6 +1209,14 @@ function ilisColor(val, isAvg) {
 
 // ── Global state for rank switching ──
 let cxcColorMode = '';
+let scriptMode = 'chimerax'; // 'chimerax' or 'pymol'
+
+function switchScriptTab(mode) {
+    scriptMode = mode;
+    document.querySelectorAll('.input-tab[data-tab="chimerax"], .input-tab[data-tab="pymol"]').forEach(t => t.classList.remove('active'));
+    document.querySelector('.input-tab[data-tab="' + mode + '"]').classList.add('active');
+    if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
+}
 let flyParsed = null;
 let flyChainSeqs = null;
 let flyPdbText = null;
@@ -1534,6 +1546,113 @@ function generateCxc(row, pdbFilename, colors) {
     lines.push(`# LIR cartoons  (${colors.lir_b}) = ${sym2} LIR (chain B)`);
     lines.push(`# cLIR cartoons (${colors.clir_b}) = ${sym2} cLIR (chain B)`);
     lines.push(`# Non-LIR regions are HIDDEN`);
+
+    return lines.join('\n');
+}
+
+// ── PyMOL script generation ──
+function hexToRgbFloat(hex) {
+    hex = hex.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    return `[${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)}]`;
+}
+
+function pmlResSpec(positions, chain) {
+    if (positions.size === 0) return '';
+    const sorted = [...positions].sort((a, b) => a - b);
+    const ranges = [];
+    let start = sorted[0], end = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === end + 1) { end = sorted[i]; }
+        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
+    }
+    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+    return `chain ${chain} and resi ${ranges.join('+')}`;
+}
+
+function generatePml(row, pdbFilename, colors) {
+    const sym1 = row['Symbol 1'] || 'Protein1';
+    const sym2 = row['Symbol 2'] || 'Protein2';
+    const cLIR_A = row._cLIR_A, cLIR_B = row._cLIR_B;
+    const LIR_A = row._LIR_A, LIR_B = row._LIR_B;
+    const iLIS = row['iLIS'] || 'N/A';
+    const ipTM = row['ipTM'] || 'N/A';
+
+    const LIR_A_filtered = filterSmallSegments(LIR_A);
+    const LIR_B_filtered = filterSmallSegments(LIR_B);
+    const cLIR_A_filtered = new Set([...cLIR_A].filter(r => LIR_A_filtered.has(r)));
+    const cLIR_B_filtered = new Set([...cLIR_B].filter(r => LIR_B_filtered.has(r)));
+    const LIR_A_filled = fillGaps(LIR_A_filtered);
+    const LIR_B_filled = fillGaps(LIR_B_filtered);
+
+    const lirASpec = pmlResSpec(LIR_A_filled, 'A');
+    const lirBSpec = pmlResSpec(LIR_B_filled, 'B');
+    const clirASpec = pmlResSpec(cLIR_A_filtered, 'A');
+    const clirBSpec = pmlResSpec(cLIR_B_filtered, 'B');
+
+    const objName = pdbFilename.replace(/\.[^.]+$/, '');
+
+    let lines = [
+        `# PyMOL visualization: ${sym1} \u2014 ${sym2} (iLIS=${iLIS}, ipTM=${ipTM})`,
+        `# Generated by LIVIA`,
+        ``,
+        `reinitialize`,
+        `load ${pdbFilename}`,
+        ``,
+        `# Define colors`,
+        `set_color lir_a, ${hexToRgbFloat(colors.lir_a)}`,
+        `set_color lir_b, ${hexToRgbFloat(colors.lir_b)}`,
+        `set_color clir_a, ${hexToRgbFloat(colors.clir_a)}`,
+        `set_color clir_b, ${hexToRgbFloat(colors.clir_b)}`,
+        ``,
+        `# Setup`,
+        `bg_color white`,
+        `set ray_trace_mode, 1`,
+        `set antialias, 2`,
+        `set ray_shadows, 1`,
+        `set depth_cue, 1`,
+        `set spec_reflect, 0.3`,
+        `set ambient, 0.4`,
+        ``,
+        `# Hide everything`,
+        `hide everything, all`,
+    ];
+
+    if (cxcColorMode === 'plddt') {
+        lines.push('');
+        lines.push('# Show all as cartoon, color by B-factor (pLDDT)');
+        lines.push('show cartoon, all');
+        lines.push('spectrum b, red_yellow_green_cyan_blue, minimum=50, maximum=90');
+    } else if (cxcColorMode === 'bychain' || cxcColorMode === 'bypolymer') {
+        lines.push('');
+        lines.push('# Show all as cartoon, color by chain');
+        lines.push('show cartoon, all');
+        lines.push('util.cbc');
+    } else {
+        // Color chains first
+        if (lirASpec) lines.push(`color lir_a, ${lirASpec}`);
+        if (lirBSpec) lines.push(`color lir_b, ${lirBSpec}`);
+        lines.push('');
+        lines.push('# Show LIR regions as cartoon');
+        if (lirASpec) lines.push(`show cartoon, ${lirASpec}`);
+        if (lirBSpec) lines.push(`show cartoon, ${lirBSpec}`);
+        lines.push('');
+        lines.push('# Highlight cLIR (contact interface)');
+        if (clirASpec) lines.push(`color clir_a, ${clirASpec}`);
+        if (clirBSpec) lines.push(`color clir_b, ${clirBSpec}`);
+    }
+
+    lines.push('');
+    lines.push('# Orient and render');
+    lines.push('orient');
+    lines.push('');
+    lines.push('# Save');
+    lines.push(`set ray_opaque_background, 0`);
+    lines.push(`ray 2400, 2400`);
+    lines.push(`png ${sym1}_${sym2}.png, dpi=300`);
+    lines.push(`save ${sym1}_${sym2}_session.pse`);
 
     return lines.join('\n');
 }
@@ -1963,7 +2082,9 @@ async function loadRank(rankNum) {
     };
 
     const pdbFilename = flyParsed.pdbUrl ? flyParsed.pdbUrl.split('/').pop() : `${sym1}___${sym2}.pdb`;
-    const cxcScript = generateCxc(target, pdbFilename, colors);
+    const isPymol = scriptMode === 'pymol';
+    const visScript = isPymol ? generatePml(target, pdbFilename, colors) : generateCxc(target, pdbFilename, colors);
+    const scriptExt = isPymol ? '.pml' : '.cxc';
 
     const titleLabel = isAvg ? 'Average' : `Rank ${rankNum}`;
     document.getElementById('result-title').textContent = `${sym1} \u2014 ${sym2} (${titleLabel})`;
@@ -1973,12 +2094,13 @@ async function loadRank(rankNum) {
         tr.classList.toggle('selected', tr.cells[0].textContent.trim() === String(isAvg ? 'Avg' : rankNum));
     });
 
-    document.getElementById('script-preview').innerHTML = highlightCxc(cxcScript);
+    document.getElementById('script-preview').innerHTML = highlightCxc(visScript);
 
-    const cxcBlob = new Blob([cxcScript], { type: 'text/plain' });
-    const dlCxc = document.getElementById('dl-cxc');
-    dlCxc.href = URL.createObjectURL(cxcBlob);
-    dlCxc.download = `${sym1}_${sym2}_${isAvg ? 'average' : 'rank' + rankNum}_interface.cxc`;
+    const scriptBlob = new Blob([visScript], { type: 'text/plain' });
+    const dlScript = document.getElementById('dl-script');
+    dlScript.href = URL.createObjectURL(scriptBlob);
+    dlScript.download = `${sym1}_${sym2}_${isAvg ? 'average' : 'rank' + rankNum}_interface${scriptExt}`;
+    document.getElementById('dl-script-ext').textContent = scriptExt;
 
     const dlPdb = document.getElementById('dl-pdb');
     if (flyParsed.pdbUrl) {
