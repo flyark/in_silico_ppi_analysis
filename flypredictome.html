@@ -451,8 +451,8 @@
                     <input type="text" id="gene-search-input"
                            placeholder="e.g., Akt1, foxo, Dl, sgg..."
                            autocomplete="off"
-                           oninput="searchUniprotAc(this.value)"
-                           onkeydown="if(event.key==='Enter'){hideGeneAc();searchGene();}">
+                           oninput="geneAcIdx=-1;searchUniprotAc(this.value)"
+                           onkeydown="handleGeneAcKey(event)">
                     <div id="gene-ac-list" class="ac-list" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ddd; border-radius:0 0 8px 8px; max-height:250px; overflow-y:auto; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
                 </div>
                 <button class="btn btn-primary" onclick="hideGeneAc();searchGene()">Search</button>
@@ -727,7 +727,46 @@ function switchTab(tab) {
 
 // ── Gene search ──
 let geneAcDebounce = null;
-function hideGeneAc() { document.getElementById('gene-ac-list').style.display = 'none'; }
+let geneAcIdx = -1;
+function hideGeneAc() { document.getElementById('gene-ac-list').style.display = 'none'; geneAcIdx = -1; }
+
+function handleGeneAcKey(e) {
+    const list = document.getElementById('gene-ac-list');
+    const items = list.querySelectorAll('div');
+    if (list.style.display !== 'none' && items.length > 0) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            geneAcIdx = Math.min(geneAcIdx + 1, items.length - 1);
+            items.forEach((it, i) => { it.style.background = i === geneAcIdx ? '#eaf2f8' : ''; });
+            items[geneAcIdx].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            geneAcIdx = Math.max(geneAcIdx - 1, 0);
+            items.forEach((it, i) => { it.style.background = i === geneAcIdx ? '#eaf2f8' : ''; });
+            items[geneAcIdx].scrollIntoView({ block: 'nearest' });
+            return;
+        }
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (geneAcIdx >= 0 && geneAcIdx < items.length) {
+                items[geneAcIdx].click();
+            } else {
+                hideGeneAc();
+                searchGene();
+            }
+            return;
+        }
+        if (e.key === 'Escape') {
+            hideGeneAc();
+            return;
+        }
+    } else if (e.key === 'Enter') {
+        hideGeneAc();
+        searchGene();
+    }
+}
 
 async function searchUniprotAc(query) {
     clearTimeout(geneAcDebounce);
