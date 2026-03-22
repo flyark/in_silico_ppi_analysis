@@ -524,6 +524,22 @@
             </div>
         </div>
 
+        <!-- Known Interactions (MIST) -->
+        <div class="card result-card" id="mist-card" style="display:none;">
+            <h2>Known Interactions <span style="font-weight:400; font-size:0.8rem; color:#888;">(<a href="https://fgrtools.hms.harvard.edu/MIST/" target="_blank" style="color:#2471A3;">MIST</a>)</span></h2>
+            <div id="mist-content"></div>
+            <div id="mist-link" style="margin-top:0.5rem; font-size:0.82rem;"></div>
+        </div>
+
+        <!-- PAE Map -->
+        <div class="card result-card" id="pae-card" style="display:none;">
+            <h2>Predicted Aligned Error (PAE) <span class="model-badge" id="pae-model-badge"></span></h2>
+            <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">PAE matrix showing prediction confidence between all residue pairs. Blue = low error (high confidence).</div>
+            <div style="display:flex; justify-content:center;">
+                <canvas id="pae-canvas"></canvas>
+            </div>
+        </div>
+
         <!-- Sequence Viewer -->
         <div class="card result-card" id="seq-viewer-card" style="display:none;">
             <h2>Sequence Viewer <span class="model-badge" id="seq-model-badge"></span></h2>
@@ -1210,7 +1226,20 @@ function parseTable(html) {
         if (!pdbUrl.startsWith('http')) pdbUrl = 'https://www.flyrnai.org' + pdbUrl;
     }
 
-    return { headers, rows, pdbUrl };
+    // Extract NCBI gene IDs
+    const ncbi1El = doc.querySelector('.ncbi_gene_id1');
+    const ncbi2El = doc.querySelector('.ncbi_gene_id2');
+    const ncbiGeneId1 = ncbi1El ? ncbi1El.textContent.trim() : '';
+    const ncbiGeneId2 = ncbi2El ? ncbi2El.textContent.trim() : '';
+
+    // Extract PAE image URL
+    let paeImgUrl = '';
+    const paeImgMatch = html.match(/["'](\/tools\/fly_predictome\/web\/data\/extracted\/png\/[^"']*_pae\.png)["']/);
+    if (paeImgMatch) {
+        paeImgUrl = 'https://www.flyrnai.org' + paeImgMatch[1];
+    }
+
+    return { headers, rows, pdbUrl, ncbiGeneId1, ncbiGeneId2, paeImgUrl };
 }
 
 // ── Build ChimeraX residue spec ──
@@ -1615,6 +1644,133 @@ async function generate() {
 
     // Background: fetch all other rank PDBs and progressively update combined chord
     fetchAllRankPdbs();
+
+    // Show PAE map
+    showPaeMap();
+
+    // Background: query MIST for known interactions
+    queryMIST();
+}
+
+function showPaeMap() {
+    const card = document.getElementById('pae-card');
+    const canvas = document.getElementById('pae-canvas');
+    if (!card || !canvas || !flyParsed?.paeImgUrl) { if (card) card.style.display = 'none'; return; }
+
+    card.style.display = '';
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        const maxW = 500;
+        const scale = Math.min(maxW / img.width, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.style.width = canvas.width + 'px';
+        canvas.style.height = canvas.height + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.onerror = () => { card.style.display = 'none'; };
+    // Use proxy for CORS
+    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(flyParsed.paeImgUrl);
+    img.src = proxyUrl;
+}
+
+async function queryMIST() {
+    const card = document.getElementById('mist-card');
+    const content = document.getElementById('mist-content');
+    const linkEl = document.getElementById('mist-link');
+    if (!card || !content || !flyParsed) return;
+
+    const id1 = flyParsed.ncbiGeneId1;
+    const id2 = flyParsed.ncbiGeneId2;
+    if (!id1 || !id2) { card.style.display = 'none'; return; }
+
+    const sym1 = flyParsed.rows[0]?.['Symbol 1'] || '';
+    const sym2 = flyParsed.rows[0]?.['Symbol 2'] || '';
+
+    content.innerHTML = '<span style="color:#888; font-size:0.85rem;">Querying MIST database...</span>';
+    card.style.display = '';
+
+    try {
+        // Query both genes
+        const types = 'ppi,interolog,genetic,interolog-genetic';
+        const [resp1, resp2] = await Promise.all([
+            fetchTextViaProxy(`https://www.flyrnai.org/tools/mist/api/get_interactions/${id1}/${types}`),
+            fetchTextViaProxy(`https://www.flyrnai.org/tools/mist/api/get_interactions/${id2}/${types}`)
+        ]);
+
+        const data1 = resp1 ? JSON.parse(resp1) : null;
+        const data2 = resp2 ? JSON.parse(resp2) : null;
+        const results1 = data1?.mist_data?.results || [];
+        const results2 = data2?.mist_data?.results || [];
+
+        // Find direct interaction between the two genes
+        const directPPI = results1.filter(r => (r.GeneA == id2 || r.GeneB == id2) && r.Interaction_type === 'ppi');
+        const directGenetic = results1.filter(r => (r.GeneA == id2 || r.GeneB == id2) && r.Interaction_type === 'genetic');
+        const directInterolog = results1.filter(r => (r.GeneA == id2 || r.GeneB == id2) && r.Interaction_type === 'interolog');
+        const directInterologGI = results1.filter(r => (r.GeneA == id2 || r.GeneB == id2) && r.Interaction_type === 'interolog-genetic');
+
+        // Count total interactions per gene
+        const countByType = (results) => {
+            const c = { ppi: 0, genetic: 0, interolog: 0, 'interolog-genetic': 0 };
+            for (const r of results) c[r.Interaction_type] = (c[r.Interaction_type] || 0) + 1;
+            return c;
+        };
+        const counts1 = countByType(results1);
+        const counts2 = countByType(results2);
+
+        // Build display
+        let html = '';
+
+        // Direct interaction between the pair
+        const hasDirect = directPPI.length > 0 || directGenetic.length > 0 || directInterolog.length > 0 || directInterologGI.length > 0;
+        if (hasDirect) {
+            html += '<div style="background:#e8f5e9; border-left:4px solid #27ae60; padding:0.6rem 0.8rem; border-radius:0 6px 6px 0; margin-bottom:0.8rem; font-size:0.85rem;">';
+            html += '<strong style="color:#27ae60;">' + esc(sym1) + ' \u2014 ' + esc(sym2) + ': Known interaction found</strong><br>';
+            const parts = [];
+            if (directPPI.length > 0) {
+                const ranks = directPPI.map(r => r.Rank);
+                const papers = new Set();
+                directPPI.forEach(r => { if (r.Reference) String(r.Reference).split(';').forEach(p => papers.add(p.trim())); });
+                parts.push(`PPI: ${directPPI.length} record(s), ${papers.size} paper(s) [${ranks.join(', ')}]`);
+            }
+            if (directGenetic.length > 0) parts.push(`Genetic: ${directGenetic.length} record(s)`);
+            if (directInterolog.length > 0) parts.push(`Interolog PPI: ${directInterolog.length} record(s)`);
+            if (directInterologGI.length > 0) parts.push(`Interolog GI: ${directInterologGI.length} record(s)`);
+            html += '<span style="color:#555;">' + parts.join(' &middot; ') + '</span>';
+            html += '</div>';
+        } else {
+            html += '<div style="background:#fff3cd; border-left:4px solid #ffc107; padding:0.6rem 0.8rem; border-radius:0 6px 6px 0; margin-bottom:0.8rem; font-size:0.85rem;">';
+            html += '<strong style="color:#856404;">' + esc(sym1) + ' \u2014 ' + esc(sym2) + ': No known direct interaction in MIST</strong>';
+            html += '</div>';
+        }
+
+        // Summary table for each gene
+        html += '<table style="font-size:0.82rem; width:100%; border-collapse:collapse;">';
+        html += '<thead><tr style="background:#f8f9fa;"><th style="padding:0.4rem 0.6rem; text-align:left;">Gene</th><th style="padding:0.4rem; text-align:center;">PPI</th><th style="padding:0.4rem; text-align:center;">Genetic</th><th style="padding:0.4rem; text-align:center;">Interolog PPI</th><th style="padding:0.4rem; text-align:center;">Interolog GI</th><th style="padding:0.4rem; text-align:center;">Total</th></tr></thead>';
+        html += '<tbody>';
+        for (const [sym, counts] of [[sym1, counts1], [sym2, counts2]]) {
+            const total = counts.ppi + counts.genetic + counts.interolog + counts['interolog-genetic'];
+            html += '<tr style="border-top:1px solid #eee;">';
+            html += '<td style="padding:0.4rem 0.6rem; font-weight:600;">' + esc(sym) + '</td>';
+            html += '<td style="padding:0.4rem; text-align:center;">' + (counts.ppi || '\u2014') + '</td>';
+            html += '<td style="padding:0.4rem; text-align:center;">' + (counts.genetic || '\u2014') + '</td>';
+            html += '<td style="padding:0.4rem; text-align:center;">' + (counts.interolog || '\u2014') + '</td>';
+            html += '<td style="padding:0.4rem; text-align:center;">' + (counts['interolog-genetic'] || '\u2014') + '</td>';
+            html += '<td style="padding:0.4rem; text-align:center; font-weight:600;">' + total + '</td>';
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+
+        content.innerHTML = html;
+
+        // MIST link
+        linkEl.innerHTML = '<a href="https://fgrtools.hms.harvard.edu/MIST/MistShowData?species=drosophila&gene_list=' + encodeURIComponent(sym1 + ',' + sym2) + '&filter=none&type=ppi_interactions,interologs,genetic,interologs_genetic" target="_blank" style="color:#2471A3;">View in MIST \u2192</a>';
+
+    } catch (e) {
+        content.innerHTML = '<span style="color:#999; font-size:0.85rem;">Could not query MIST: ' + esc(e.message) + '</span>';
+    }
 }
 
 async function fetchRankPdb(rankNum) {
