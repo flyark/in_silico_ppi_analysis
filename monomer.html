@@ -1022,7 +1022,19 @@ function detectRegions() {
     const segs = segmentByPlddt(smoothed, plddtCutoff, minLen);
 
     if (segs.length < 2) {
-        setStatus(`Detected ${segs.length} region(s) — try lowering pLDDT cutoff or min region length.`, 'error');
+        setStatus(`Detected ${segs.length} region(s) — try lowering pLDDT cutoff or min region length. You can also add regions manually.`, 'error');
+        // Still populate the detected regions so user can adjust
+        monRegions = [];
+        monRegionCounter = 0;
+        for (let k = 0; k < segs.length; k++) {
+            const seg = segs[k];
+            const name = String.fromCharCode(65 + k);
+            const palette = segs.length > 10 ? TAB20 : TAB10;
+            const color = palette[k % palette.length];
+            monRegions.push({ name, start: seg.start + 1, end: seg.end + 1, color });
+            monRegionCounter++;
+        }
+        renderRegions();
         return;
     }
 
