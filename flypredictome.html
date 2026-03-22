@@ -774,7 +774,7 @@ async function searchUniprotAc(query) {
     if (query.length < 2) { list.style.display = 'none'; return; }
     geneAcDebounce = setTimeout(async () => {
         try {
-            const url = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}+AND+organism_id:7227&fields=accession,gene_names,protein_name,organism_name&size=8&format=json`;
+            const url = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}+AND+organism_id:7227&fields=accession,gene_names,protein_name,organism_name,xref_flybase&size=8&format=json`;
             const resp = await fetch(url);
             if (!resp.ok) return;
             const data = await resp.json();
@@ -787,19 +787,23 @@ async function searchUniprotAc(query) {
                 const synonyms = (r.genes || [{}])[0]?.synonyms?.map(s => s.value).join(', ') || '';
                 const name = r.proteinDescription?.recommendedName?.fullName?.value
                           || r.proteinDescription?.submissionNames?.[0]?.fullName?.value || '';
+                // Extract FBgn from FlyBase cross-reference
+                const flybaseXref = (r.uniProtKBCrossReferences || []).find(x => x.database === 'FlyBase');
+                const fbgn = flybaseXref?.id || '';
                 const item = document.createElement('div');
                 item.style.cssText = 'padding:0.5rem 0.8rem; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:0.85rem;';
                 item.innerHTML = '<strong style="color:#2471A3;">' + esc(gene) + '</strong>' +
                     (synonyms ? ' <span style="color:#999; font-size:0.75rem;">(' + esc(synonyms) + ')</span>' : '') +
+                    (fbgn ? ' <span style="color:#bbb; font-size:0.7rem;">' + esc(fbgn) + '</span>' : '') +
                     '<br><span style="color:#555; font-size:0.78rem;">' + esc(name.substring(0, 60)) + '</span>' +
                     ' <span style="color:#aaa; font-size:0.72rem;">' + esc(acc) + '</span>';
                 item.addEventListener('mouseenter', () => { item.style.background = '#eaf2f8'; });
                 item.addEventListener('mouseleave', () => { item.style.background = ''; });
-                item.addEventListener('click', () => {
-                    document.getElementById('gene-search-input').value = gene;
+                item.addEventListener('click', ((g, f) => () => {
+                    document.getElementById('gene-search-input').value = g;
                     list.style.display = 'none';
-                    searchGene();
-                });
+                    searchGene(f); // pass FBgn directly
+                })(gene, fbgn));
                 list.appendChild(item);
             }
             list.style.display = '';
@@ -811,7 +815,7 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('#search-panel')) hideGeneAc();
 });
 
-async function searchGene() {
+async function searchGene(presetFbgn) {
     const query = document.getElementById('gene-search-input').value.trim();
     if (!query) return;
 
@@ -822,27 +826,44 @@ async function searchGene() {
     resultsEl.style.display = 'none';
 
     try {
-        // Step 1: Resolve gene symbol to FBgn (via proxy for CORS)
-        const fbgnText = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/get_fbgns/' + encodeURIComponent(query));
-        if (!fbgnText) throw new Error('Could not reach FlyPredictome. Try again.');
-        const fbgnData = JSON.parse(fbgnText);
+        let fbgnId, geneSymbol;
 
-        if (!fbgnData.data || fbgnData.data.length === 0) {
-            statusEl.textContent = 'No genes found for "' + query + '".';
-            statusEl.style.color = '#c0392b';
-            return;
-        }
+        if (presetFbgn) {
+            // FBgn provided from UniProt autocomplete — skip get_fbgns lookup
+            fbgnId = presetFbgn;
+            geneSymbol = query;
+        } else {
+            // Resolve gene symbol to FBgn via FlyPredictome
+            const fbgnText = await fetchTextViaProxy('https://www.flyrnai.org/tools/fly_predictome/web/get_fbgns/' + encodeURIComponent(query));
+            if (!fbgnText) throw new Error('Could not reach FlyPredictome. Try again.');
+            const fbgnData = JSON.parse(fbgnText);
 
-        // Extract FBgn ID from the HTML in the response
-        const fbgnHtml = fbgnData.data[0][1]; // e.g., '<a id=FBgn0010379 ...>FBgn0010379</a>'
-        const fbgnMatch = fbgnHtml.match(/FBgn\d+/);
-        if (!fbgnMatch) {
-            statusEl.textContent = 'Could not resolve gene ID.';
-            statusEl.style.color = '#c0392b';
-            return;
+            if (!fbgnData.data || fbgnData.data.length === 0) {
+                statusEl.textContent = 'No genes found for "' + query + '".';
+                statusEl.style.color = '#c0392b';
+                return;
+            }
+
+            // Find exact gene symbol match (case-sensitive), fall back to first result
+            let bestRow = fbgnData.data[0];
+            for (const row of fbgnData.data) {
+                if (row[2] === query) { bestRow = row; break; }
+            }
+            if (bestRow[2] !== query) {
+                for (const row of fbgnData.data) {
+                    if (row[2].toLowerCase() === query.toLowerCase()) { bestRow = row; break; }
+                }
+            }
+            const fbgnHtml = bestRow[1];
+            const fbgnMatch = fbgnHtml.match(/FBgn\d+/);
+            if (!fbgnMatch) {
+                statusEl.textContent = 'Could not resolve gene ID.';
+                statusEl.style.color = '#c0392b';
+                return;
+            }
+            fbgnId = fbgnMatch[0];
+            geneSymbol = bestRow[2] || query;
         }
-        const fbgnId = fbgnMatch[0];
-        const geneSymbol = fbgnData.data[0][2] || query;
 
         statusEl.textContent = 'Found: ' + geneSymbol + ' (' + fbgnId + '). Loading interaction partners...';
 
