@@ -1232,11 +1232,15 @@ function parseTable(html) {
     const ncbiGeneId1 = ncbi1El ? ncbi1El.textContent.trim() : '';
     const ncbiGeneId2 = ncbi2El ? ncbi2El.textContent.trim() : '';
 
-    // Extract PAE image URL
+    // Extract PAE image URL (prefer colabfold-output path which is publicly accessible)
     let paeImgUrl = '';
-    const paeImgMatch = html.match(/["'](\/tools\/fly_predictome\/web\/data\/extracted\/png\/[^"']*_pae\.png)["']/);
+    const paeImgMatch = html.match(/["'](\/tools\/fly_predictome\/web\/colabfold-output\/[^"']*_pae\.png)["']/);
     if (paeImgMatch) {
         paeImgUrl = 'https://www.flyrnai.org' + paeImgMatch[1];
+    } else {
+        // Fallback: try data/extracted path
+        const paeImgMatch2 = html.match(/["'](\/tools\/fly_predictome\/web\/data\/extracted\/png\/[^"']*_pae\.png)["']/);
+        if (paeImgMatch2) paeImgUrl = 'https://www.flyrnai.org' + paeImgMatch2[1];
     }
 
     return { headers, rows, pdbUrl, ncbiGeneId1, ncbiGeneId2, paeImgUrl };
@@ -1652,27 +1656,41 @@ async function generate() {
     queryMIST();
 }
 
-function showPaeMap() {
+async function showPaeMap() {
     const card = document.getElementById('pae-card');
     const img = document.getElementById('pae-img');
     if (!card || !img || !flyParsed?.paeImgUrl) { if (card) card.style.display = 'none'; return; }
 
-    // Try direct URL first, then proxies
-    img.onerror = () => {
-        // Try proxies
-        for (const makeProxy of CORS_PROXIES) {
-            const proxyUrl = makeProxy(flyParsed.paeImgUrl);
-            const testImg = new Image();
-            testImg.onload = () => { img.onerror = () => { card.style.display = 'none'; }; img.src = proxyUrl; };
-            testImg.onerror = () => {};
-            testImg.src = proxyUrl;
-            return;
-        }
-        card.style.display = 'none';
-    };
-    img.onload = () => { card.style.display = ''; };
     card.style.display = '';
-    img.src = flyParsed.paeImgUrl;
+    // Fetch image as blob via proxy (same approach as PDB download)
+    try {
+        let blob = null;
+        // Try direct first
+        try {
+            const resp = await fetch(flyParsed.paeImgUrl);
+            if (resp.ok) blob = await resp.blob();
+        } catch {}
+        // Try proxies
+        if (!blob) {
+            for (const makeProxy of CORS_PROXIES) {
+                try {
+                    const resp = await fetch(makeProxy(flyParsed.paeImgUrl), { signal: AbortSignal.timeout(10000) });
+                    if (resp.ok) {
+                        blob = await resp.blob();
+                        if (blob.size > 100) break;
+                        blob = null;
+                    }
+                } catch {}
+            }
+        }
+        if (blob && blob.size > 100) {
+            img.src = URL.createObjectURL(blob);
+        } else {
+            card.style.display = 'none';
+        }
+    } catch {
+        card.style.display = 'none';
+    }
 }
 
 async function queryMIST() {
