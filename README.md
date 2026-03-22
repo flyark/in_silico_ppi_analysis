@@ -1,4 +1,4 @@
-# *In silico* PPI Analysis & ChimeraX Script Generator
+# *In silico* PPI Analysis Tools
 
 Web-based tools for analyzing protein-protein interactions from structure predictions.
 
