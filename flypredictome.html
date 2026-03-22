@@ -1799,67 +1799,37 @@ async function queryMIST() {
         } else {
             // Build a table of evidence
             html += '<table style="font-size:0.82rem; width:100%; border-collapse:collapse;">';
-            html += '<thead><tr style="background:#f8f9fa;"><th style="padding:0.4rem 0.6rem; text-align:left;">Type</th><th style="padding:0.4rem 0.6rem; text-align:left;">Rank</th><th style="padding:0.4rem 0.6rem; text-align:left;">Evidence</th><th style="padding:0.4rem 0.6rem; text-align:left;">Source</th><th style="padding:0.4rem 0.6rem; text-align:left;">PMID</th></tr></thead>';
+            html += '<thead><tr style="background:#f8f9fa;"><th style="padding:0.4rem 0.6rem; text-align:left;">Type</th><th style="padding:0.4rem 0.6rem; text-align:center;">Papers</th><th style="padding:0.4rem 0.6rem; text-align:left;">PMID</th></tr></thead>';
             html += '<tbody>';
 
             const typeLabels = { ppi: 'PPI', genetic: 'Genetic', interolog: 'Interolog PPI', 'interolog-genetic': 'Interolog GI' };
-            const rankColors = { high: '#27ae60', moderate: '#e67e22', low: '#999' };
+            const makePmidLink = (p) => '<a href="https://pubmed.ncbi.nlm.nih.gov/' + p + '/" target="_blank" style="color:#2471A3;">' + p + '</a>';
 
             for (const [type, records] of Object.entries(byType)) {
+                if (records.length === 0) continue;
+                // Merge all PMIDs across records of this type
+                const allPmids = new Set();
                 for (const r of records) {
-                    const rankColor = rankColors[r.Rank] || '#999';
-                    // Evidence codes — collapsed if many
-                    const evParts = [r.Exp_Direct, r.Exp_Indirect].filter(Boolean).join(';').split(';').map(e => e.trim()).filter(Boolean);
-                    let evidenceHtml = '\u2014';
-                    if (evParts.length > 0) {
-                        if (evParts.length <= 3) {
-                            evidenceHtml = evParts.map(e => esc(e)).join(', ');
-                        } else {
-                            const eid = 'ev_' + Math.random().toString(36).slice(2, 8);
-                            evidenceHtml = evParts.slice(0, 3).map(e => esc(e)).join(', ') +
-                                ' <a href="javascript:void(0)" onclick="document.getElementById(\'' + eid + '\').style.display=\'\';this.style.display=\'none\'" style="color:#888; font-size:0.72rem;">+' + (evParts.length - 3) + ' more</a>' +
-                                '<span id="' + eid + '" style="display:none;">, ' + evParts.slice(3).map(e => esc(e)).join(', ') + '</span>';
-                        }
-                    }
-                    // Sources — collapsed if many
-                    const srcParts = (r.Source_databases || '').split(';').map(s => s.trim()).filter(Boolean);
-                    let sourcesHtml = '\u2014';
-                    if (srcParts.length > 0) {
-                        if (srcParts.length <= 3) {
-                            sourcesHtml = esc(srcParts.join(', '));
-                        } else {
-                            const sid = 'src_' + Math.random().toString(36).slice(2, 8);
-                            sourcesHtml = esc(srcParts.slice(0, 3).join(', ')) +
-                                ' <a href="javascript:void(0)" onclick="document.getElementById(\'' + sid + '\').style.display=\'\';this.style.display=\'none\'" style="color:#888; font-size:0.72rem;">+' + (srcParts.length - 3) + ' more</a>' +
-                                '<span id="' + sid + '" style="display:none;">, ' + esc(srcParts.slice(3).join(', ')) + '</span>';
-                        }
-                    }
-                    // PMID links — show first 3 inline, rest collapsed
-                    let pmidHtml = '\u2014';
-                    if (r.Reference) {
-                        const pmids = String(r.Reference).split(';').map(p => p.trim()).filter(Boolean);
-                        const makePmidLink = (p) => r.Reference_type?.includes('PMID')
-                            ? '<a href="https://pubmed.ncbi.nlm.nih.gov/' + p + '/" target="_blank" style="color:#2471A3;">' + p + '</a>' : p;
-                        const count = pmids.length;
-                        const countTag = '<span style="color:#888; font-size:0.72rem;">(' + count + ')</span> ';
-                        if (pmids.length <= 3) {
-                            pmidHtml = countTag + pmids.map(makePmidLink).join(', ');
-                        } else {
-                            const id = 'pmid_' + Math.random().toString(36).slice(2, 8);
-                            pmidHtml = countTag + pmids.slice(0, 3).map(makePmidLink).join(', ') +
-                                ' <a href="javascript:void(0)" onclick="document.getElementById(\'' + id + '\').style.display=\'\';this.style.display=\'none\'" style="color:#888; font-size:0.72rem;">+' + (pmids.length - 3) + ' more</a>' +
-                                '<span id="' + id + '" style="display:none;">, ' + pmids.slice(3).map(makePmidLink).join(', ') + '</span>';
-                        }
-                    }
-
-                    html += '<tr style="border-top:1px solid #eee;">';
-                    html += '<td style="padding:0.4rem 0.6rem; white-space:nowrap;">' + typeLabels[type] + '</td>';
-                    html += '<td style="padding:0.4rem 0.6rem; color:' + rankColor + '; font-weight:600;">' + (r.Rank || '\u2014') + '</td>';
-                    html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem; color:#666;">' + evidenceHtml + '</td>';
-                    html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem; color:#666;">' + sourcesHtml + '</td>';
-                    html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem;">' + pmidHtml + '</td>';
-                    html += '</tr>';
+                    if (r.Reference) String(r.Reference).split(';').map(p => p.trim()).filter(Boolean).forEach(p => allPmids.add(p));
                 }
+                const pmids = [...allPmids];
+                let pmidHtml = '\u2014';
+                if (pmids.length > 0) {
+                    if (pmids.length <= 5) {
+                        pmidHtml = pmids.map(makePmidLink).join(', ');
+                    } else {
+                        const id = 'pmid_' + Math.random().toString(36).slice(2, 8);
+                        pmidHtml = pmids.slice(0, 5).map(makePmidLink).join(', ') +
+                            ' <a href="javascript:void(0)" onclick="document.getElementById(\'' + id + '\').style.display=\'\';this.style.display=\'none\'" style="color:#888; font-size:0.72rem;">+' + (pmids.length - 5) + ' more</a>' +
+                            '<span id="' + id + '" style="display:none;">, ' + pmids.slice(5).map(makePmidLink).join(', ') + '</span>';
+                    }
+                }
+
+                html += '<tr style="border-top:1px solid #eee;">';
+                html += '<td style="padding:0.4rem 0.6rem; white-space:nowrap;">' + typeLabels[type] + '</td>';
+                html += '<td style="padding:0.4rem 0.6rem; text-align:center; font-weight:600;">' + pmids.length + '</td>';
+                html += '<td style="padding:0.4rem 0.6rem; font-size:0.78rem;">' + pmidHtml + '</td>';
+                html += '</tr>';
             }
             html += '</tbody></table>';
         }
