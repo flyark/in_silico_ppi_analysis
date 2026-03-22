@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><span style="color:#2471A3;">LIVIA</span> &mdash; Universal Prediction Analysis</title>
+    <title>LIVIA — Prediction Analysis</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Mol* loaded inside iframe, not here -->
     <style>
@@ -173,17 +173,18 @@
 <body>
 
 <div class="header">
-    <div class="container" style="padding:0;">
-        <h1><span style="color:#2471A3;">LIVIA</span> &mdash; Universal Prediction Analysis</h1>
+    <div class="container">
+        <h1><span style="color:#2471A3;">LIVIA</span> &mdash; Prediction Analysis</h1>
         <p>Analyze predictions from AlphaFold3, ColabFold, Boltz, Chai-1, and OpenFold</p>
         <div class="header-links">
             <a href="index.html">Home</a>
+            <a href="universal.html">Prediction Analysis</a>
             <a href="flypredictome.html">FlyPredictome</a>
             <a href="human_kinase_tf.html">Human Kinase-TF</a>
-            <a href="universal.html">Universal Prediction</a>
             <a href="dimer.html">AFDB Dimer</a>
             <a href="monomer.html">AFDB Monomer Subdomain</a>
             <a href="guide.html">Guide</a>
+        
         
         </div>
     </div>
@@ -337,7 +338,10 @@
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Interactive 3D preview matching ChimeraX script output. LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom, right-click to translate.
             </div>
-            <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin"></iframe>
+            <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+            <div style="text-align:right; margin-top:0.3rem;">
+                <button onclick="document.getElementById('viewer3d-frame').requestFullscreen()" style="padding:0.25rem 0.6rem; border:1px solid #ddd; border-radius:4px; background:#f8f9fa; cursor:pointer; font-size:0.78rem; color:#555;">Fullscreen</button>
+            </div>
         </div>
 
         <!-- Script -->
@@ -384,6 +388,19 @@
                     <div class="preset-chip" onclick="applyCxcPreset('bychain',this)"><div class="preset-strip"><span style="background:#6495ED"></span><span style="background:#FF6347"></span><span style="background:#90EE90"></span><span style="background:#DDA0DD"></span></div>bychain</div>
                     <div class="preset-chip" onclick="applyCxcPreset('bypolymer',this)"><div class="preset-strip"><span style="background:#87CEEB"></span><span style="background:#FFA07A"></span><span style="background:#98FB98"></span><span style="background:#DDA0DD"></span></div>bypolymer</div>
                 </div>
+                <label>LIR Display Options</label>
+                <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.5rem; font-size:0.85rem; color:#555; flex-wrap:wrap;">
+                    <span>Fill gaps &le;</span>
+                    <input type="number" id="gap-fill-input" value="10" min="0" max="200" style="width:55px; padding:0.3rem 0.4rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.85rem; text-align:center;">
+                    <span>residues</span>
+                    <span style="color:#ccc;">|</span>
+                    <span>Min segment &ge;</span>
+                    <input type="number" id="min-segment-input" value="3" min="1" max="50" style="width:55px; padding:0.3rem 0.4rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.85rem; text-align:center;">
+                    <span>residues</span>
+                    <button class="btn btn-primary" style="font-size:0.82rem; padding:0.3rem 0.8rem;" onclick="updateGapFill()">Apply</button>
+                </div>
+                <div style="font-size:0.78rem; color:#999; margin-bottom:1rem;">Gap filling bridges short breaks for continuous cartoon. Min segment removes isolated LIR fragments shorter than the threshold.</div>
+
                 <label style="margin-top:1rem">Color Scheme</label>
                 <div class="color-section">
                     <div class="color-group">
@@ -2235,8 +2252,10 @@ function buildColorComponents(v) {
         components.push({ chain, ranges, color, isIon: t === 'ion' });
     };
 
-    const lirIFilled = fillGaps(v.lirI);
-    const lirJFilled = fillGaps(v.lirJ);
+    const lirI_filtered = filterSmallSegments(v.lirI);
+    const lirJ_filtered = filterSmallSegments(v.lirJ);
+    const lirIFilled = fillGaps(lirI_filtered);
+    const lirJFilled = fillGaps(lirJ_filtered);
 
     // Helper: convert Set to array of {start, end} ranges
     function toRanges(positions) {
@@ -2293,8 +2312,8 @@ function buildColorComponents(v) {
         }
     } else {
         // Gradient: LIR-only in light, cLIR in dark (separate components)
-        const clirISet = v.clirI || new Set();
-        const clirJSet = v.clirJ || new Set();
+        const clirISet = new Set([...(v.clirI || new Set())].filter(r => lirI_filtered.has(r)));
+        const clirJSet = new Set([...(v.clirJ || new Set())].filter(r => lirJ_filtered.has(r)));
         const lirOnlyI = new Set([...lirIFilled].filter(r => !clirISet.has(r)));
         const lirOnlyJ = new Set([...lirJFilled].filter(r => !clirJSet.has(r)));
 
@@ -2504,7 +2523,10 @@ async function updateViewer3d(pairKey) {
     const blob = new Blob([page], { type: 'text/html' });
     if (viewer3dBlobUrl) URL.revokeObjectURL(viewer3dBlobUrl);
     viewer3dBlobUrl = URL.createObjectURL(blob);
-    frame.src = viewer3dBlobUrl;
+    const parent = frame.parentNode;
+    const newFrame = frame.cloneNode(false);
+    newFrame.src = viewer3dBlobUrl;
+    parent.replaceChild(newFrame, frame);
 }
 
 function selectPair(key) {
@@ -2552,7 +2574,48 @@ function resSpec(positions, chain) {
     return `/${chain}:${ranges.join(',')}`;
 }
 
-function fillGaps(positions, maxGap = 20) {
+function getGapFillValue() {
+    const el = document.getElementById('gap-fill-input');
+    return el ? parseInt(el.value) || 10 : 10;
+}
+
+function getMinSegmentValue() {
+    const el = document.getElementById('min-segment-input');
+    return el ? parseInt(el.value) || 3 : 3;
+}
+
+function updateGapFill() {
+    const sel = document.querySelector('#pairs-tbody tr.selected');
+    if (sel) sel.click();
+}
+
+// Remove LIR segments shorter than minSize residues
+function filterSmallSegments(positions, minSize) {
+    if (minSize === undefined) minSize = getMinSegmentValue();
+    if (minSize <= 1 || positions.size === 0) return positions;
+    const sorted = [...positions].sort((a, b) => a - b);
+    const segments = [];
+    let seg = [sorted[0]];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === seg[seg.length - 1] + 1) {
+            seg.push(sorted[i]);
+        } else {
+            segments.push(seg);
+            seg = [sorted[i]];
+        }
+    }
+    segments.push(seg);
+    const result = new Set();
+    for (const s of segments) {
+        if (s.length >= minSize) {
+            for (const r of s) result.add(r);
+        }
+    }
+    return result;
+}
+
+function fillGaps(positions, maxGap) {
+    if (maxGap === undefined) maxGap = getGapFillValue();
     if (positions.size === 0) return new Set();
     const sorted = [...positions].sort((a, b) => a - b);
     const filled = new Set(sorted);
@@ -2587,10 +2650,14 @@ function generateCxc(v, structFilename, colors) {
     const xB = (0.03 + partA.length * 0.009 + 0.015).toFixed(3);
     const xC = (parseFloat(xB) + partB.length * 0.009 + 0.015).toFixed(3);
 
-    const lirISpec = resSpec(fillGaps(v.lirI), v.ci);
-    const lirJSpec = resSpec(fillGaps(v.lirJ), v.cj);
-    const clirISpec = resSpec(v.clirI, v.ci);
-    const clirJSpec = resSpec(v.clirJ, v.cj);
+    const lirI_filtered = filterSmallSegments(v.lirI);
+    const lirJ_filtered = filterSmallSegments(v.lirJ);
+    const clirI_filtered = new Set([...v.clirI].filter(r => lirI_filtered.has(r)));
+    const clirJ_filtered = new Set([...v.clirJ].filter(r => lirJ_filtered.has(r)));
+    const lirISpec = resSpec(fillGaps(lirI_filtered), v.ci);
+    const lirJSpec = resSpec(fillGaps(lirJ_filtered), v.cj);
+    const clirISpec = resSpec(clirI_filtered, v.ci);
+    const clirJSpec = resSpec(clirJ_filtered, v.cj);
     const types = uniState.chainTypes || [];
     const chainType = (ch) => types[uniState.chainNames?.indexOf(ch)] || 'protein';
 

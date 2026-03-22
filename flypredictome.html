@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><span style="color:#2471A3;">LIVIA</span> &mdash; FlyPredictome Analysis</title>
+    <title>LIVIA — FlyPredictome Analysis</title>
     <style>
         html { scrollbar-gutter: stable; } * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -407,17 +407,18 @@
 <body>
 
 <div class="header">
-    <div class="container" style="padding:0;">
+    <div class="container">
         <h1><span style="color:#2471A3;">LIVIA</span> &mdash; FlyPredictome Analysis</h1>
         <p>Analyze <em>Drosophila</em> protein interactions from FlyPredictome predictions</p>
         <div class="header-links">
             <a href="index.html">Home</a>
+            <a href="universal.html">Prediction Analysis</a>
             <a href="flypredictome.html">FlyPredictome</a>
             <a href="human_kinase_tf.html">Human Kinase-TF</a>
-            <a href="universal.html">Universal Prediction</a>
             <a href="dimer.html">AFDB Dimer</a>
             <a href="monomer.html">AFDB Monomer Subdomain</a>
             <a href="guide.html">Guide</a>
+        
         
         </div>
     </div>
@@ -588,8 +589,9 @@
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Interactive 3D preview matching ChimeraX script output. LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom, right-click to translate.
             </div>
-            <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin"></iframe>
-            <div style="text-align:center; margin-top:0.3rem;">
+            <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+            <div style="text-align:right; margin-top:0.3rem;">
+                <button onclick="document.getElementById('viewer3d-frame').requestFullscreen()" style="padding:0.25rem 0.6rem; border:1px solid #ddd; border-radius:4px; background:#f8f9fa; cursor:pointer; font-size:0.78rem; color:#555;">Fullscreen</button>
             </div>
         </div>
 
@@ -600,6 +602,19 @@
             <!-- Options -->
             <div style="margin-bottom:1rem;">
                 <label style="font-size:0.9rem; font-weight:600; color:#1a5276;">Options</label>
+
+                <label>LIR Display Options</label>
+                <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.5rem; font-size:0.85rem; color:#555; flex-wrap:wrap;">
+                    <span>Fill gaps &le;</span>
+                    <input type="number" id="gap-fill-input" value="10" min="0" max="200" style="width:55px; padding:0.3rem 0.4rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.85rem; text-align:center;">
+                    <span>residues</span>
+                    <span style="color:#ccc;">|</span>
+                    <span>Min segment &ge;</span>
+                    <input type="number" id="min-segment-input" value="3" min="1" max="50" style="width:55px; padding:0.3rem 0.4rem; border:2px solid #e0e0e0; border-radius:6px; font-size:0.85rem; text-align:center;">
+                    <span>residues</span>
+                    <button class="btn btn-primary" style="font-size:0.82rem; padding:0.3rem 0.8rem;" onclick="updateGapFill()">Apply</button>
+                </div>
+                <div style="font-size:0.78rem; color:#999; margin-bottom:1rem;">Gap filling bridges short breaks for continuous cartoon. Min segment removes isolated LIR fragments shorter than the threshold.</div>
 
                 <label>Color Scheme</label>
                 <div class="color-section">
@@ -730,7 +745,7 @@
     <div class="footer">
         Made by Ah-Ram Kim &middot;
         <a href="https://github.com/flyark/AFM-LIS" style="color:#2471A3; text-decoration:none;">AFM-LIS</a> &middot;
-        <a href="universal.html" style="color:#2471A3; text-decoration:none;">Universal Prediction</a> &middot;
+        <a href="universal.html" style="color:#2471A3; text-decoration:none;">Prediction Analysis</a> &middot;
         <a href="dimer.html" style="color:#2471A3; text-decoration:none;">AFDB Dimer</a> &middot;
         <a href="monomer.html" style="color:#2471A3; text-decoration:none;">AFDB Monomer Subdomain</a> &middot;
         <a href="https://github.com/flyark/LIVIA" style="color:#2471A3; text-decoration:none;">GitHub</a>
@@ -1273,8 +1288,48 @@ function resSpec(positions, chain) {
     return `/${chain}:${ranges.join(',')}`;
 }
 
+function getGapFillValue() {
+    const el = document.getElementById('gap-fill-input');
+    return el ? parseInt(el.value) || 10 : 10;
+}
+
+function getMinSegmentValue() {
+    const el = document.getElementById('min-segment-input');
+    return el ? parseInt(el.value) || 3 : 3;
+}
+
+function updateGapFill() {
+    if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
+}
+
+// Remove LIR segments shorter than minSize residues
+function filterSmallSegments(positions, minSize) {
+    if (minSize === undefined) minSize = getMinSegmentValue();
+    if (minSize <= 1 || positions.size === 0) return positions;
+    const sorted = [...positions].sort((a, b) => a - b);
+    const segments = [];
+    let seg = [sorted[0]];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === seg[seg.length - 1] + 1) {
+            seg.push(sorted[i]);
+        } else {
+            segments.push(seg);
+            seg = [sorted[i]];
+        }
+    }
+    segments.push(seg);
+    const result = new Set();
+    for (const s of segments) {
+        if (s.length >= minSize) {
+            for (const r of s) result.add(r);
+        }
+    }
+    return result;
+}
+
 // ── Fill gaps for continuous cartoon ──
-function fillGaps(positions, maxGap = 20) {
+function fillGaps(positions, maxGap) {
+    if (maxGap === undefined) maxGap = getGapFillValue();
     if (positions.size === 0) return new Set();
     const sorted = [...positions].sort((a, b) => a - b);
     const filled = new Set(sorted);
@@ -1315,12 +1370,16 @@ function generateCxc(row, pdbFilename, colors) {
     const lirAStr = rangesStr(LIR_A);
     const lirBStr = rangesStr(LIR_B);
 
-    const LIR_A_filled = fillGaps(LIR_A);
-    const LIR_B_filled = fillGaps(LIR_B);
+    const LIR_A_filtered = filterSmallSegments(LIR_A);
+    const LIR_B_filtered = filterSmallSegments(LIR_B);
+    const cLIR_A_filtered = new Set([...cLIR_A].filter(r => LIR_A_filtered.has(r)));
+    const cLIR_B_filtered = new Set([...cLIR_B].filter(r => LIR_B_filtered.has(r)));
+    const LIR_A_filled = fillGaps(LIR_A_filtered);
+    const LIR_B_filled = fillGaps(LIR_B_filtered);
     const lirASpec = resSpec(LIR_A_filled, 'A');
     const lirBSpec = resSpec(LIR_B_filled, 'B');
-    const clirASpec = resSpec(cLIR_A, 'A');
-    const clirBSpec = resSpec(cLIR_B, 'B');
+    const clirASpec = resSpec(cLIR_A_filtered, 'A');
+    const clirBSpec = resSpec(cLIR_B_filtered, 'B');
 
     // Title positions
     const partA = `${sym1} (${lirAStr})`;
@@ -1600,8 +1659,8 @@ async function generate() {
         const iliaVal = Math.sqrt(liaVal * cliaVal);
         const ilisVal = parseFloat(r['iLIS'] || 0);
         const ilisaVal = ilisVal * iliaVal;
-        const ilia = iliaVal > 0 ? iliaVal.toFixed(1) : '';
-        const ilisa = ilisaVal > 0 ? ilisaVal.toFixed(1) : '';
+        const ilia = iliaVal.toFixed(1);
+        const ilisa = ilisaVal.toFixed(1);
         return `<tr class="clickable ${parseInt(rk) === rank ? 'selected' : ''}" onclick="loadRank(${parseInt(rk)})">
             <td>${rk}</td><td>${r['Symbol 1']||''}</td><td>${r['Symbol 2']||''}</td>
             <td>${ilisColor(parseFloat(r['iLIS']||0))}</td><td>${ilia}</td><td>${ilisa}</td><td>${r['ipTM']||''}</td>
@@ -1640,8 +1699,8 @@ async function generate() {
         const avgIpTM = (sumIpTM / n).toFixed(2);
         const avgILIA = Math.sqrt((sumLIA / n) * (sumCLIA / n));
         const avgILISA = parseFloat(avgILIS) * avgILIA;
-        const iliaStr = avgILIA > 0 ? avgILIA.toFixed(1) : '';
-        const ilisaStr = avgILISA > 0 ? avgILISA.toFixed(1) : '';
+        const iliaStr = avgILIA.toFixed(1);
+        const ilisaStr = avgILISA.toFixed(1);
 
         // Store average data for loadRank('avg')
         flyAverageRow = {
@@ -2980,10 +3039,12 @@ function plddtColor(b) {
 
 function buildFlyColorComponents(row, colors, pdbText) {
     const components = [];
-    const LIR_A = row._LIR_A, LIR_B = row._LIR_B;
-    const cLIR_A = row._cLIR_A, cLIR_B = row._cLIR_B;
-    const lirAFilled = fillGaps(LIR_A);
-    const lirBFilled = fillGaps(LIR_B);
+    const LIR_A_filtered = filterSmallSegments(row._LIR_A);
+    const LIR_B_filtered = filterSmallSegments(row._LIR_B);
+    const cLIR_A = new Set([...row._cLIR_A].filter(r => LIR_A_filtered.has(r)));
+    const cLIR_B = new Set([...row._cLIR_B].filter(r => LIR_B_filtered.has(r)));
+    const lirAFilled = fillGaps(LIR_A_filtered);
+    const lirBFilled = fillGaps(LIR_B_filtered);
 
     // Helper: convert Set to array of {start, end} ranges
     function toRanges(positions) {
@@ -3160,7 +3221,10 @@ function updateViewer3d(row, colors, pdbText) {
     const blob = new Blob([page], { type: 'text/html' });
     if (viewer3dBlobUrl) URL.revokeObjectURL(viewer3dBlobUrl);
     viewer3dBlobUrl = URL.createObjectURL(blob);
-    frame.src = viewer3dBlobUrl;
+    const parent = frame.parentNode;
+    const newFrame = frame.cloneNode(false);
+    newFrame.src = viewer3dBlobUrl;
+    parent.replaceChild(newFrame, frame);
 }
 
 function copyScript() {
