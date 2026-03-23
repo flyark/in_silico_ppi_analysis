@@ -874,6 +874,7 @@ async function selectJob(jobName) {
     const platform = detectPlatform();
     uniState.platform = platform;
     showPlatformBadge(platform);
+    document.getElementById('btn-process').disabled = false;
     setStatus(`Loaded ${jobName}: ${nFiles} files (${platformLabel(platform)}). Click Process.`, 'success');
 }
 
