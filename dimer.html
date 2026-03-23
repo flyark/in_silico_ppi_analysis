@@ -1769,7 +1769,7 @@ function displayDimerResults() {
         <tr>
             <td>${esc(geneA)}</td>
             <td>${esc(geneB)}</td>
-            <td>${v.iLIS.toFixed(3)}</td>
+            <td>${ilisColor(v.iLIS)}</td>
             <td>${v.iLIA.toFixed(1)}</td>
             <td>${v.iLISA.toFixed(1)}</td>
             <td>${v.ipSAE.toFixed(3)}</td>
@@ -2342,6 +2342,13 @@ function highlightCxc(text) {
 }
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function ilisColor(val, isAvg) {
+    const color = isAvg
+        ? (val >= 0.303 ? '#6B21A8' : val >= 0.120 ? '#0e8a6e' : val >= 0.073 ? '#bf8700' : '#8b949e')
+        : (val >= 0.551 ? '#6B21A8' : val >= 0.339 ? '#0e8a6e' : val >= 0.223 ? '#bf8700' : '#8b949e');
+    return '<span style="color:' + color + '; font-weight:700;">' + val.toFixed(3) + '</span>';
+}
 
 // ── PyMOL helpers ──
 function hexToRgbFloat(hex) {
