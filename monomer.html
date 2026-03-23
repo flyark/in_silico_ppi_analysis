@@ -2616,7 +2616,10 @@ function generatePmlMono(validRegions) {
     lines.push('set cartoon_smooth_loops, 1');
     lines.push('set cartoon_flat_sheets, 1');
     lines.push('');
-    lines.push('# To save publication-quality image with outlines:');
+    lines.push('# Ray trace for outlines (rotating exits ray mode, type "ray" to re-render)');
+    lines.push('ray');
+    lines.push('');
+    lines.push('# To save high-res image:');
     lines.push(# `png ${monUniprotId}_regions.png, dpi=300`);
     lines.push(`# save ${monUniprotId}_regions_session.pse`);
 

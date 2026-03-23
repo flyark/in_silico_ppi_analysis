@@ -2446,7 +2446,10 @@ function generatePml(v, structFilename, colors) {
     lines.push('set cartoon_smooth_loops, 1');
     lines.push('set cartoon_flat_sheets, 1');
     lines.push('');
-    lines.push('# To save publication-quality image with outlines:');
+    lines.push('# Ray trace for outlines (rotating exits ray mode, type "ray" to re-render)');
+    lines.push('ray');
+    lines.push('');
+    lines.push('# To save high-res image:');
     lines.push(# `png chain${v.ci}_chain${v.cj}.png, dpi=300`);
     lines.push(`# save chain${v.ci}_chain${v.cj}_session.pse`);
 
