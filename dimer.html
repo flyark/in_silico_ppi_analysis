@@ -448,7 +448,7 @@
                 <h4 style="font-size:0.9rem; color:#1a5276; margin-top:0.8rem; margin-bottom:0.5rem;">References</h4>
                 <ul style="list-style:none; padding:0; font-size:0.85rem;">
                     <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2024</a> &mdash; Enhanced PPI Discovery via AlphaFold-Multimer</li>
-                    <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2025</a> &mdash; <em>In silico</em> Kinase-TF atlas for human and fly</li>
+                    <li style="margin-bottom:0.3rem; color:#555;"><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3; font-weight:600;">Kim et al. 2025</a> &mdash; A Structure-Guided Kinase–Transcription Factor Interactome Atlas</li>
                     <li style="margin-bottom:0.3rem; color:#555;"><a href="https://alphafold.ebi.ac.uk" target="_blank" style="color:#2471A3; font-weight:600;">AlphaFold Protein Structure Database</a> &mdash; Dimer predictions</li>
                 </ul>
             </div>
@@ -2397,12 +2397,16 @@ function generatePml(v, structFilename, colors) {
         `set_color clir_j, ${hexToRgbFloat(colors.clir_b)}`, '',
         '# Setup',
         'bg_color white',
-        'set ray_trace_mode, 1',
+        'set ray_trace_mode, 3',
+        'set ray_trace_color, black',
         'set antialias, 2',
-        'set ray_shadows, 1',
-        'set depth_cue, 1',
-        'set spec_reflect, 0.3',
-        'set ambient, 0.4', '',
+        'set ray_shadows, 0',
+        'set depth_cue, 0',
+        'set spec_reflect, 0',
+        'set spec_power, 0',
+        'set ambient, 1',
+        'set direct, 0',
+        'set ray_trace_gain, 0', '',
         '# Hide everything',
         'hide everything, all',
     ];
