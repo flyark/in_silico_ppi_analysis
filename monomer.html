@@ -56,6 +56,10 @@
         .color-preview-strip { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
         .color-preview-strip div { flex: 1; transition: background 0.3s; }
         .presets-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .input-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
+        .input-tab { padding: 0.5rem 1.2rem; font-size: 0.9rem; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+        .input-tab:hover { color: #2471A3; }
+        .input-tab.active { color: #2471A3; border-bottom-color: #2471A3; }
         .preset-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 0.82rem; color: #666; transition: all 0.2s; background: white; }
         .preset-chip:hover { border-color: #2471A3; color: #333; }
         .preset-chip.active { border-color: #2471A3; background: #eaf2f8; color: #1a5276; font-weight: 600; }
@@ -287,7 +291,7 @@
         <div class="card result-card" id="viewer3d-card" style="display:none;">
             <h2>3D Structure Viewer</h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
-                Interactive 3D preview matching ChimeraX script output. LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom, right-click to translate.
+                Interactive 3D preview powered by <a href="https://molstar.org" target="_blank" style="color:#2471A3;">Mol*</a> (<a href="https://doi.org/10.1093/nar/gkab314" target="_blank" style="color:#2471A3;">Sehnal et al. 2021</a>). LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom.
             </div>
             <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
             <div style="text-align:right; margin-top:0.3rem;">
@@ -334,7 +338,11 @@
 
         <!-- Script -->
         <div class="card result-card" id="script-card">
-            <div class="step-header">ChimeraX Script</div>
+            <h2>Visualization Script</h2>
+            <div class="input-tabs" style="margin-bottom:0.8rem;">
+                <button class="input-tab active" data-tab="chimerax" onclick="switchScriptTab('chimerax')">ChimeraX</button>
+                <button class="input-tab" data-tab="pymol" onclick="switchScriptTab('pymol')">PyMOL</button>
+            </div>
 
             <!-- Options -->
             <div style="margin-bottom:1rem;">
@@ -412,11 +420,11 @@
 
             <div class="script-preview" id="script-preview"></div>
             <div class="download-row">
-                <a class="btn-download cxc" id="dl-cxc" download>&#8595; Download .cxc</a>
+                <a class="btn-download cxc" id="dl-script" download>&#8595; Download <span id="dl-script-ext">.cxc</span></a>
                 <a class="btn-download pdb" id="dl-pdb" download>&#8595; Download .pdb</a>
                 <button class="btn-download" id="btn-copy" style="background:white; color:#2471A3; border:2px solid #2471A3; cursor:pointer;" onclick="copyScript()">Copy to Clipboard</button>
             </div>
-            <div class="info-box" style="margin-top:1rem;">Place the .cxc and .pdb files in the same folder, then double-click the .cxc — ChimeraX will launch automatically.</div>
+            <div class="info-box" style="margin-top:1rem;">Place the script and .pdb files in the same folder, then double-click the .cxc to launch ChimeraX or run the .pml in PyMOL.</div>
         </div>
     </div>
 
@@ -481,6 +489,17 @@ let monPdbFilename = '';    // filename for download
 let monRegions = [];        // [{name, start, end, color}]
 let monPairResults = [];    // calculated pair results
 let monCxcColorMode = '';   // '', 'plddt', 'bychain', 'bypolymer'
+let scriptMode = 'chimerax'; // 'chimerax' or 'pymol'
+
+function switchScriptTab(mode) {
+    scriptMode = mode;
+    document.querySelectorAll('.input-tab[data-tab="chimerax"], .input-tab[data-tab="pymol"]').forEach(t => t.classList.remove('active'));
+    document.querySelector('.input-tab[data-tab="' + mode + '"]').classList.add('active');
+    if (monPairResults && monPairResults.length > 0) {
+        const vr = monRegions.filter(r => !isNaN(parseInt(r.start)) && !isNaN(parseInt(r.end)));
+        if (vr.length >= 2) generateAndShowScript(vr);
+    }
+}
 let monRegionCounter = 0;   // for naming regions
 let viewer3dBlobUrl = null; // blob URL for current Mol* iframe page
 let monDomains = [];        // UniProt domain annotations [{name, start, end}]
@@ -1996,11 +2015,17 @@ function generateAndShowScript(validRegions) {
     lines.push('# # Very high (>90): dark blue, High (70-90): light blue, Low (50-70): yellow, Very low (<50): orange');
 
     const cxc = lines.join('\n');
-    document.getElementById('script-preview').innerHTML = highlightCxc(cxc);
 
-    const dlCxc = document.getElementById('dl-cxc');
-    dlCxc.href = URL.createObjectURL(new Blob([cxc], { type: 'text/plain' }));
-    dlCxc.download = `${monUniprotId}_regions.cxc`;
+    const isPymol = scriptMode === 'pymol';
+    const visScript = isPymol ? generatePmlMono(validRegions) : cxc;
+    const scriptExt = isPymol ? '.pml' : '.cxc';
+
+    document.getElementById('script-preview').innerHTML = highlightCxc(visScript);
+
+    const dlScript = document.getElementById('dl-script');
+    dlScript.href = URL.createObjectURL(new Blob([visScript], { type: 'text/plain' }));
+    dlScript.download = `${monUniprotId}_regions${scriptExt}`;
+    document.getElementById('dl-script-ext').textContent = scriptExt;
 
     const dlPdb = document.getElementById('dl-pdb');
     dlPdb.href = URL.createObjectURL(new Blob([monPdbText], { type: 'text/plain' }));
@@ -2461,6 +2486,121 @@ function highlightCxc(text) {
 }
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ── PyMOL helpers ──
+function hexToRgbFloat(hex) {
+    hex = hex.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    return `[${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)}]`;
+}
+
+function pmlResSpec(positions, chain) {
+    if (positions.size === 0) return '';
+    const sorted = [...positions].sort((a, b) => a - b);
+    const ranges = [];
+    let start = sorted[0], end = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === end + 1) { end = sorted[i]; }
+        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
+    }
+    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+    return `chain ${chain} and resi ${ranges.join('+')}`;
+}
+
+// ── Generate PyMOL script (monomer regions) ──
+function generatePmlMono(validRegions) {
+    const paeCut = document.getElementById('pae-cutoff')?.value || '12';
+    const cbCut = document.getElementById('cb-cutoff')?.value || '8';
+
+    let lines = [
+        `# PyMOL: ${monUniprotId} \u2014 Intramolecular Region Analysis`,
+        `# Protein length: ${monProteinLen} residues`,
+    ];
+
+    for (const r of validRegions) {
+        lines.push(`# Region ${r.name}: residues ${r.start}-${r.end}`);
+    }
+    lines.push(`# Generated by LIVIA`, '');
+    lines.push('reinitialize', `load ${monPdbFilename}`, '');
+    lines.push('# Setup');
+    lines.push('bg_color white');
+    lines.push('set ray_trace_mode, 1');
+    lines.push('set antialias, 2');
+    lines.push('set ray_shadows, 1');
+    lines.push('set depth_cue, 1');
+    lines.push('set spec_reflect, 0.3');
+    lines.push('set ambient, 0.4', '');
+    lines.push('# Hide everything');
+    lines.push('hide everything, all', '');
+
+    // Show all regions
+    lines.push('# Show Regions');
+    for (const r of validRegions) {
+        lines.push(`show cartoon, chain A and resi ${r.start}-${r.end}`);
+    }
+    lines.push('');
+
+    if (monCxcColorMode === 'plddt') {
+        lines.push('# Color by pLDDT');
+        lines.push('show cartoon, all');
+        lines.push('spectrum b, red_yellow_green_cyan_blue, minimum=50, maximum=90');
+        lines.push('');
+    } else if (monCxcColorMode === 'bychain' || monCxcColorMode === 'bypolymer') {
+        lines.push('# Color by chain');
+        lines.push('show cartoon, all');
+        lines.push('util.cbc');
+        lines.push('');
+    } else {
+        // Color by region
+        lines.push('# Color Regions');
+        for (let ri = 0; ri < validRegions.length; ri++) {
+            const r = validRegions[ri];
+            const color = monRegions.length <= 2
+                ? (ri === 0 ? (document.getElementById('color-lir-a')?.value || '#80CBC4') : (document.getElementById('color-lir-b')?.value || '#FFAB91'))
+                : r.color;
+            lines.push(`set_color region_${ri}, ${hexToRgbFloat(color)}`);
+            lines.push(`color region_${ri}, chain A and resi ${r.start}-${r.end}`);
+        }
+        lines.push('');
+
+        // Highlight cLIR
+        lines.push('# Highlight cLIR residues');
+        for (const v of monPairResults) {
+            const colorsForPair = getColorsForRegionPair(
+                validRegions.indexOf(v.ri),
+                validRegions.indexOf(v.rj)
+            );
+            if (v.clirI.size > 0) {
+                const spec = pmlResSpec(v.clirI, 'A');
+                const color = monRegions.length <= 2 ? colorsForPair.clir_a : v.ri.color;
+                lines.push(`# cLIR ${v.ri.name}: ${v.clirI.size} residues (from ${v.ri.name}-${v.rj.name} pair)`);
+                lines.push(`set_color clir_${v.ri.name}, ${hexToRgbFloat(color)}`);
+                lines.push(`color clir_${v.ri.name}, ${spec}`);
+            }
+            if (v.clirJ.size > 0) {
+                const spec = pmlResSpec(v.clirJ, 'A');
+                const color = monRegions.length <= 2 ? colorsForPair.clir_b : v.rj.color;
+                lines.push(`# cLIR ${v.rj.name}: ${v.clirJ.size} residues (from ${v.ri.name}-${v.rj.name} pair)`);
+                lines.push(`set_color clir_${v.rj.name}, ${hexToRgbFloat(color)}`);
+                lines.push(`color clir_${v.rj.name}, ${spec}`);
+            }
+        }
+        lines.push('');
+    }
+
+    lines.push('# Orient and render');
+    lines.push('orient');
+    lines.push('');
+    lines.push('# Save');
+    lines.push('set ray_opaque_background, 0');
+    lines.push('ray 2400, 2400');
+    lines.push(`png ${monUniprotId}_regions.png, dpi=300`);
+    lines.push(`save ${monUniprotId}_regions_session.pse`);
+
+    return lines.join('\n');
+}
 
 // ============================================================================
 // MAP DRAWING
