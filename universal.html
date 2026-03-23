@@ -6,24 +6,11 @@
     <title>LIVIA — Prediction Analysis</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <!-- Mol* loaded inside iframe, not here -->
+    <link rel="stylesheet" href="css/livia.css">
     <style>
-        html { scrollbar-gutter: stable; } * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
-
-        /* Header */
-        .header { background: white; color: #1a5276; padding: 0.8rem 2rem 0.8rem; border-bottom: 1px solid #e8e8e8; }
-        .header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.15rem; color: #1a5276; letter-spacing: -0.02em; }
-        .header p { font-size: 0.92rem; color: #888; margin-bottom: 0.8rem; font-weight: 400; }
-        .header-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-        .header-links a { color: #555; text-decoration: none; font-size: 0.82rem; padding: 0.3rem 0.7rem; border: 1px solid #ddd; border-radius: 6px; transition: all 0.2s; background: #f8f9fa; }
-        .header-links a:hover { background: #2471A3; color: white; border-color: #2471A3; }
-
-        /* Layout */
-        .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-        .card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 1.5rem; }
-        .card label { font-weight: 600; font-size: 0.85rem; color: #555; display: block; margin-bottom: 0.4rem; }
-        .step-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #2471A3; color: white; font-weight: 700; font-size: 0.85rem; margin-right: 0.5rem; }
-        .step-header { display: flex; align-items: center; margin-bottom: 0.8rem; font-weight: 600; font-size: 1rem; }
+        /* ── Page-specific styles for Universal ── */
+        .step-link { color: #2471A3; text-decoration: none; }
+        .step-link:hover { text-decoration: underline; }
 
         /* Drop zone */
         .drop-zone { border: 2px dashed #ccc; border-radius: 12px; padding: 2.5rem; text-align: center; cursor: pointer; transition: all 0.2s; color: #888; }
@@ -39,17 +26,11 @@
         .status.error { color: #c0392b; }
         .status.success { color: #27ae60; }
 
-        /* Buttons */
-        .btn { padding: 0.6rem 1.5rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: background 0.2s; }
-        .btn-primary { background: #2471A3; color: white; margin-top: 0.8rem; }
-        .btn-primary:hover { background: #1a5276; }
-        .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+        /* Page-specific button styles */
+        .btn-primary { margin-top: 0.8rem; }
         .example-btn { background: white; color: #2471A3; border: 1px solid #ccc; border-radius: 6px; padding: 0.3rem 0.7rem; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
         .example-btn:hover { background: #eaf2f8; border-color: #2471A3; }
         .btn-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
-        .btn-download { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 2px solid; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
-        .btn-download.cxc { background: #2471A3; color: white; border-color: #2471A3; }
-        .btn-download.cxc:hover { background: #1a5276; }
         .btn-download.cif { background: white; color: #E67E22; border-color: #E67E22; }
         .btn-download.cif:hover { background: #fef5ec; }
 
@@ -62,53 +43,13 @@
         .platform-badge.openfold { background: #f3e5f5; color: #6a1b9a; border: 1px solid #ce93d8; }
         .platform-badge.generic { background: #f5f5f5; color: #616161; border: 1px solid #bdbdbd; }
 
-        /* Color scheme */
-        .color-section { display: flex; gap: 2rem; flex-wrap: wrap; }
-        .color-group { flex: 1; min-width: 200px; }
-        .color-group h3 { font-size: 0.8rem; color: #888; margin-bottom: 0.6rem; }
-        .color-pair { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
-        .color-pair input[type="color"] { width: 36px; height: 36px; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer; padding: 2px; }
-        .color-pair .color-label { font-size: 0.9rem; }
-        .color-pair .color-hex { font-family: monospace; font-size: 0.8rem; color: #888; }
-        .color-preview-strip { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
-        .color-preview-strip div { flex: 1; transition: background 0.3s; }
-        .presets-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .input-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
-        .input-tab { padding: 0.5rem 1.2rem; font-size: 0.9rem; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
-        .input-tab:hover { color: #2471A3; }
-        .input-tab.active { color: #2471A3; border-bottom-color: #2471A3; }
-        .preset-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 0.82rem; color: #666; transition: all 0.2s; background: white; }
-        .preset-chip:hover { border-color: #2471A3; color: #333; }
-        .preset-chip.active { border-color: #2471A3; background: #eaf2f8; color: #1a5276; font-weight: 600; }
+        /* Page-specific overrides */
         .preset-strip { display: flex; width: 60px; height: 12px; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
         .preset-strip span { flex: 1; }
+        .script-preview { font-size: 0.72rem; line-height: 1.4; }
+        .metrics-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
 
-        /* Results */
-        .results { display: none; }
-        .results.active { display: block; }
-        .result-card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1a5276; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-        .metric { background: #f8f9fa; border-radius: 8px; padding: 0.8rem; text-align: center; }
-        .metric .value { font-size: 1.3rem; font-weight: 700; color: #2471A3; }
-        .metric .label { font-size: 0.75rem; color: #888; margin-top: 0.2rem; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem; }
-        .data-table th { text-align: left; padding: 0.5rem 0.8rem; background: #f8f9fa; font-weight: 600; font-size: 0.8rem; color: #666; }
-        .data-table td { padding: 0.5rem 0.8rem; border-top: 1px solid #eee; }
-        .data-table tr.selected td { background: #faf8f4; }
-        .data-table tr.selected td:first-child { box-shadow: inset 4px 0 0 #c4a35a; }
-        .data-table tr.avg-row { font-weight: 600; border-top: 2px solid #999; }
-        .model-badge { font-size: 0.7rem; font-weight: 500; color: #2471A3; background: #eaf2f8; padding: 0.15rem 0.5rem; border-radius: 4px; vertical-align: middle; }
-        .data-table tr.clickable { cursor: pointer; }
-        .data-table tr.clickable:hover { background: #f0f7fc; }
-        .script-preview { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 0.6rem 0.8rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.72rem; line-height: 1.4; max-height: 200px; overflow-y: auto; white-space: pre; margin-bottom: 1rem; }
-        .script-preview .comment { color: #6c7086; }
-        .script-preview .command { color: #89b4fa; }
-        .script-preview .color-val { color: #f9e2af; }
-        .download-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        .error-msg { display: none; background: #fdeaea; color: #c0392b; padding: 0.6rem 0.8rem; border-radius: 8px; margin-bottom: 1rem; }
-        .error-msg.active { display: block; }
-
-        /* Mol* viewer overrides: hide all UI panels, keep only the 3D canvas */
+        /* Mol* viewer overrides */
         #viewer3d-container .msp-plugin { position: relative !important; }
         #viewer3d-container .msp-layout-expanded { transform: none !important; position: relative !important; }
         #viewer3d-container .msp-plugin .msp-btn-row-group,
@@ -116,7 +57,6 @@
         #viewer3d-container .msp-plugin .msp-highlight-info,
         #viewer3d-container .msp-plugin .msp-sequence,
         #viewer3d-container .msp-plugin .msp-left-panel-controls { display: none !important; }
-        .info-box { background: #faf8f4; border-left: 3px solid #c4a35a; padding: 0.4rem 0.8rem; border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #555; margin-bottom: 0.6rem; }
         .warning-box { background: #fff8e1; border-left: 4px solid #f9a825; padding: 0.8rem 1rem; border-radius: 0 8px 8px 0; font-size: 0.85rem; color: #795548; margin-bottom: 1rem; }
 
         /* Map rows */
@@ -129,48 +69,40 @@
         .colorbar-labels { display: flex; justify-content: space-between; width: 300px; font-size: 0.72rem; color: #888; margin-top: 2px; }
         .colorbar-labels span:nth-child(2) { color: #555; font-weight: 500; }
 
-        /* Sequence viewer */
-        .seq-row { display:flex; align-items:center; margin-bottom:0; }
-        .seq-num { font-size:0.72rem; color:#888; width:36px; text-align:right; padding-right:4px; flex-shrink:0; font-family:'SF Mono','Fira Code',monospace; }
-        .seq-blocks { display:flex; flex-wrap:nowrap; font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.4; letter-spacing:0.5px; }
-        .seq-res { display:inline-block; width:0.75em; text-align:center; cursor:default; color:#333; }
-        .seq-res.clir { color:white; font-weight:700; }
-        .seq-chain-label { font-size:0.88rem; font-weight:700; color:#1a5276; margin-top:0.5rem; margin-bottom:0.2rem; }
-        .seq-tooltip { position:fixed; background:#333; color:white; padding:2px 6px; border-radius:4px; font-size:0.72rem; pointer-events:none; z-index:200; display:none; font-family:'SF Mono',monospace; }
+        .data-table tr.avg-row { font-weight: 600; border-top: 2px solid #999; }
 
-        .footer { text-align: center; padding: 2rem; font-size: 0.8rem; color: #999; }
-        .footer a { color: #2471A3; text-decoration: none; }
-        .footer a:hover { text-decoration: underline; }
-
-        /* Sortable table headers */
-        .data-table th.sortable { cursor: pointer; user-select: none; position: relative; }
-        .data-table th.sortable:hover { background: #e8f0fe; }
-        .data-table th.sortable::after { content: ' ⇅'; font-size: 0.7em; color: #aaa; }
-        .data-table th.sort-asc::after { content: ' ▲'; color: #2471A3; }
-        .data-table th.sort-desc::after { content: ' ▼'; color: #2471A3; }
+        .help-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding-left: 2.3rem;
+        }
+        .help-col h4 { font-size: 0.9rem; color: #1a5276; margin-bottom: 0.5rem; }
+        .help-col ol { padding-left: 1.2rem; font-size: 0.85rem; color: #555; line-height: 1.7; }
+        .help-col a { color: #2471A3; text-decoration: none; }
+        .help-col a:hover { text-decoration: underline; }
+        .help-table { font-size: 0.85rem; }
+        .help-table td { padding: 0.25rem 0.5rem 0.25rem 0; vertical-align: top; color: #555; }
+        .ref-list { list-style: none; padding: 0; font-size: 0.85rem; }
+        .ref-list li { margin-bottom: 0.3rem; color: #555; }
+        .ref-list a { color: #2471A3; text-decoration: none; font-weight: 600; }
+        .ref-list a:hover { text-decoration: underline; }
+        .color-presets { display: flex; flex-direction: column; gap: 0.4rem; }
+        .preset {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.35rem 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .preset:hover { background: #f0f0f0; }
 
         @media (max-width: 768px) {
-            .header { padding: 0.6rem 0.8rem; }
-            .header h1 { font-size: 1.2rem; }
-            .header-links { gap: 0.4rem; }
-            .header-links a { font-size: 0.72rem; padding: 0.15rem 0.4rem; }
-            .container { padding: 0.75rem; }
-            .card, .result-card { padding: 0.6rem 0.8rem; border-radius: 8px; overflow-x: auto; }
-            .result-card h2 { font-size: 1rem; }
             .map-row { flex-wrap: wrap; justify-content: center; }
             canvas { max-width: 100%; height: auto; }
-            .data-table th, .data-table td { white-space: nowrap; padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-            #viewer3d-frame { height: 400px !important; }
-            .script-preview { font-size: 0.68rem; max-height: 250px; overflow-x: auto; }
-            .seq-blocks { font-size: 0.68rem; }
-            .seq-res { width: 0.6em; }
-            .seq-num { font-size: 0.62rem; width: 28px; }
-            .download-row { flex-direction: column; }
-            .btn-download { width: 100%; text-align: center; }
             .colorbar-labels { width: 100%; max-width: 300px; }
-            .color-section { gap: 0.8rem; }
-            .color-group { min-width: 140px; }
-            .preset-chip { font-size: 0.72rem; padding: 0.25rem 0.5rem; }
         }
     </style>
 </head>
@@ -520,7 +452,16 @@
 </div>
 </div>
 
+<script src="js/livia-core.js"></script>
+<script src="js/livia-scripts.js"></script>
+<script src="js/livia-viewer.js"></script>
+<script src="js/livia-colors.js"></script>
 <script>
+// ── Callbacks for shared modules ──
+onColorChange = () => { const sel = document.querySelector('#pairs-tbody tr.selected'); if (sel) sel.click(); };
+onScriptTabSwitch = () => { updateScriptPreview(); };
+document.addEventListener('DOMContentLoaded', initColorPickers);
+
 // ============================================================================
 // GLOBAL STATE
 // ============================================================================
@@ -545,15 +486,6 @@ let uniState = {
     cxcColorMode: '',
 };
 let viewer3dBlobUrl = null;  // blob URL for current iframe page
-let scriptMode = 'chimerax'; // 'chimerax' or 'pymol'
-
-function switchScriptTab(mode) {
-    scriptMode = mode;
-    document.querySelectorAll('.input-tab[data-tab="chimerax"], .input-tab[data-tab="pymol"]').forEach(t => t.classList.remove('active'));
-    document.querySelector('.input-tab[data-tab="' + mode + '"]').classList.add('active');
-    updateScriptPreview();
-}
-
 function updateScriptPreview() {
     if (!uniState.currentPairResult) return;
     const v = uniState.currentPairResult;
@@ -1044,18 +976,8 @@ function setStatus(msg, type = '') {
 }
 
 // ============================================================================
-// COLOR PICKERS & PRESETS
+// COLOR PICKERS & PRESETS (page-specific — use uniState.cxcColorMode, not global)
 // ============================================================================
-document.querySelectorAll('input[type="color"]').forEach(input => {
-    input.addEventListener('input', () => {
-        document.getElementById(input.id.replace('color-', 'hex-')).textContent = input.value;
-        const s = document.getElementById('color-strip').children;
-        s[0].style.background = document.getElementById('color-lir-a').value;
-        s[1].style.background = document.getElementById('color-clir-a').value;
-        s[2].style.background = document.getElementById('color-clir-b').value;
-        s[3].style.background = document.getElementById('color-lir-b').value;
-    });
-});
 
 function applyPreset(la, ca, lb, cb, el) {
     uniState.cxcColorMode = '';
@@ -2560,148 +2482,6 @@ function parseBfactorsPerResidue(text, format) {
     return m;
 }
 
-function plddtColor(b) {
-    if (b > 90) return '#0053D6';
-    if (b > 70) return '#65CBF3';
-    if (b > 50) return '#FFDB13';
-    return '#FF7D45';
-}
-
-function buildMolstarPage(structData, fmt, colorComponents) {
-    // Build MVS JSON with separate components per colored group
-    // Each component selects only the LIR residues for that chain+color
-    // Non-LIR residues have no component = hidden
-    const structureChildren = [];
-    for (const comp of colorComponents) {
-        let selectorParams, repType;
-        if (comp.isIon) {
-            // Ion: select entire chain (label_seq_id is '.' in CIF, so range selector won't work)
-            selectorParams = { selector: { label_asym_id: comp.chain } };
-            repType = 'ball_and_stick';
-        } else {
-            const selector = comp.ranges.map(r => ({
-                label_asym_id: comp.chain,
-                beg_label_seq_id: r.start,
-                end_label_seq_id: r.end,
-            }));
-            selectorParams = { selector: selector.length === 1 ? selector[0] : selector };
-            repType = 'cartoon';
-        }
-        structureChildren.push({
-            kind: 'component',
-            params: selectorParams,
-            children: [{
-                kind: 'representation',
-                params: { type: repType },
-                children: [{ kind: 'color', params: { color: comp.color } }]
-            }]
-        });
-    }
-
-    const mvsJson = {
-        kind: 'single',
-        root: {
-            kind: 'root',
-            children: [
-                { kind: 'canvas', params: { background_color: 'white' } },
-                {
-                    kind: 'download',
-                    params: { url: '__STRUCT_BLOB_URL__' },
-                    children: [{
-                        kind: 'parse',
-                        params: { format: fmt },
-                        children: [{
-                            kind: 'structure',
-                            params: { type: 'model' },
-                            children: structureChildren
-                        }]
-                    }]
-                }
-            ]
-        },
-        metadata: { version: '1.6' }
-    };
-
-    return `<!DOCTYPE html>
-<html><head>
-<script src="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.js"><\/script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.css" />
-<style>
-#viewer1 { position:absolute; top:0; left:0; right:0; bottom:0; }
-@media (max-width: 768px) {
-  .msp-layout-right { display: none !important; }
-  .msp-viewport-controls { display: none !important; }
-}
-</style>
-</head><body>
-<div id="viewer1"></div>
-<script>
-var structData = ${JSON.stringify(structData)};
-var fmt = "${fmt}";
-var mvsTemplate = ${JSON.stringify(JSON.stringify(mvsJson))};
-
-async function init() {
-    var isMobile = window.innerWidth < 768;
-    var viewer = await molstar.Viewer.create('viewer1', {
-        layoutIsExpanded: false,
-        layoutShowControls: !isMobile,
-        layoutShowRemoteState: false,
-        layoutShowSequence: false,
-        layoutShowLog: false,
-        layoutShowLeftPanel: false,
-        viewportShowExpand: false,
-        viewportShowSelectionMode: false,
-        viewportShowAnimation: false,
-    });
-
-    // Create blob URL for structure data (inside iframe = same origin)
-    var structBlob = new Blob([structData], { type: 'text/plain' });
-    var structUrl = URL.createObjectURL(structBlob);
-
-    // Replace placeholder URL in MVS JSON
-    var mvsStr = mvsTemplate.replace('__STRUCT_BLOB_URL__', structUrl);
-
-    // Load via MVS (coloring included)
-    try {
-        viewer.loadMvsData(mvsStr, 'mvsj');
-    } catch(e) {
-        console.warn('MVS failed, falling back:', e);
-        viewer.loadStructureFromData(structData, fmt);
-    }
-
-    // Apply illustrative style AFTER loading
-    setTimeout(function() {
-        try {
-            // Use the built-in Illustrative preset if available
-            if (viewer.plugin.managers && viewer.plugin.managers.canvas3dContext) {
-                viewer.plugin.managers.canvas3dContext.setProps({ style: { name: 'illustrative' } });
-            }
-        } catch(e1) {}
-        try {
-            // Fallback: manually set canvas3d props for illustrative look
-            var c3d = viewer.plugin.canvas3d;
-            if (c3d) {
-                // Set renderer to ignore lighting (matte/flat look)
-                var rp = Object.assign({}, c3d.props.renderer);
-                rp.style = { name: 'flat-shaded', params: {} };
-                c3d.setProps({
-                    renderer: rp,
-                    postprocessing: {
-                        occlusion: { name: 'on', params: { multiScale: { name: 'off', params: {} }, radius: 5, bias: 0.8, blurKernelSize: 15, resolutionScale: 1, color: 0x000000 } },
-                        outline: { name: 'on', params: { scale: 1, threshold: 0.33, color: 0x000000, includeTransparent: true } },
-                    },
-                });
-                // Also try setting light intensity to 0 for fully matte appearance
-
-            }
-        } catch(e2) { console.warn('Illustrative style error:', e2); }
-    }, 2000);
-}
-init().catch(function(e) { console.error('Mol* error:', e); });
-<\/script>
-</body></html>`;
-}
-
 async function updateViewer3d(pairKey) {
     const card = document.getElementById('viewer3d-card');
     const frame = document.getElementById('viewer3d-frame');
@@ -2765,86 +2545,12 @@ function selectPair(key) {
 // CXC GENERATION
 // ============================================================================
 
-function resSpec(positions, chain) {
-    if (positions.size === 0) return '';
-    const sorted = [...positions].sort((a, b) => a - b);
-    const ranges = [];
-    let start = sorted[0], end = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] === end + 1) end = sorted[i];
-        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
-    }
-    ranges.push(start === end ? `${start}` : `${start}-${end}`);
-    return `/${chain}:${ranges.join(',')}`;
-}
-
-function getGapFillValue() {
-    const el = document.getElementById('gap-fill-input');
-    return el ? parseInt(el.value) || 10 : 10;
-}
-
-function getMinSegmentValue() {
-    const el = document.getElementById('min-segment-input');
-    return el ? parseInt(el.value) || 3 : 3;
-}
-
 function updateGapFill() {
     const sel = document.querySelector('#pairs-tbody tr.selected');
     if (sel) sel.click();
 }
 
 // Remove LIR segments shorter than minSize residues
-function filterSmallSegments(positions, minSize) {
-    if (minSize === undefined) minSize = getMinSegmentValue();
-    if (minSize <= 1 || positions.size === 0) return positions;
-    const sorted = [...positions].sort((a, b) => a - b);
-    const segments = [];
-    let seg = [sorted[0]];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] === seg[seg.length - 1] + 1) {
-            seg.push(sorted[i]);
-        } else {
-            segments.push(seg);
-            seg = [sorted[i]];
-        }
-    }
-    segments.push(seg);
-    const result = new Set();
-    for (const s of segments) {
-        if (s.length >= minSize) {
-            for (const r of s) result.add(r);
-        }
-    }
-    return result;
-}
-
-function fillGaps(positions, maxGap) {
-    if (maxGap === undefined) maxGap = getGapFillValue();
-    if (positions.size === 0) return new Set();
-    const sorted = [...positions].sort((a, b) => a - b);
-    const filled = new Set(sorted);
-    for (let i = 0; i < sorted.length - 1; i++) {
-        const gap = sorted[i + 1] - sorted[i] - 1;
-        if (gap > 0 && gap <= maxGap) {
-            for (let j = sorted[i] + 1; j < sorted[i + 1]; j++) filled.add(j);
-        }
-    }
-    return filled;
-}
-
-function rangesStr(positions) {
-    if (positions.size === 0) return 'none';
-    const sorted = [...positions].sort((a, b) => a - b);
-    const ranges = [];
-    let start = sorted[0], end = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] <= end + 15) end = sorted[i];
-        else { ranges.push(`${start}-${end}`); start = end = sorted[i]; }
-    }
-    ranges.push(`${start}-${end}`);
-    return ranges.join(', ');
-}
-
 function generateCxc(v, structFilename, colors) {
     const lirIStr = rangesStr(v.lirI), lirJStr = rangesStr(v.lirJ);
     const iLIS = v.iLIS.toFixed(3), ipTM = v.ipTM.toFixed(2);
@@ -2935,40 +2641,7 @@ function generateCxc(v, structFilename, colors) {
     return lines.join('\n');
 }
 
-function highlightCxc(text) {
-    return text.split('\n').map(line => {
-        if (line.startsWith('#')) return `<span class="comment">${esc(line)}</span>`;
-        line = esc(line).replace(/(#[0-9A-Fa-f]{6})/g, '<span class="color-val">$1</span>');
-        const m = line.match(/^(\w+)/);
-        if (m) line = `<span class="command">${m[1]}</span>` + line.slice(m[1].length);
-        return line;
-    }).join('\n');
-}
-
-function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
 // ── PyMOL helpers ──
-function hexToRgbFloat(hex) {
-    hex = hex.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16) / 255;
-    const g = parseInt(hex.substring(2, 4), 16) / 255;
-    const b = parseInt(hex.substring(4, 6), 16) / 255;
-    return `[${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)}]`;
-}
-
-function pmlResSpec(positions, chain) {
-    if (positions.size === 0) return '';
-    const sorted = [...positions].sort((a, b) => a - b);
-    const ranges = [];
-    let start = sorted[0], end = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] === end + 1) { end = sorted[i]; }
-        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
-    }
-    ranges.push(start === end ? `${start}` : `${start}-${end}`);
-    return `chain ${chain} and resi ${ranges.join('+')}`;
-}
-
 // ── Generate PyMOL script ──
 function generatePml(v, structFilename, colors) {
     const iLIS = v.iLIS.toFixed(3), ipTM = v.ipTM.toFixed(2);
@@ -3542,7 +3215,6 @@ function downloadAllChainsCxc() {
 // ============================================================================
 // SEQUENCE VIEWER
 // ============================================================================
-const AA3TO1 = {ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLN:'Q',GLU:'E',GLY:'G',HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',THR:'T',TRP:'W',TYR:'Y',VAL:'V'};
 const NT3TO1 = {DA:'A',DC:'C',DG:'G',DT:'T',A:'A',C:'C',G:'G',U:'U'};
 const ION_NAMES = new Set(['ZN','CA','MG','MN','FE','CU','NA','K','CL','NI','CO','CD']);
 
@@ -3635,15 +3307,6 @@ function parsePdbSequence(pdbText) {
         }
     }
     return chains;
-}
-
-function lightenColor(hex, amount) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `rgb(${Math.round(r+(255-r)*amount)},${Math.round(g+(255-g)*amount)},${Math.round(b+(255-b)*amount)})`;
 }
 
 function buildSequenceViewer(pairKey) {
@@ -3822,16 +3485,6 @@ function makeSortable(table) {
         });
     });
 }
-
-function hexToRgba(hex, alpha) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-}
-
 
 function buildContactMap(pairKey) {
     // Get the selected pair result

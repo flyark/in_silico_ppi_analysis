@@ -4,73 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LIVIA — FlyPredictome Analysis</title>
+    <link rel="stylesheet" href="css/livia.css">
     <style>
-        html { scrollbar-gutter: stable; } * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            color: #333;
-            min-height: 100vh;
-        }
-        .header { background: white; color: #1a5276; padding: 0.8rem 2rem 0.8rem; border-bottom: 1px solid #e8e8e8; }
-        .header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.15rem; color: #1a5276; letter-spacing: -0.02em; }
-        .header p { font-size: 0.92rem; color: #888; margin-bottom: 0.8rem; font-weight: 400; }
-        .header-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-        .header-links a { color: #555; text-decoration: none; font-size: 0.82rem; padding: 0.3rem 0.7rem; border: 1px solid #ddd; border-radius: 6px; transition: all 0.2s; background: #f8f9fa; }
-        .header-links a:hover { background: #2471A3; color: white; border-color: #2471A3; }
+        /* ── Page-specific styles for FlyPredictome ── */
         .step-link { color: #2471A3; text-decoration: none; }
         .step-link:hover { text-decoration: underline; }
-        .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-
-        /* ── Cards ── */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            margin-bottom: 1.5rem;
-        }
-        .card label {
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #555;
-            display: block;
-            margin-bottom: 0.4rem;
-        }
-
-        /* ── Steps ── */
-        .step-num {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            background: #2471A3;
-            color: white;
-            font-weight: 700;
-            font-size: 0.85rem;
-            margin-right: 0.5rem;
-            flex-shrink: 0;
-        }
-        .step-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.8rem;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-        .step-desc {
-            font-size: 0.88rem;
-            color: #666;
-            margin-bottom: 0.8rem;
-            padding-left: 2.3rem;
-        }
-        .step-desc code {
-            background: #f0f0f0;
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.82rem;
-        }
 
         /* ── Textarea ── */
         textarea {
@@ -101,192 +39,6 @@
             font-size: 0.9rem;
             background: white;
         }
-
-        /* ── Buttons ── */
-        .btn {
-            padding: 0.6rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: background 0.2s;
-        }
-        .btn-primary { background: #2471A3; color: white; }
-        .btn-primary:hover { background: #1a5276; }
-        .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
-        .example-btn { padding: 0.25rem 0.65rem; border: none; border-radius: 20px; background: #eaf2f8; cursor: pointer; font-size: 0.78rem; color: #2471A3; transition: all 0.2s; font-weight: 500; }
-        .example-btn:hover { background: #2471A3; color: white; }
-
-        .btn-download {
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: 2px solid;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: all 0.2s;
-        }
-        .btn-download.cxc { background: #2471A3; color: white; border-color: #2471A3; }
-        .btn-download.cxc:hover { background: #1a5276; border-color: #1a5276; }
-        .btn-download.pdb { background: white; color: #E67E22; border-color: #E67E22; }
-        .btn-download.pdb:hover { background: #fef5ec; }
-
-        /* ── Color Scheme ── */
-        .color-section { display: flex; gap: 2rem; flex-wrap: wrap; }
-        .color-group { flex: 1; min-width: 200px; }
-        .color-group h3 {
-            font-size: 0.8rem;
-            color: #888;
-            margin-bottom: 0.6rem;
-        }
-        .color-pair {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            margin-bottom: 0.5rem;
-        }
-        .color-pair input[type="color"] {
-            width: 36px; height: 36px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            cursor: pointer;
-            padding: 2px;
-        }
-        .color-pair .color-label { font-size: 0.9rem; }
-        .color-pair .color-hex { font-family: monospace; font-size: 0.8rem; color: #888; }
-        .color-def { font-weight: 400; font-size: 0.8rem; color: #999; }
-        .color-preview-strip {
-            display: flex; height: 8px; border-radius: 4px;
-            overflow: hidden; margin-top: 0.5rem;
-        }
-        .color-preview-strip div { flex: 1; transition: background 0.3s; }
-
-        /* ── URL input ── */
-        .url-row {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 0.8rem;
-        }
-        .url-row input[type="text"] {
-            flex: 1;
-            padding: 0.7rem 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            transition: border-color 0.2s;
-        }
-        .url-row input[type="text"]:focus { outline: none; border-color: #2471A3; }
-        .url-row select {
-            padding: 0.7rem 0.8rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            background: white;
-        }
-        .fetch-status {
-            font-size: 0.85rem;
-            color: #666;
-            min-height: 1.2rem;
-            margin-bottom: 0.5rem;
-        }
-        .fetch-status.loading { color: #2471A3; }
-        .fetch-status.error { color: #c0392b; }
-        .fetch-status.success { color: #27ae60; }
-
-        /* ── Results ── */
-        .results { display: none; }
-        .results.active { display: block; }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 1rem;
-        }
-        .metric {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 0.8rem;
-            text-align: center;
-        }
-        .metric .value { font-size: 1.3rem; font-weight: 700; color: #2471A3; }
-        .metric .label { font-size: 0.75rem; color: #888; margin-top: 0.2rem; }
-
-        .result-card h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1a5276; }
-
-        /* ── Tables ── */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-        }
-        .data-table th {
-            text-align: left;
-            padding: 0.5rem 0.8rem;
-            background: #f8f9fa;
-            font-weight: 600;
-            font-size: 0.8rem;
-            color: #666;
-        }
-        .data-table td {
-            padding: 0.5rem 0.8rem;
-            border-top: 1px solid #eee;
-        }
-        .data-table tr.selected td { background: #faf8f4; }
-        .data-table tr.selected td:first-child { box-shadow: inset 4px 0 0 #c4a35a; }
-        .model-badge { font-size: 0.7rem; font-weight: 500; color: #2471A3; background: #eaf2f8; padding: 0.15rem 0.5rem; border-radius: 4px; vertical-align: middle; }
-        .data-table tr.clickable { cursor: pointer; }
-        .data-table tr.clickable:hover { background: #f0f7fc; }
-
-        /* ── Script Preview ── */
-        .script-preview {
-            background: #1e1e2e;
-            color: #cdd6f4;
-            border-radius: 8px;
-            padding: 0.6rem 0.8rem;
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 0.8rem;
-            line-height: 1.5;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre;
-            margin-bottom: 1rem;
-        }
-        .script-preview .comment { color: #6c7086; }
-        .script-preview .command { color: #89b4fa; }
-        .script-preview .color-val { color: #f9e2af; }
-
-        .download-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-
-        /* ── Error ── */
-        .error-msg {
-            display: none;
-            background: #fdeaea;
-            color: #c0392b;
-            padding: 0.6rem 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        .error-msg.active { display: block; }
-
-        /* ── Info box ── */
-        .info-box { background: #faf8f4; border-left: 3px solid #c4a35a; padding: 0.4rem 0.8rem; border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #555; margin-bottom: 0.6rem; }
-
-        /* ── Footer ── */
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            font-size: 0.8rem;
-            color: #999;
-        }
-        .footer a { color: #2471A3; text-decoration: none; }
-        .footer a:hover { text-decoration: underline; }
 
         /* ── Help section ── */
         .help-content {
@@ -326,74 +78,6 @@
         }
         .preset-strip span { flex: 1; }
         .preset-name { font-size: 0.82rem; color: #666; }
-
-        /* ── Sequence viewer ── */
-        .seq-row { display:flex; align-items:center; margin-bottom:0; }
-        .seq-num { font-size:0.72rem; color:#888; width:36px; text-align:right; padding-right:4px; flex-shrink:0; font-family:'SF Mono','Fira Code',monospace; }
-        .seq-blocks { display:flex; flex-wrap:nowrap; font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.4; letter-spacing:0.5px; }
-        .seq-res { display:inline-block; width:0.75em; text-align:center; cursor:default; color:#333; }
-        .seq-res.clir { color:white; font-weight:700; }
-        .seq-chain-label { font-size:0.88rem; font-weight:700; color:#1a5276; margin-top:0.5rem; margin-bottom:0.2rem; }
-        .seq-tooltip { position:fixed; background:#333; color:white; padding:2px 6px; border-radius:4px; font-size:0.72rem; pointer-events:none; z-index:200; display:none; font-family:'SF Mono',monospace; }
-
-        /* ── Preset chips (in Options card) ── */
-        .presets-row {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .preset-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0.8rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.82rem;
-            color: #666;
-            transition: all 0.2s;
-            background: white;
-        }
-        .preset-chip:hover { border-color: #2471A3; color: #333; }
-        .preset-chip.active { border-color: #2471A3; background: #eaf2f8; color: #1a5276; font-weight: 600; }
-
-        /* Sortable table headers */
-        .data-table th.sortable { cursor: pointer; user-select: none; position: relative; }
-        .data-table th.sortable:hover { background: #e8f0fe; }
-        .data-table th.sortable::after { content: ' ⇅'; font-size: 0.7em; color: #aaa; }
-        .data-table th.sort-asc::after { content: ' ▲'; color: #2471A3; }
-        .data-table th.sort-desc::after { content: ' ▼'; color: #2471A3; }
-
-        /* ── Input tabs ── */
-        .input-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 1rem; }
-        .input-tab { padding: 0.5rem 1.2rem; font-size: 0.9rem; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
-        .input-tab:hover { color: #2471A3; }
-        .input-tab.active { color: #2471A3; border-bottom-color: #2471A3; }
-
-        @media (max-width: 768px) {
-            .header { padding: 0.6rem 0.8rem; }
-            .header h1 { font-size: 1.2rem; }
-            .header-links { gap: 0.4rem; }
-            .header-links a { font-size: 0.72rem; padding: 0.15rem 0.4rem; }
-            .container { padding: 0.75rem; }
-            .card, .result-card { padding: 0.6rem 0.8rem; border-radius: 8px; overflow-x: auto; }
-            .result-card h2 { font-size: 1rem; }
-            .map-row { flex-wrap: wrap; justify-content: center; }
-            canvas { max-width: 100%; height: auto; }
-            .data-table th, .data-table td { white-space: nowrap; padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-            #viewer3d-frame { height: 400px !important; }
-            .script-preview { font-size: 0.68rem; max-height: 250px; overflow-x: auto; }
-            .seq-blocks { font-size: 0.68rem; }
-            .seq-res { width: 0.6em; }
-            .seq-num { font-size: 0.62rem; width: 28px; }
-            .download-row { flex-direction: column; }
-            .btn-download { width: 100%; text-align: center; }
-            .colorbar-labels { width: 100%; max-width: 300px; }
-            .color-section { gap: 0.8rem; }
-            .color-group { min-width: 140px; }
-            .preset-chip { font-size: 0.72rem; padding: 0.25rem 0.5rem; }
-        }
     </style>
 </head>
 <body>
@@ -742,7 +426,17 @@
 </div>
 </div>
 
+<script src="js/livia-core.js"></script>
+<script src="js/livia-scripts.js"></script>
+<script src="js/livia-viewer.js"></script>
+<script src="js/livia-colors.js"></script>
 <script>
+// Wire shared module callbacks
+onColorChange = () => { if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank); };
+onScriptTabSwitch = () => { updateScriptPreview(); };
+// Initialize color pickers
+document.addEventListener('DOMContentLoaded', initColorPickers);
+
 // ── Tab switching ──
 function switchTab(tab) {
     document.getElementById('search-panel').style.display = tab === 'search' ? '' : 'none';
@@ -1167,42 +861,6 @@ function filterPartnerTable() {
     if (countEl) countEl.textContent = 'Showing ' + count + ' of ' + partners.length;
 }
 
-// ── Color picker sync ──
-document.querySelectorAll('input[type="color"]').forEach(input => {
-    input.addEventListener('input', () => {
-        document.getElementById(input.id.replace('color-', 'hex-')).textContent = input.value;
-        updateColorStrip();
-    });
-});
-function updateColorStrip() {
-    const s = document.getElementById('color-strip').children;
-    s[0].style.background = document.getElementById('color-lir-a').value;
-    s[1].style.background = document.getElementById('color-clir-a').value;
-    s[2].style.background = document.getElementById('color-clir-b').value;
-    s[3].style.background = document.getElementById('color-lir-b').value;
-}
-
-// ── Parse residue ranges: '["107-114","117","120-121"]' → Set of ints ──
-function parseResidueRanges(raw) {
-    if (!raw || raw === '[]') return new Set();
-    let items;
-    try { items = JSON.parse(raw); } catch {
-        items = raw.match(/[\d]+-[\d]+|\d+/g) || [];
-    }
-    const positions = new Set();
-    for (const item of items) {
-        const s = String(item).trim();
-        if (s.includes('-')) {
-            const [a, b] = s.split('-').map(Number);
-            for (let i = a; i <= b; i++) positions.add(i);
-        } else {
-            const n = parseInt(s);
-            if (!isNaN(n)) positions.add(n);
-        }
-    }
-    return positions;
-}
-
 // ── Parse HTML table ──
 function parseTable(html) {
     const parser = new DOMParser();
@@ -1264,30 +922,6 @@ function parseTable(html) {
     return { headers, rows, pdbUrl, ncbiGeneId1, ncbiGeneId2, paeImgUrl };
 }
 
-// ── Build ChimeraX residue spec ──
-function resSpec(positions, chain) {
-    if (positions.size === 0) return '';
-    const sorted = [...positions].sort((a, b) => a - b);
-    const ranges = [];
-    let start = sorted[0], end = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] === end + 1) { end = sorted[i]; }
-        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
-    }
-    ranges.push(start === end ? `${start}` : `${start}-${end}`);
-    return `/${chain}:${ranges.join(',')}`;
-}
-
-function getGapFillValue() {
-    const el = document.getElementById('gap-fill-input');
-    return el ? parseInt(el.value) || 10 : 10;
-}
-
-function getMinSegmentValue() {
-    const el = document.getElementById('min-segment-input');
-    return el ? parseInt(el.value) || 3 : 3;
-}
-
 function updateGapFill() {
     updateScriptPreview();
 }
@@ -1318,60 +952,6 @@ function updateScriptPreview() {
     }
     const extEl = document.getElementById('dl-script-ext');
     if (extEl) extEl.textContent = scriptExt;
-}
-
-// Remove LIR segments shorter than minSize residues
-function filterSmallSegments(positions, minSize) {
-    if (minSize === undefined) minSize = getMinSegmentValue();
-    if (minSize <= 1 || positions.size === 0) return positions;
-    const sorted = [...positions].sort((a, b) => a - b);
-    const segments = [];
-    let seg = [sorted[0]];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] === seg[seg.length - 1] + 1) {
-            seg.push(sorted[i]);
-        } else {
-            segments.push(seg);
-            seg = [sorted[i]];
-        }
-    }
-    segments.push(seg);
-    const result = new Set();
-    for (const s of segments) {
-        if (s.length >= minSize) {
-            for (const r of s) result.add(r);
-        }
-    }
-    return result;
-}
-
-// ── Fill gaps for continuous cartoon ──
-function fillGaps(positions, maxGap) {
-    if (maxGap === undefined) maxGap = getGapFillValue();
-    if (positions.size === 0) return new Set();
-    const sorted = [...positions].sort((a, b) => a - b);
-    const filled = new Set(sorted);
-    for (let i = 0; i < sorted.length - 1; i++) {
-        const gap = sorted[i + 1] - sorted[i] - 1;
-        if (gap > 0 && gap <= maxGap) {
-            for (let j = sorted[i] + 1; j < sorted[i + 1]; j++) filled.add(j);
-        }
-    }
-    return filled;
-}
-
-// ── Compact range string for display ──
-function rangesStr(positions) {
-    if (positions.size === 0) return 'none';
-    const sorted = [...positions].sort((a, b) => a - b);
-    const ranges = [];
-    let start = sorted[0], end = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] <= end + 15) { end = sorted[i]; }
-        else { ranges.push(`${start}-${end}`); start = end = sorted[i]; }
-    }
-    ranges.push(`${start}-${end}`);
-    return ranges.join(', ');
 }
 
 // ── Generate CXC script ──
@@ -1506,40 +1086,6 @@ function generateCxc(row, pdbFilename, colors) {
     return lines.join('\n');
 }
 
-// ── Syntax highlight ──
-function highlightCxc(text) {
-    return text.split('\n').map(line => {
-        if (line.startsWith('#')) return `<span class="comment">${esc(line)}</span>`;
-        line = esc(line).replace(/(#[0-9A-Fa-f]{6})/g, '<span class="color-val">$1</span>');
-        const m = line.match(/^(\w+)/);
-        if (m) line = `<span class="command">${m[1]}</span>` + line.slice(m[1].length);
-        return line;
-    }).join('\n');
-}
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ── PyMOL helpers ──
-function hexToRgbFloat(hex) {
-    hex = hex.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16) / 255;
-    const g = parseInt(hex.substring(2, 4), 16) / 255;
-    const b = parseInt(hex.substring(4, 6), 16) / 255;
-    return `[${r.toFixed(3)}, ${g.toFixed(3)}, ${b.toFixed(3)}]`;
-}
-
-function pmlResSpec(positions, chain) {
-    if (positions.size === 0) return '';
-    const sorted = [...positions].sort((a, b) => a - b);
-    const ranges = [];
-    let start = sorted[0], end = sorted[0];
-    for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i] === end + 1) { end = sorted[i]; }
-        else { ranges.push(start === end ? `${start}` : `${start}-${end}`); start = end = sorted[i]; }
-    }
-    ranges.push(start === end ? `${start}` : `${start}-${end}`);
-    return `chain ${chain} and resi ${ranges.join('+')}`;
-}
-
 // ── Generate PyMOL script ──
 function generatePml(row, pdbFilename, colors) {
     const sym1 = row['Symbol 1'] || 'Protein1';
@@ -1605,52 +1151,6 @@ function generatePml(row, pdbFilename, colors) {
     return lines.join('\n');
 }
 
-function ilisColor(val, isAvg) {
-    const color = isAvg
-        ? (val >= 0.303 ? '#6B21A8' : val >= 0.120 ? '#0e8a6e' : val >= 0.073 ? '#bf8700' : '#8b949e')
-        : (val >= 0.551 ? '#6B21A8' : val >= 0.339 ? '#0e8a6e' : val >= 0.223 ? '#bf8700' : '#8b949e');
-    return '<span style="color:' + color + '; font-weight:700;">' + val.toFixed(3) + '</span>';
-}
-
-// ── Global state for rank switching ──
-let cxcColorMode = '';       // ChimeraX color command preset
-let scriptMode = 'chimerax'; // 'chimerax' or 'pymol'
-
-function switchScriptTab(mode) {
-    scriptMode = mode;
-    document.querySelectorAll('.input-tab[data-tab="chimerax"], .input-tab[data-tab="pymol"]').forEach(t => t.classList.remove('active'));
-    document.querySelector('.input-tab[data-tab="' + mode + '"]').classList.add('active');
-    updateScriptPreview();
-}
-
-function updateScriptPreview() {
-    if (!flyParsed) return;
-    const isAvg = flyCurrentRank === 'avg';
-    const target = isAvg ? flyAverageRow : (flyParsed.rows.find(r => parseInt(r['Rank']) === flyCurrentRank) || flyParsed.rows[0]);
-    if (!target) return;
-    const sym1 = target['Symbol 1'] || '?';
-    const sym2 = target['Symbol 2'] || '?';
-    const colors = {
-        lir_a: document.getElementById('color-lir-a').value,
-        lir_b: document.getElementById('color-lir-b').value,
-        clir_a: document.getElementById('color-clir-a').value,
-        clir_b: document.getElementById('color-clir-b').value,
-    };
-    const pdbFilename = flyParsed.pdbUrl ? flyParsed.pdbUrl.split('/').pop() : sym1 + '___' + sym2 + '.pdb';
-    const isPymol = scriptMode === 'pymol';
-    const visScript = isPymol ? generatePml(target, pdbFilename, colors) : generateCxc(target, pdbFilename, colors);
-    const scriptExt = isPymol ? '.pml' : '.cxc';
-    document.getElementById('script-preview').innerHTML = highlightCxc(visScript);
-    const scriptBlob = new Blob([visScript], { type: 'text/plain' });
-    const dlScript = document.getElementById('dl-script');
-    if (dlScript) {
-        dlScript.href = URL.createObjectURL(scriptBlob);
-        dlScript.download = sym1 + '_' + sym2 + '_' + (isAvg ? 'average' : 'rank' + flyCurrentRank) + '_interface' + scriptExt;
-    }
-    const extEl = document.getElementById('dl-script-ext');
-    if (extEl) extEl.textContent = scriptExt;
-}
-
 let flyParsed = null;      // parsed table data
 let flyChainSeqs = null;   // parsed PDB sequences
 let flyPdbText = null;     // raw PDB text for connection diagram
@@ -1662,13 +1162,6 @@ let flyDomains = { A: [], B: [] }; // UniProt domain annotations per chain
 let flyDomainInfo = { A: null, B: null }; // { accession, offset, fullLength, predLength, isPartial }
 let domainCache = new Map();       // cache UniProt domain results
 let viewer3dBlobUrl = null; // blob URL for current Mol* iframe page
-
-// ── CORS proxy fetch ──
-const CORS_PROXIES = [
-    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-];
 
 async function fetchViaProxy(url) {
     // Race all proxies in parallel — use whichever responds first with valid data
@@ -2198,47 +1691,6 @@ async function loadRank(rankNum) {
     // 3D Structure Viewer (Mol*)
     updateViewer3d(target, colors, flyPdbText);
 }
-
-function hexToRgba(hex, alpha) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-}
-
-
-function lightenColor(hex, amount) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `rgb(${Math.round(r+(255-r)*amount)},${Math.round(g+(255-g)*amount)},${Math.round(b+(255-b)*amount)})`;
-}
-
-// Generic proxy fetch (unlike fetchViaProxy which checks for rank_table)
-async function fetchTextViaProxy(url) {
-    // Try direct first
-    try {
-        const resp = await fetch(url);
-        if (resp.ok) return await resp.text();
-    } catch {}
-    // Try proxies
-    for (const makeProxy of CORS_PROXIES) {
-        try {
-            const resp = await fetch(makeProxy(url), { signal: AbortSignal.timeout(10000) });
-            if (resp.ok) {
-                const text = await resp.text();
-                if (text.length > 100) return text;
-            }
-        } catch {}
-    }
-    return null;
-}
-
-const AA3TO1 = {ALA:'A',ARG:'R',ASN:'N',ASP:'D',CYS:'C',GLN:'Q',GLU:'E',GLY:'G',HIS:'H',ILE:'I',LEU:'L',LYS:'K',MET:'M',PHE:'F',PRO:'P',SER:'S',THR:'T',TRP:'W',TYR:'Y',VAL:'V'};
 
 function parsePdbSequence(pdbText) {
     // Extract per-chain sequences from PDB CA atoms
@@ -3082,42 +2534,6 @@ function showError(msg) {
     el.classList.add('active');
 }
 
-// ── Apply color preset ──
-function applyPreset(lirA, clirA, lirB, clirB, el) {
-    cxcColorMode = '';
-    document.getElementById('color-lir-a').value = lirA;
-    document.getElementById('color-clir-a').value = clirA;
-    document.getElementById('color-lir-b').value = lirB;
-    document.getElementById('color-clir-b').value = clirB;
-    document.getElementById('hex-lir-a').textContent = lirA;
-    document.getElementById('hex-clir-a').textContent = clirA;
-    document.getElementById('hex-lir-b').textContent = lirB;
-    document.getElementById('hex-clir-b').textContent = clirB;
-    updateColorStrip();
-    // Update active state
-    if (el) {
-        document.querySelectorAll('.preset-chip, .preset').forEach(p => p.classList.remove('active'));
-        el.classList.add('active');
-    }
-    // Regenerate CXC with new colors
-    if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
-}
-
-function applyCxcPreset(mode, el) {
-    cxcColorMode = mode;
-    document.querySelectorAll('.preset-chip').forEach(p => p.classList.remove('active'));
-    if (el) el.classList.add('active');
-    if (flyParsed && flyCurrentRank) loadRank(flyCurrentRank);
-}
-
-function swapColors() {
-    const la = document.getElementById('color-lir-a').value;
-    const ca = document.getElementById('color-clir-a').value;
-    const lb = document.getElementById('color-lir-b').value;
-    const cb = document.getElementById('color-clir-b').value;
-    applyPreset(lb, cb, la, ca, null);
-}
-
 // Enter key triggers generate
 document.getElementById('url-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') generate();
@@ -3161,26 +2577,6 @@ function makeSortable(table) {
 // ============================================================================
 // 3D STRUCTURE VIEWER (Mol* via iframe + MVS coloring)
 // ============================================================================
-
-function parseBfactorsPerResidue(pdbText) {
-    const m = new Map();
-    for (const line of pdbText.split('\n')) {
-        if (!line.startsWith('ATOM') || line.length < 66) continue;
-        if (line.substring(12, 16).trim() !== 'CA') continue;
-        const ch = line.substring(21, 22).trim() || 'A';
-        const rn = parseInt(line.substring(22, 26).trim());
-        const bf = parseFloat(line.substring(60, 66).trim());
-        if (!isNaN(rn) && !isNaN(bf)) m.set(`${ch}:${rn}`, bf);
-    }
-    return m;
-}
-
-function plddtColor(b) {
-    if (b > 90) return '#0053D6';
-    if (b > 70) return '#65CBF3';
-    if (b > 50) return '#FFDB13';
-    return '#FF7D45';
-}
 
 function buildFlyColorComponents(row, colors, pdbText) {
     const components = [];
@@ -3234,121 +2630,6 @@ function buildFlyColorComponents(row, colors, pdbText) {
         components.push({ chain: 'B', ranges: toRanges(cLIR_B), color: colors.clir_b });
     }
     return components.filter(c => c.ranges.length > 0);
-}
-
-function buildMolstarPage(structData, fmt, colorComponents) {
-    const structureChildren = [];
-    for (const comp of colorComponents) {
-        const selector = comp.ranges.map(r => ({
-            label_asym_id: comp.chain,
-            beg_label_seq_id: r.start,
-            end_label_seq_id: r.end,
-        }));
-        structureChildren.push({
-            kind: 'component',
-            params: { selector: selector.length === 1 ? selector[0] : selector },
-            children: [{
-                kind: 'representation',
-                params: { type: 'cartoon' },
-                children: [{ kind: 'color', params: { color: comp.color } }]
-            }]
-        });
-    }
-
-    const mvsJson = {
-        kind: 'single',
-        root: {
-            kind: 'root',
-            children: [
-                { kind: 'canvas', params: { background_color: 'white' } },
-                {
-                    kind: 'download',
-                    params: { url: '__STRUCT_BLOB_URL__' },
-                    children: [{
-                        kind: 'parse',
-                        params: { format: fmt },
-                        children: [{
-                            kind: 'structure',
-                            params: { type: 'model' },
-                            children: structureChildren
-                        }]
-                    }]
-                }
-            ]
-        },
-        metadata: { version: '1.6' }
-    };
-
-    return `<!DOCTYPE html>
-<html><head>
-<script src="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.js"><\/script>
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/molstar@latest/build/viewer/molstar.css" />
-<style>
-#viewer1 { position:absolute; top:0; left:0; right:0; bottom:0; }
-@media (max-width: 768px) {
-  .msp-layout-right { display: none !important; }
-  .msp-viewport-controls { display: none !important; }
-}
-</style>
-</head><body>
-<div id="viewer1"></div>
-<script>
-var structData = ${JSON.stringify(structData)};
-var fmt = "${fmt}";
-var mvsTemplate = ${JSON.stringify(JSON.stringify(mvsJson))};
-
-async function init() {
-    var isMobile = window.innerWidth < 768;
-    var viewer = await molstar.Viewer.create('viewer1', {
-        layoutIsExpanded: false,
-        layoutShowControls: !isMobile,
-        layoutShowRemoteState: false,
-        layoutShowSequence: false,
-        layoutShowLog: false,
-        layoutShowLeftPanel: false,
-        viewportShowExpand: false,
-        viewportShowSelectionMode: false,
-        viewportShowAnimation: false,
-    });
-
-    var structBlob = new Blob([structData], { type: 'text/plain' });
-    var structUrl = URL.createObjectURL(structBlob);
-    var mvsStr = mvsTemplate.replace('__STRUCT_BLOB_URL__', structUrl);
-
-    try {
-        viewer.loadMvsData(mvsStr, 'mvsj');
-    } catch(e) {
-        console.warn('MVS failed, falling back:', e);
-        viewer.loadStructureFromData(structData, fmt);
-    }
-
-    // Apply illustrative style AFTER loading
-    setTimeout(function() {
-        try {
-            if (viewer.plugin.managers && viewer.plugin.managers.canvas3dContext) {
-                viewer.plugin.managers.canvas3dContext.setProps({ style: { name: 'illustrative' } });
-            }
-        } catch(e1) {}
-        try {
-            var c3d = viewer.plugin.canvas3d;
-            if (c3d) {
-                var rp = Object.assign({}, c3d.props.renderer);
-                rp.style = { name: 'flat-shaded', params: {} };
-                c3d.setProps({
-                    renderer: rp,
-                    postprocessing: {
-                        occlusion: { name: 'on', params: { multiScale: { name: 'off', params: {} }, radius: 5, bias: 0.8, blurKernelSize: 15, resolutionScale: 1, color: 0x000000 } },
-                        outline: { name: 'on', params: { scale: 1, threshold: 0.33, color: 0x000000, includeTransparent: true } },
-                    },
-                });
-
-            }
-        } catch(e2) { console.warn('Illustrative style error:', e2); }
-    }, 2000);
-}
-init().catch(function(e) { console.error('Mol* error:', e); });
-<\/script>
-</body></html>`;
 }
 
 function updateViewer3d(row, colors, pdbText) {
