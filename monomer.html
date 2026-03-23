@@ -185,8 +185,8 @@
     <div class="card">
         <div class="step-header">Fetch AlphaFold Monomer Prediction &nbsp;<span style="font-weight:400; font-size:0.8rem; color:#888;">(data fetched from AlphaFold Database &mdash; all analysis runs locally in your browser)</span></div>
         <label>UniProt ID or AlphaFold DB URL</label>
-        <div style="display:flex; gap:0.5rem; align-items:flex-start;">
-            <div class="ac-wrap">
+        <div style="display:flex; gap:0.5rem; align-items:flex-start; max-width:600px;">
+            <div class="ac-wrap" style="flex:1;">
                 <input type="text" id="uniprot-input" value="Q8TF76" placeholder="e.g. Q8TF76, P31749, or protein name" autocomplete="off" style="width:100%; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem;">
                 <div class="ac-list" id="ac-list"></div>
             </div>
@@ -194,10 +194,14 @@
         </div>
         <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
             <span style="font-size:0.8rem; color:#888;">Examples:</span>
-            <button class="example-btn" onclick="loadExample('Q8TF76')">Haspin (Q8TF76)</button>
-            <button class="example-btn" onclick="loadExample('Q15858')">SCN9A (Q15858)</button>
-            <button class="example-btn" onclick="loadExample('P18206')">Vinculin (P18206)</button>
-            <button class="example-btn" onclick="loadExample('P43403')">ZAP-70 (P43403)</button>
+            <button class="example-btn" onclick="loadExample('Q8TF76')">Haspin</button>
+            <button class="example-btn" onclick="loadExample('Q15858')">SCN9A</button>
+            <button class="example-btn" onclick="loadExample('P18206')">Vinculin</button>
+            <button class="example-btn" onclick="loadExample('P43403')">ZAP-70</button>
+            <button class="example-btn" onclick="loadExample('P12931')">c-Src</button>
+            <button class="example-btn" onclick="loadExample('O60674')">JAK2</button>
+            <button class="example-btn" onclick="loadExample('Q05397')">FAK</button>
+            <button class="example-btn" onclick="loadExample('Q13153')">PAK1</button>
         </div>
         <div class="status" id="status"></div>
         <div id="external-links" style="display:none; font-size:0.82rem; margin-top:0.3rem;"></div>

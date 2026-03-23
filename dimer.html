@@ -36,6 +36,8 @@
         .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
         .btn-secondary { background: white; color: #2471A3; border: 2px solid #2471A3; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-secondary:hover { background: #eaf2f8; }
+        .example-btn { padding: 0.25rem 0.65rem; border: none; border-radius: 20px; background: #eaf2f8; cursor: pointer; font-size: 0.78rem; color: #2471A3; transition: all 0.2s; font-weight: 500; }
+        .example-btn:hover { background: #2471A3; color: white; }
         .btn-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; flex-wrap: wrap; }
         .btn-download { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 2px solid; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
         .btn-download.cxc { background: #2471A3; color: white; border-color: #2471A3; }
@@ -196,14 +198,17 @@
     <div class="card">
         <div class="step-header">Fetch Dimer Prediction &nbsp;<span style="font-weight:400; font-size:0.8rem; color:#888;">(data fetched from AlphaFold Database &mdash; all analysis runs locally in your browser)</span></div>
         <label>UniProt ID, AlphaFold Model ID, or AlphaFold DB URL</label>
-        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-            <div class="ac-wrap">
-                <input type="text" id="uniprot-input" placeholder="e.g. P69905, AF-0000000066214167, or protein name" autocomplete="off" style="width:100%; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.95rem;">
+        <div style="display:flex; gap:0.5rem; align-items:center; max-width:600px;">
+            <div class="ac-wrap" style="flex:1;">
+                <input type="text" id="uniprot-input" placeholder="e.g. P69905, AF-0000000066214167, or protein name" autocomplete="off" style="width:100%; padding:0.5rem 0.8rem; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem;">
                 <div class="ac-list" id="ac-list"></div>
             </div>
             <button class="btn btn-primary" style="margin:0;" id="btn-fetch" onclick="fetchDimers()">Search</button>
-            <button class="btn-secondary" onclick="tryExample('AF-0000000066214167')">Example: Fiber protein 2</button>
-            <button class="btn-secondary" onclick="tryExample('AF-0000000066082551')">Example: pp71</button>
+        </div>
+        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
+            <span style="font-size:0.8rem; color:#888;">Examples:</span>
+            <button class="example-btn" onclick="tryExample('AF-0000000066214167')">Fiber protein 2</button>
+            <button class="example-btn" onclick="tryExample('AF-0000000066082551')">pp71</button>
         </div>
         <div style="font-size:0.8rem; color:#888; margin-top:0.4rem;">Not all proteins have dimer predictions. Browse <a href="https://alphafold.ebi.ac.uk" target="_blank" style="color:#2471A3;">AlphaFold DB</a> to find available complexes, then paste the URL or model ID here.</div>
         <div class="status" id="status"></div>
