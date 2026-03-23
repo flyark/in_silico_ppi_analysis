@@ -270,6 +270,17 @@
             </div>
         </div>
 
+        <!-- Score Matrix (iLIS / iLIA) -->
+        <div class="card result-card" id="score-matrix-card" style="display:none;">
+            <h2>Score Matrix</h2>
+            <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
+                Lower-left: iLIS (Oranges). Upper-right: iLIA (Greens). Diagonal: self.
+            </div>
+            <div style="text-align:center;">
+                <canvas id="score-matrix-canvas"></canvas>
+            </div>
+        </div>
+
         <!-- PAE Maps -->
         <div class="card result-card">
             <h2>Predicted Aligned Error (PAE) Maps</h2>
@@ -2025,6 +2036,7 @@ async function processFiles() {
 
             // Build grids
             const ilisGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
+            const iliaGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
             const iptmGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
             const lirGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
             const clirGrid = Array.from({ length: nc }, () => Array(nc).fill(0));
@@ -2039,12 +2051,16 @@ async function processFiles() {
                     if (fwd && rev) {
                         const avgLIS = (fwd.LIS + rev.LIS) / 2;
                         const avgCLIS = (fwd.cLIS + rev.cLIS) / 2;
+                        const avgLIA = (fwd.LIA + rev.LIA) / 2;
+                        const avgCLIA = (fwd.cLIA + rev.cLIA) / 2;
                         ilisGrid[i][j] = Math.sqrt(avgLIS * avgCLIS);
+                        iliaGrid[i][j] = Math.sqrt(avgLIA * avgCLIA);
                         iptmGrid[i][j] = (fwd.ipTM + rev.ipTM) / 2;
                         lirGrid[i][j] = fwd.lirI.size;
                         clirGrid[i][j] = fwd.clirI.size;
                     } else if (fwd) {
                         ilisGrid[i][j] = fwd.iLIS;
+                        iliaGrid[i][j] = fwd.iLIA;
                         iptmGrid[i][j] = fwd.ipTM;
                         lirGrid[i][j] = fwd.lirI.size;
                         clirGrid[i][j] = fwd.clirI.size;
@@ -2060,7 +2076,7 @@ async function processFiles() {
             if (!uniState.chainTypes) uniState.chainTypes = types;
 
             uniState.modelData.push({
-                pae, lisMap, clisMap, ilisGrid, iptmGrid, lirGrid, clirGrid, nTotal, idx,
+                pae, lisMap, clisMap, ilisGrid, iliaGrid, iptmGrid, lirGrid, clirGrid, nTotal, idx,
                 label: model.label || `model_${idx}`,
             });
         }
@@ -2279,6 +2295,7 @@ function displayResults(results, jobName) {
 
     document.getElementById('results').classList.add('active');
     setupMultiChainColors();
+    drawScoreMatrix(0);
     drawAllMaps();
     document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 
@@ -2942,6 +2959,115 @@ function greensColor(value, vmin, vmax) {
     } else {
         const s = (t - 0.5) / 0.5;
         return [Math.round(116 - s * 116), Math.round(196 - s * 128), Math.round(118 - s * 91)];
+    }
+}
+
+function drawScoreMatrix(modelIdx) {
+    const card = document.getElementById('score-matrix-card');
+    const canvas = document.getElementById('score-matrix-canvas');
+    if (!canvas || !uniState.chainNames || uniState.chainNames.length < 2) {
+        if (card) card.style.display = 'none';
+        return;
+    }
+
+    const idx = modelIdx === 'avg' ? 0 : (parseInt(modelIdx) || 0);
+    const md = uniState.modelData[idx];
+    if (!md || !md.ilisGrid) { if (card) card.style.display = 'none'; return; }
+
+    const nc = uniState.chainNames.length;
+    if (nc < 2) { if (card) card.style.display = 'none'; return; }
+
+    card.style.display = '';
+    const S = 2;
+    const cellSize = Math.min(55, Math.floor(460 / nc));
+    const leftMargin = 50;
+    const bottomMargin = 22;
+    const gridPx = cellSize * nc * S;
+    const leftPx = leftMargin * S;
+    const cPx = cellSize * S;
+
+    canvas.width = gridPx + leftPx;
+    canvas.height = gridPx + bottomMargin * S;
+    canvas.style.width = (cellSize * nc + leftMargin) + 'px';
+    canvas.style.height = (cellSize * nc + bottomMargin) + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const ilisG = md.ilisGrid;
+    const iliaG = md.iliaGrid || Array.from({ length: nc }, () => Array(nc).fill(0));
+
+    // Find max iLIA for scaling
+    let maxIlia = 1;
+    for (let i = 0; i < nc; i++)
+        for (let j = 0; j < nc; j++)
+            if (i !== j && iliaG[i][j] > maxIlia) maxIlia = iliaG[i][j];
+
+    // Draw cells
+    for (let i = 0; i < nc; i++) {
+        for (let j = 0; j < nc; j++) {
+            const x = leftPx + j * cPx;
+            const y = i * cPx;
+
+            if (i === j) {
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(x, y, cPx, cPx);
+                continue;
+            }
+
+            if (i > j) {
+                // Bottom-left: iLIS (Oranges)
+                const val = ilisG[i][j];
+                const [r, g, b] = orangesColor(val, 0, 1);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fillRect(x, y, cPx, cPx);
+                const fontSize = Math.max(8, Math.min(14, cellSize / 3.5)) * S;
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = val > 0.5 ? 'white' : '#333';
+                ctx.fillText(val.toFixed(3), x + cPx / 2, y + cPx / 2);
+            } else {
+                // Top-right: iLIA (Greens)
+                const val = iliaG[i][j];
+                if (val === 0) {
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    const t = maxIlia > 0 ? Math.min(1, val / maxIlia) : 0;
+                    ctx.fillStyle = `rgb(${Math.round(255*(1-t))},${Math.round(255-t*85)},${Math.round(255*(1-t))})`;
+                }
+                ctx.fillRect(x, y, cPx, cPx);
+                const fontSize = Math.max(8, Math.min(14, cellSize / 3.5)) * S;
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                const t2 = maxIlia > 0 ? val / maxIlia : 0;
+                ctx.fillStyle = t2 > 0.6 ? 'white' : '#333';
+                ctx.fillText(val.toFixed(1), x + cPx / 2, y + cPx / 2);
+            }
+        }
+    }
+
+    // Grid lines
+    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 0.5 * S;
+    for (let i = 0; i <= nc; i++) {
+        ctx.beginPath(); ctx.moveTo(leftPx, i * cPx); ctx.lineTo(leftPx + nc * cPx, i * cPx); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(leftPx + i * cPx, 0); ctx.lineTo(leftPx + i * cPx, nc * cPx); ctx.stroke();
+    }
+
+    // Diagonal
+    ctx.strokeStyle = '#999'; ctx.lineWidth = 1.5 * S;
+    ctx.beginPath(); ctx.moveTo(leftPx, 0); ctx.lineTo(leftPx + gridPx, gridPx); ctx.stroke();
+
+    // Labels
+    const labelFont = Math.max(8, Math.min(12, cellSize / 3)) * S;
+    ctx.fillStyle = '#333';
+    for (let k = 0; k < nc; k++) {
+        const name = uniState.chainNames[k];
+        ctx.font = `bold ${labelFont}px sans-serif`;
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillText(name, leftPx - 4 * S, k * cPx + cPx / 2);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(name, leftPx + k * cPx + cPx / 2, gridPx + 4 * S);
     }
 }
 
