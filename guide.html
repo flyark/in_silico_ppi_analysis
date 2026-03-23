@@ -104,11 +104,11 @@
 <div class="container">
 
     <div class="prereq">
-        <h4>Prerequisites</h4>
+        <h4>About</h4>
         <ul>
-            <li>Install <a href="https://www.cgl.ucsf.edu/chimerax/download.html" target="_blank">UCSF ChimeraX</a> and/or <a href="https://pymol.org" target="_blank">PyMOL</a> (free for academic use)</li>
-            <li>A modern web browser (tested in Google Chrome; folder selection requires Chrome)</li>
-            <li>No Python or other software needed &mdash; all analysis runs locally in your browser (no data leaves your device)</li>
+            <li>All analysis runs locally in your browser &mdash; no data leaves your device</li>
+            <li>Tested in Google Chrome and Safari (macOS/iOS)</li>
+            <li>Generates visualization scripts for <a href="https://www.cgl.ucsf.edu/chimerax/download.html" target="_blank">ChimeraX</a> and <a href="https://pymol.org" target="_blank">PyMOL</a> (optional, for 3D structure export)</li>
         </ul>
     </div>
 
@@ -126,8 +126,8 @@
                 <li>The tool auto-detects the prediction platform and shows available models/ranks</li>
                 <li>Optionally adjust PAE cutoff (default: 12 &Aring;) and C&beta; cutoff (default: 8 &Aring;), then click <strong>Process</strong></li>
                 <li>Explore PAE/LIS/cLIS maps, score matrix, and chain pair table</li>
-                <li>Click a row in the chain pair table to generate a ChimeraX script</li>
-                <li>Download the <code>.cxc</code> script and structure file, place them in the same folder, then double-click the <code>.cxc</code> &mdash; ChimeraX will launch automatically</li>
+                <li>Click a row in the chain pair table to generate a visualization script</li>
+                <li>Download the <code>.cxc</code> script and structure file, place them in the same folder, then open the script in ChimeraX or PyMOL</li>
             </ol>
         </div>
 
@@ -156,7 +156,7 @@
                 <li><strong>Score matrix</strong> &mdash; iLIS (Oranges, lower-left) / ipTM (Purples, upper-right)</li>
                 <li><strong>Residue count matrix</strong> &mdash; LIR (Blues) / cLIR (Greens)</li>
                 <li><strong>Sequence viewer</strong> &mdash; amino acid letters with LIR/cLIR highlighting</li>
-                <li><strong>ChimeraX presets</strong> &mdash; gradient, solid, pLDDT coloring, color bychain, color bypolymer</li>
+                <li><strong>Color presets</strong> &mdash; gradient, solid, pLDDT coloring, color bychain, color bypolymer</li>
                 <li><strong>NPZ/NPY parser</strong> &mdash; reads Boltz PAE (.npz) and Chai-1 PAE (.npy) in browser</li>
                 <li><strong>Downloads</strong> &mdash; .cxc script, structure file, CSV with full metrics</li>
             </ul>
@@ -177,7 +177,7 @@
                 <li>Open <a href="flypredictome.html">FlyPredictome Analysis</a>, paste the URL, and click <strong>Generate</strong></li>
                 <li>Review the <strong>All Ranks</strong> table &mdash; click any row to switch between ranks 1&ndash;5</li>
                 <li>Explore metrics (iLIS, ipTM, LIR/cLIR counts), the sequence viewer, and the visualization script preview</li>
-                <li>Download the script (.cxc for ChimeraX or .pml for PyMOL) and structure file, place them in the same folder — ChimeraX will launch automatically</li>
+                <li>Download the script (.cxc for ChimeraX or .pml for PyMOL) and structure file, place them in the same folder, then open the script in ChimeraX or PyMOL</li>
             </ol>
         </div>
 
@@ -186,7 +186,7 @@
             <ul class="features-list">
                 <li><strong>All Ranks table</strong> &mdash; shows iLIS, LIS, cLIS, ipTM, LIR/cLIR counts for all 5 ranked models; click any row to load that rank</li>
                 <li><strong>Sequence viewer</strong> &mdash; displays actual amino acid letters for each chain with LIR (light color) and cLIR (dark color) highlighting</li>
-                <li><strong>Visualization script</strong> &mdash; syntax-highlighted preview with color presets (Gradient, Solid, ChimeraX defaults); Swap A &harr; B button reverses chain colors</li>
+                <li><strong>Visualization script</strong> &mdash; syntax-highlighted preview with color presets (Gradient, Solid, coloring modes); Swap A &harr; B button reverses chain colors</li>
                 <li><strong>Linear Contact Map</strong> &mdash; lines connect cLIR residue pairs in physical contact, with color gradient from chain A to chain B</li>
                 <li><strong>Circular Contact Map</strong> &mdash; circular chord diagram showing chain arcs (proportional to length) and lines connecting cLIR residue pairs in contact</li>
                 <li><strong>Downloads</strong> &mdash; .cxc script, .pdb structure, and CSV of all ranks with full metrics</li>
@@ -236,7 +236,7 @@
                 <li>Click <strong>Search Dimers</strong> &mdash; a table of available dimer complexes appears with LIS, ipTM, and ipSAE scores</li>
                 <li>Click a dimer row in the table to load it &mdash; the tool fetches CIF and PAE data from AlphaFold DB automatically</li>
                 <li>Review PAE/LIS/cLIS maps, score matrix, sequence viewer, and metrics (iLIS, LIS, cLIS, ipTM, ipSAE)</li>
-                <li>Download the script (.cxc/.pml) and structure file, place them in the same folder — ChimeraX will launch automatically</li>
+                <li>Download the script (.cxc/.pml) and structure file, place them in the same folder, then open the script in ChimeraX or PyMOL</li>
             </ol>
         </div>
 
@@ -271,7 +271,7 @@
                 <li>Domains are <strong>auto-detected</strong> using pLDDT-based segmentation; adjust settings if needed (min length, merge LIS threshold, pLDDT cutoff)</li>
                 <li>Click <strong>Detect Domains</strong> to re-detect with new settings, or manually edit domain boundaries</li>
                 <li>Review PAE/LIS/cLIS maps, the iLIS/cLIR score matrix between domains, and the sequence viewer</li>
-                <li>Download the script (.cxc/.pml) and structure file, place them in the same folder — ChimeraX will launch automatically</li>
+                <li>Download the script (.cxc/.pml) and structure file, place them in the same folder, then open the script in ChimeraX or PyMOL</li>
             </ol>
         </div>
 
@@ -321,7 +321,7 @@
             <p>All four tools include a <strong>sequence viewer</strong> that displays the actual amino acid sequence (one-letter codes) for each chain or domain. Residues are color-coded based on their interaction status:</p>
             <div style="display:flex; gap:1.5rem; margin:0.8rem 0; flex-wrap:wrap;">
                 <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#80CBC4; border-radius:4px; border:1px solid #ccc; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px;">A K L</div><span style="font-size:0.85rem;">LIR residues (light color)</span></div>
-                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#2471A3; border-radius:4px; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px; color:white;">R D E</div><span style="font-size:0.85rem;">cLIR residues (dark color)</span></div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#00897B; border-radius:4px; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px; color:white; font-weight:700;">R D E</div><span style="font-size:0.85rem;">cLIR residues (dark color, bold white)</span></div>
                 <div style="display:flex; align-items:center; gap:0.5rem;"><div style="width:60px; height:24px; background:#f0f0f0; border-radius:4px; text-align:center; font-family:monospace; font-size:0.8rem; line-height:24px; color:#999;">G P S</div><span style="font-size:0.85rem;">Non-interacting residues</span></div>
             </div>
             <p>Residue numbering is shown at intervals. The viewer scrolls horizontally for long sequences.</p>
@@ -359,7 +359,7 @@
             <ul class="features-list" style="margin-top:0.8rem;">
                 <li><strong>Gradient</strong> &mdash; light color for LIR, dark color for cLIR (e.g., Blue/Orange, Purple/Gold, Teal/Coral)</li>
                 <li><strong>Solid</strong> &mdash; same color for both LIR and cLIR</li>
-                <li><strong>ChimeraX defaults</strong> &mdash; familiar colors (Cornflower/Tomato, SkyBlue/Gold, etc.)</li>
+                <li><strong>Named colors</strong> &mdash; familiar colors (Cornflower/Tomato, SkyBlue/Gold, etc.)</li>
                 <li><strong>Multi-chain (tab10)</strong> &mdash; auto-assigned distinct colors per chain, shown for complexes with more than 2 chains</li>
                 <li><strong>Swap A &harr; B</strong> button &mdash; reverses chain colors without changing the color combination</li>
             </ul>
@@ -370,21 +370,14 @@
             <p>The Monomer tool provides additional coloring presets beyond the default domain-colored view:</p>
             <ul class="features-list">
                 <li><strong>pLDDT coloring</strong> &mdash; colors residues by AlphaFold confidence: <span style="color:#0053D6; font-weight:600;">very high (&gt;90)</span>, <span style="color:#65CBF3; font-weight:600;">confident (70&ndash;90)</span>, <span style="color:#FFDB13; font-weight:600;">low (50&ndash;70)</span>, <span style="color:#FF7D45; font-weight:600;">very low (&lt;50)</span></li>
-                <li><strong>color bychain</strong> &mdash; standard ChimeraX chain coloring</li>
-                <li><strong>color bypolymer</strong> &mdash; standard ChimeraX polymer coloring</li>
+                <li><strong>color bychain</strong> &mdash; chain coloring</li>
+                <li><strong>color bypolymer</strong> &mdash; polymer coloring</li>
             </ul>
         </div>
 
         <div class="subsection">
             <h3>Applying Color Changes</h3>
-            <p>After selecting a new color scheme or adjusting individual colors:</p>
-            <ul class="features-list">
-                <li><strong>FlyPredictome:</strong> Click <strong>Generate</strong> again to regenerate the .cxc script with updated colors</li>
-                <li><strong>Universal:</strong> Click a chain pair row in the table again, or click <strong>Process</strong> to reprocess</li>
-                <li><strong>Dimer:</strong> Click a dimer row to regenerate the script with the new color scheme</li>
-                <li><strong>Monomer:</strong> Select a ChimeraX preset (domain colors, pLDDT, bychain, bypolymer) to regenerate the script</li>
-            </ul>
-            <p style="margin-top:0.3rem; font-size:0.85rem; color:#888;">The PAE/LIS/cLIS maps are not affected by color choices &mdash; they use fixed colorscales (bwr, Blues, Greens). Only the ChimeraX .cxc script uses the selected chain colors.</p>
+            <p>Color presets and custom colors update the visualization script (ChimeraX/PyMOL) automatically when you select a preset. The PAE/LIS/cLIS maps use fixed colorscales and are not affected by color choices.</p>
         </div>
     </div>
 
@@ -412,7 +405,10 @@
                 <strong>Default cutoffs:</strong> PAE &le; <strong>12 &Aring;</strong> (confident interaction) and C&beta; &le; <strong>8 &Aring;</strong> (direct contact). These can be adjusted before processing in the Universal and Dimer tools.
             </p>
             <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
-                <strong>PAE transformation:</strong> Raw PAE values (0&ndash;30 &Aring;) are linearly scaled to confidence scores: PAE = 0 &rarr; score = 1 (highest confidence), PAE = cutoff &rarr; score = 0, PAE &gt; cutoff &rarr; 0. Default PAE cutoff is 12 &Aring;.
+                <strong>PAE transformation:</strong> For each inter-chain residue pair (i, j), the PAE value is converted to a confidence score: <code>confidence = 1 &minus; (PAE / cutoff)</code> if PAE &le; cutoff, otherwise 0. This linearly maps PAE = 0 &Aring; to confidence = 1.0 (highest) and PAE = cutoff to 0. The PAE cutoff of 12 &Aring; was determined by ROC analysis to maximize AUC (<a href="https://doi.org/10.1101/2024.02.19.580970" target="_blank" style="color:#2471A3;">Kim et al., 2024</a>).
+            </p>
+            <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
+                <strong>LIS calculation:</strong> <strong>LIA</strong> (Local Interaction Area) is the count of inter-chain residue pairs with PAE &le; cutoff. <strong>LIS</strong> is the mean confidence score across all LIA pairs. <strong>cLIA</strong> further restricts to pairs also in physical contact (C&beta; &le; 8 &Aring;), and <strong>cLIS</strong> is the mean confidence within cLIA. The inter-chain PAE block is symmetrized by averaging (A&rarr;B) and (B&rarr;A) directions. <strong>iLIS</strong> = &radic;(LIS &times; cLIS), combining interface confidence with direct contact evidence into a single robust metric (<a href="https://doi.org/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al., 2025</a>).
             </p>
             <p style="font-size:0.9rem; color:#555; line-height:1.6; margin-top:0.5rem;">
                 <strong>Contact map:</strong> Built from C&beta; atom distances (C&alpha; for glycine). Two residues are in contact if their C&beta;&ndash;C&beta; distance &le; 8 &Aring;. For nucleic acids, phosphorus (P) atoms are used with a 4 &Aring; distance adjustment.
@@ -441,27 +437,37 @@
                 <li><a href="https://www.biorxiv.org/content/10.1101/2025.10.10.681672" target="_blank" style="color:#2471A3;">Kim et al. 2025</a> &mdash; A Structure-Guided Kinase&ndash;Transcription Factor Interactome Atlas Reveals Docking Landscapes of the Kinome</li>
                 <li><a href="https://github.com/flyark/AFM-LIS" target="_blank" style="color:#2471A3;">AFM-LIS GitHub</a> &mdash; Code and documentation for calculating integrated Local Interaction Score (iLIS)</li>
             </ul>
-            <p><strong>AlphaFold</strong></p>
+            <p><strong>Structure Prediction</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
-                <li><a href="https://doi.org/10.1038/s41586-024-07487-w" target="_blank" style="color:#2471A3;">Abramson et al. 2024</a> &mdash; Accurate structure prediction of biomolecular interactions with AlphaFold 3. <em>Nature</em> 630, 493&ndash;500.</li>
+                <li><a href="https://doi.org/10.1038/s41586-021-03819-2" target="_blank" style="color:#2471A3;">Jumper et al. 2021</a> &mdash; Highly accurate protein structure prediction with AlphaFold. <em>Nature</em> 596, 583&ndash;589.</li>
                 <li><a href="https://doi.org/10.1101/2021.10.04.463034" target="_blank" style="color:#2471A3;">Evans et al. 2022</a> &mdash; Protein complex prediction with AlphaFold-Multimer. <em>bioRxiv</em>.</li>
+                <li><a href="https://doi.org/10.1038/s41586-024-07487-w" target="_blank" style="color:#2471A3;">Abramson et al. 2024</a> &mdash; Accurate structure prediction of biomolecular interactions with AlphaFold 3. <em>Nature</em> 630, 493&ndash;500.</li>
+                <li><a href="https://doi.org/10.1038/s41592-022-01488-1" target="_blank" style="color:#2471A3;">Mirdita et al. 2022</a> &mdash; ColabFold: making protein folding accessible to all. <em>Nature Methods</em> 19, 679&ndash;682.</li>
             </ul>
-            <p><strong>ipSAE</strong></p>
+            <p><strong>Confidence Metrics</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://www.biorxiv.org/content/10.1101/2025.02.10.637595" target="_blank" style="color:#2471A3;">Dunbrack 2025</a> &mdash; <em>R&emacr;s ipSAE loquuntur</em>: What&rsquo;s wrong with AlphaFold&rsquo;s ipTM score and how to fix it. <em>bioRxiv</em>.</li>
             </ul>
-            <p><strong>Mol* (3D Structure Viewer)</strong></p>
+            <p><strong>Y2H Reference Datasets (iLIS Benchmarks)</strong></p>
+            <ul style="padding-left:1.2rem; margin-bottom:1rem;">
+                <li><a href="https://doi.org/10.1126/science.1158684" target="_blank" style="color:#2471A3;">Yu et al. 2008</a> &mdash; High-quality binary protein interaction map of the yeast interactome network. <em>Science</em> 322, 104&ndash;110.</li>
+                <li><a href="https://doi.org/10.1038/s41467-023-37876-0" target="_blank" style="color:#2471A3;">Tang et al. 2023</a> &mdash; Next-generation large-scale binary protein interaction network for <em>Drosophila melanogaster</em>. <em>Nature Communications</em> 14, 2177.</li>
+                <li><a href="https://doi.org/10.1038/nmeth.1280" target="_blank" style="color:#2471A3;">Braun et al. 2009</a> Venkatesan et al. 2009</a> &mdash; An empirical framework for binary interactome mappingmdash; An experimentally derived confidence score for binary protein-protein interactions. <em>Nature Methods</em> 6, 83&ndash;90.</li>
+            </ul>
+            <p><strong>Visualization</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://doi.org/10.1093/nar/gkab314" target="_blank" style="color:#2471A3;">Sehnal et al. 2021</a> &mdash; Mol* Viewer: modern web app for 3D visualization and analysis of large biomolecular structures. <em>Nucleic Acids Research</em> 49, W431&ndash;W437.</li>
-            </ul>
-            <p><strong>ChimeraX</strong></p>
-            <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://doi.org/10.1002/pro.3943" target="_blank" style="color:#2471A3;">Pettersen et al. 2021</a> &mdash; UCSF ChimeraX: Structure visualization for researchers, educators, and developers. <em>Protein Science</em> 30, 70&ndash;82.</li>
+                <li>The PyMOL Molecular Graphics System, Schr&ouml;dinger, LLC. <a href="https://pymol.org" target="_blank" style="color:#2471A3;">pymol.org</a></li>
             </ul>
             <p><strong>Databases</strong></p>
             <ul style="padding-left:1.2rem; margin-bottom:1rem;">
                 <li><a href="https://doi.org/10.1093/nar/gkac1052" target="_blank" style="color:#2471A3;">UniProt Consortium 2023</a> &mdash; UniProt: the Universal Protein Knowledgebase in 2023. <em>Nucleic Acids Research</em> 51, D523&ndash;D531.</li>
                 <li><a href="https://doi.org/10.1093/nar/gkab1061" target="_blank" style="color:#2471A3;">Varadi et al. 2022</a> &mdash; AlphaFold Protein Structure Database: massively expanding the structural coverage of protein-sequence space with high-accuracy models. <em>Nucleic Acids Research</em> 50, D439&ndash;D444.</li>
+                <li><a href="https://doi.org/10.1093/nar/gkae917" target="_blank" style="color:#2471A3;">Hu et al. 2025</a> &mdash; FlyRNAi.org 2025 update: expanded resources for new technologies and species. <em>Nucleic Acids Research</em> 53(D1), D958&ndash;D965.</li>
+                <li><a href="https://doi.org/10.1093/nar/gkx1116" target="_blank" style="color:#2471A3;">Hu et al. 2018</a> &mdash; Molecular Interaction Search Tool (MIST): an integrated resource for mining gene and protein interaction data. <em>Nucleic Acids Research</em> 46(D1), D567&ndash;D574.</li>
+                <li><a href="https://doi.org/10.1093/nar/gkac993" target="_blank" style="color:#2471A3;">Paysan-Lafosse et al. 2023</a> &mdash; InterPro in 2022. <em>Nucleic Acids Research</em> 51(D1), D418&ndash;D427.</li>
+                <li><a href="https://doi.org/10.1093/genetics/iyad211" target="_blank" style="color:#2471A3;">Ozturk-Colak et al. 2024</a> &mdash; FlyBase: updates to the <em>Drosophila</em> genes and genomes database. <em>Genetics</em> 227(1), iyad211.</li>
             </ul>
             <p><strong>This Tool</strong></p>
             <ul style="padding-left:1.2rem;">
