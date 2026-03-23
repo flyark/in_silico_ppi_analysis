@@ -36,6 +36,8 @@
         .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
         .btn-secondary { background: white; color: #2471A3; border: 2px solid #2471A3; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-secondary:hover { background: #eaf2f8; }
+        .example-btn { padding: 0.25rem 0.65rem; border: none; border-radius: 20px; background: #eaf2f8; cursor: pointer; font-size: 0.78rem; color: #2471A3; transition: all 0.2s; font-weight: 500; }
+        .example-btn:hover { background: #2471A3; color: white; }
         .btn-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; flex-wrap: wrap; }
         .btn-download { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 2px solid; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
         .btn-download.cxc { background: #2471A3; color: white; border-color: #2471A3; }
@@ -189,8 +191,13 @@
                 <div class="ac-list" id="ac-list"></div>
             </div>
             <button class="btn btn-primary" style="margin:0;" id="btn-fetch" onclick="fetchData()">Fetch</button>
-            <button class="btn-secondary" style="white-space:nowrap;" onclick="loadExample()">Try Example (Haspin)</button>
-            <button class="btn-secondary" style="white-space:nowrap;" onclick="loadExample('Q15858')">Try Example (SCN9A)</button>
+        </div>
+        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; align-items:center;">
+            <span style="font-size:0.8rem; color:#888;">Examples:</span>
+            <button class="example-btn" onclick="loadExample('Q8TF76')">Haspin (Q8TF76)</button>
+            <button class="example-btn" onclick="loadExample('Q15858')">SCN9A (Q15858)</button>
+            <button class="example-btn" onclick="loadExample('P18206')">Vinculin (P18206)</button>
+            <button class="example-btn" onclick="loadExample('P43403')">ZAP-70 (P43403)</button>
         </div>
         <div class="status" id="status"></div>
         <div id="external-links" style="display:none; font-size:0.82rem; margin-top:0.3rem;"></div>
