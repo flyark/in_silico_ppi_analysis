@@ -841,7 +841,7 @@ async function fetchData() {
         detectAndCalculate();
 
     } catch (e) {
-        setStatus(e.message, 'error');
+        setStatus(e.message + ' — AlphaFold DB may be temporarily slow. Try again.', 'error');
         console.error(e);
     }
 

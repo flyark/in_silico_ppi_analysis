@@ -769,7 +769,7 @@ async function fetchDimers() {
         }
 
     } catch (e) {
-        setStatus(e.message, 'error');
+        setStatus(e.message + ' — AlphaFold DB may be temporarily slow. Try again.', 'error');
         console.error(e);
     }
     document.getElementById('btn-fetch').disabled = false;
@@ -877,7 +877,7 @@ async function selectDimer(idx, trEl) {
         processDimer();
 
     } catch (e) {
-        setStatus(e.message, 'error');
+        setStatus(e.message + ' — AlphaFold DB may be temporarily slow. Try again.', 'error');
         console.error(e);
     }
 }
