@@ -276,9 +276,7 @@
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Lower-left: iLIS (Oranges). Upper-right: iLIA (Greens). Diagonal: self.
             </div>
-            <div style="text-align:center;">
-                <canvas id="score-matrix-canvas"></canvas>
-            </div>
+            <div class="map-row" id="score-matrix-row"></div>
         </div>
 
         <!-- PAE Maps -->
@@ -2295,7 +2293,7 @@ function displayResults(results, jobName) {
 
     document.getElementById('results').classList.add('active');
     setupMultiChainColors();
-    drawScoreMatrix(0);
+    drawAllScoreMatrices();
     drawAllMaps();
     document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 
@@ -2319,7 +2317,7 @@ function selectRow(pairKey, modelIdx, trEl) {
     const badgeText = modelIdx === 'avg' ? 'Average' : (uniState.modelData[parseInt(modelIdx)]?.label || 'model_' + modelIdx);
     document.querySelectorAll('.model-badge').forEach(el => { el.textContent = badgeText; });
 
-    drawScoreMatrix(modelIdx);
+    
     selectPair(pairKey);
 }
 
@@ -2963,42 +2961,50 @@ function greensColor(value, vmin, vmax) {
     }
 }
 
-function drawScoreMatrix(modelIdx) {
+function drawAllScoreMatrices() {
     const card = document.getElementById('score-matrix-card');
-    const canvas = document.getElementById('score-matrix-canvas');
-    if (!canvas || !uniState.chainNames || uniState.chainNames.length < 2) {
+    const row = document.getElementById('score-matrix-row');
+    if (!row || !uniState.chainNames || uniState.chainNames.length < 2 || !uniState.modelData.length) {
         if (card) card.style.display = 'none';
         return;
     }
-
-    let ilisG, iliaG;
     const nc = uniState.chainNames.length;
-    if (modelIdx === 'avg' && uniState.modelData.length > 1) {
-        // Average across all models
-        ilisG = Array.from({ length: nc }, () => Array(nc).fill(0));
-        iliaG = Array.from({ length: nc }, () => Array(nc).fill(0));
-        const n = uniState.modelData.length;
-        for (const md of uniState.modelData) {
-            for (let i = 0; i < nc; i++) for (let j = 0; j < nc; j++) {
-                ilisG[i][j] += (md.ilisGrid?.[i]?.[j] || 0) / n;
-                iliaG[i][j] += (md.iliaGrid?.[i]?.[j] || 0) / n;
-            }
-        }
-    } else {
-        const idx = parseInt(modelIdx) || 0;
-        const md = uniState.modelData[idx];
-        if (!md || !md.ilisGrid) { if (card) card.style.display = 'none'; return; }
-        ilisG = md.ilisGrid;
-        iliaG = md.iliaGrid || Array.from({ length: nc }, () => Array(nc).fill(0));
-    }
-
     if (nc < 2) { if (card) card.style.display = 'none'; return; }
 
     card.style.display = '';
+    row.innerHTML = '';
+
+    // Find global max iLIA across all models for consistent scaling
+    let globalMaxIlia = 1;
+    for (const md of uniState.modelData) {
+        const g = md.iliaGrid;
+        if (!g) continue;
+        for (let i = 0; i < nc; i++)
+            for (let j = 0; j < nc; j++)
+                if (i !== j && g[i][j] > globalMaxIlia) globalMaxIlia = g[i][j];
+    }
+
+    for (let mi = 0; mi < uniState.modelData.length; mi++) {
+        const md = uniState.modelData[mi];
+        if (!md.ilisGrid) continue;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'text-align:center;';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size:0.78rem; color:#555; font-weight:600; margin-bottom:0.2rem;';
+        title.textContent = md.label || ('model_' + mi);
+        wrap.appendChild(title);
+        const canvas = document.createElement('canvas');
+        drawOneScoreMatrix(canvas, md.ilisGrid, md.iliaGrid || Array.from({length:nc},()=>Array(nc).fill(0)), nc, globalMaxIlia);
+        wrap.appendChild(canvas);
+        row.appendChild(wrap);
+    }
+}
+
+function drawOneScoreMatrix(canvas, ilisG, iliaG, nc, maxIlia) {
     const S = 2;
-    const cellSize = Math.min(55, Math.floor(460 / nc));
-    const leftMargin = 50;
-    const bottomMargin = 22;
+    const cellSize = Math.min(45, Math.floor(360 / nc));
+    const leftMargin = 30;
+    const bottomMargin = 18;
     const gridPx = cellSize * nc * S;
     const leftPx = leftMargin * S;
     const cPx = cellSize * S;
@@ -3012,13 +3018,6 @@ function drawScoreMatrix(modelIdx) {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Find max iLIA for scaling
-    let maxIlia = 1;
-    for (let i = 0; i < nc; i++)
-        for (let j = 0; j < nc; j++)
-            if (i !== j && iliaG[i][j] > maxIlia) maxIlia = iliaG[i][j];
-
-    // Draw cells
     for (let i = 0; i < nc; i++) {
         for (let j = 0; j < nc; j++) {
             const x = leftPx + j * cPx;
@@ -3031,57 +3030,46 @@ function drawScoreMatrix(modelIdx) {
             }
 
             if (i > j) {
-                // Bottom-left: iLIS (Oranges)
                 const val = ilisG[i][j];
                 const [r, g, b] = orangesColor(val, 0, 1);
                 ctx.fillStyle = `rgb(${r},${g},${b})`;
                 ctx.fillRect(x, y, cPx, cPx);
-                const fontSize = Math.max(8, Math.min(14, cellSize / 3.5)) * S;
-                ctx.font = `bold ${fontSize}px sans-serif`;
+                const fs = Math.max(7, Math.min(12, cellSize / 4)) * S;
+                ctx.font = `bold ${fs}px sans-serif`;
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillStyle = val > 0.5 ? 'white' : '#333';
-                ctx.fillText(val.toFixed(3), x + cPx / 2, y + cPx / 2);
+                ctx.fillText(val.toFixed(2), x + cPx / 2, y + cPx / 2);
             } else {
-                // Top-right: iLIA (Greens)
                 const val = iliaG[i][j];
-                if (val === 0) {
-                    ctx.fillStyle = '#ffffff';
-                } else {
-                    const t = maxIlia > 0 ? Math.min(1, val / maxIlia) : 0;
-                    ctx.fillStyle = `rgb(${Math.round(255*(1-t))},${Math.round(255-t*85)},${Math.round(255*(1-t))})`;
-                }
+                const t = maxIlia > 0 ? Math.min(1, val / maxIlia) : 0;
+                ctx.fillStyle = val === 0 ? '#fff' : `rgb(${Math.round(255*(1-t))},${Math.round(255-t*85)},${Math.round(255*(1-t))})`;
                 ctx.fillRect(x, y, cPx, cPx);
-                const fontSize = Math.max(8, Math.min(14, cellSize / 3.5)) * S;
-                ctx.font = `bold ${fontSize}px sans-serif`;
+                const fs = Math.max(7, Math.min(12, cellSize / 4)) * S;
+                ctx.font = `bold ${fs}px sans-serif`;
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                const t2 = maxIlia > 0 ? val / maxIlia : 0;
-                ctx.fillStyle = t2 > 0.6 ? 'white' : '#333';
-                ctx.fillText(val.toFixed(1), x + cPx / 2, y + cPx / 2);
+                ctx.fillStyle = t > 0.6 ? 'white' : '#333';
+                ctx.fillText(val.toFixed(0), x + cPx / 2, y + cPx / 2);
             }
         }
     }
 
-    // Grid lines
     ctx.strokeStyle = '#ccc'; ctx.lineWidth = 0.5 * S;
     for (let i = 0; i <= nc; i++) {
         ctx.beginPath(); ctx.moveTo(leftPx, i * cPx); ctx.lineTo(leftPx + nc * cPx, i * cPx); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(leftPx + i * cPx, 0); ctx.lineTo(leftPx + i * cPx, nc * cPx); ctx.stroke();
     }
-
-    // Diagonal
     ctx.strokeStyle = '#999'; ctx.lineWidth = 1.5 * S;
     ctx.beginPath(); ctx.moveTo(leftPx, 0); ctx.lineTo(leftPx + gridPx, gridPx); ctx.stroke();
 
-    // Labels
-    const labelFont = Math.max(8, Math.min(12, cellSize / 3)) * S;
+    const lf = Math.max(7, Math.min(10, cellSize / 3)) * S;
     ctx.fillStyle = '#333';
     for (let k = 0; k < nc; k++) {
         const name = uniState.chainNames[k];
-        ctx.font = `bold ${labelFont}px sans-serif`;
+        ctx.font = `bold ${lf}px sans-serif`;
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-        ctx.fillText(name, leftPx - 4 * S, k * cPx + cPx / 2);
+        ctx.fillText(name, leftPx - 3 * S, k * cPx + cPx / 2);
         ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(name, leftPx + k * cPx + cPx / 2, gridPx + 4 * S);
+        ctx.fillText(name, leftPx + k * cPx + cPx / 2, gridPx + 3 * S);
     }
 }
 
