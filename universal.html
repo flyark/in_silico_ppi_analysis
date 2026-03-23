@@ -694,9 +694,45 @@ const folderInput = document.getElementById('folder-input');
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
+dropZone.addEventListener('drop', async e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
+    // Check if any item is a directory
+    const items = e.dataTransfer.items;
+    if (items && items.length > 0) {
+        const entries = [];
+        for (let i = 0; i < items.length; i++) {
+            const entry = items[i].webkitGetAsEntry && items[i].webkitGetAsEntry();
+            if (entry) entries.push(entry);
+        }
+        const hasDir = entries.some(en => en.isDirectory);
+        if (hasDir) {
+            // Recursively read all files from directory
+            const allFiles = [];
+            async function readDir(dirEntry, path) {
+                return new Promise(resolve => {
+                    dirEntry.createReader().readEntries(async entries => {
+                        for (const en of entries) {
+                            if (en.isFile) {
+                                const file = await new Promise(r => en.file(f => r(f)));
+                                Object.defineProperty(file, 'webkitRelativePath', { value: path + '/' + file.name });
+                                allFiles.push(file);
+                            } else if (en.isDirectory) {
+                                await readDir(en, path + '/' + en.name);
+                            }
+                        }
+                        resolve();
+                    });
+                });
+            }
+            for (const en of entries) {
+                if (en.isDirectory) await readDir(en, en.name);
+                else { const file = await new Promise(r => en.file(f => r(f))); allFiles.push(file); }
+            }
+            handleInputFiles(allFiles);
+            return;
+        }
+    }
     if (e.dataTransfer.files.length) handleInputFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', e => { if (e.target.files.length) handleInputFiles(e.target.files); });
