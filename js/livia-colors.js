@@ -24,6 +24,9 @@ let cxcColorMode = '';
 // ── Display mode: show all residues vs LIR only ──
 let showComplete = false;
 
+// ── Gray non-LIR: color non-LIR residues gray when showComplete is on ──
+let grayNonLir = false;
+
 // ── Callback for page-specific reload after color change ──
 let onColorChange = null;
 
@@ -83,6 +86,23 @@ function toggleShowComplete(cb) {
     showComplete = cb.checked;
     // Sync all checkboxes with same class on the page
     document.querySelectorAll('.show-complete-cb').forEach(el => { el.checked = showComplete; });
+    // If turning off showComplete, also turn off grayNonLir
+    if (!showComplete && grayNonLir) {
+        grayNonLir = false;
+        document.querySelectorAll('.gray-nonlir-cb').forEach(el => { el.checked = false; });
+    }
+    if (onColorChange) onColorChange();
+}
+
+// ── Toggle gray non-LIR display ──
+function toggleGrayNonLir(cb) {
+    grayNonLir = cb.checked;
+    document.querySelectorAll('.gray-nonlir-cb').forEach(el => { el.checked = grayNonLir; });
+    // Gray non-LIR implies showComplete
+    if (grayNonLir && !showComplete) {
+        showComplete = true;
+        document.querySelectorAll('.show-complete-cb').forEach(el => { el.checked = true; });
+    }
     if (onColorChange) onColorChange();
 }
 

@@ -143,6 +143,14 @@ async function init() {
 
             }
         } catch(e2) { console.warn('Illustrative style error:', e2); }
+        // Default screenshot to transparent background
+        try {
+            var sh = viewer.plugin.helpers.viewportScreenshot;
+            if (sh) {
+                var cur = sh.behaviors.values.value;
+                sh.behaviors.values.next(Object.assign({}, cur, { transparent: true }));
+            }
+        } catch(e3) {}
     }, 2000);
 }
 init().catch(function(e) { console.error('Mol* error:', e); });

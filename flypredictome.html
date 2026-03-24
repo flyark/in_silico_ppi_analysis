@@ -263,7 +263,7 @@
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
                 Interactive 3D preview powered by <a href="https://molstar.org" target="_blank" style="color:#2471A3;">Mol*</a> (<a href="https://doi.org/10.1093/nar/gkab314" target="_blank" style="color:#2471A3;">Sehnal et al. 2021</a>). LIR regions shown as cartoons; cLIR residues highlighted. Drag to rotate, scroll to zoom.
             </div>
-            <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+            <iframe id="viewer3d-frame" style="width:100%; height:660px; border:1px solid #e0e0e0; border-radius:8px; background:#fff;" sandbox="allow-scripts allow-same-origin allow-downloads" allowfullscreen></iframe>
             <div style="text-align:right; margin-top:0.3rem;">
                 <button onclick="document.getElementById('viewer3d-frame').requestFullscreen()" style="padding:0.25rem 0.6rem; border:1px solid #ddd; border-radius:4px; background:#f8f9fa; cursor:pointer; font-size:0.78rem; color:#555;">Fullscreen</button>
             </div>
@@ -293,8 +293,11 @@
                     <button class="btn btn-primary" style="font-size:0.82rem; padding:0.3rem 0.8rem;" onclick="updateGapFill()">Apply</button>
                 </div>
                 <div style="font-size:0.78rem; color:#999; margin-bottom:0.5rem;">Gap filling bridges short breaks for continuous cartoon. Min segment removes isolated LIR fragments shorter than the threshold.</div>
-                <label style="display:flex; align-items:center; gap:0.3rem; font-size:0.85rem; color:#555; cursor:pointer; user-select:none; margin-bottom:1rem;">
+                <label style="display:flex; align-items:center; gap:0.3rem; font-size:0.85rem; color:#555; cursor:pointer; user-select:none; margin-bottom:0.3rem;">
                     <input type="checkbox" class="show-complete-cb" onchange="toggleShowComplete(this)"> Show complete structure <span style="font-size:0.78rem; color:#999;">(display all residues instead of LIR only)</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:0.3rem; font-size:0.85rem; color:#555; cursor:pointer; user-select:none; margin-bottom:1rem; padding-left:1.2rem;">
+                    <input type="checkbox" class="gray-nonlir-cb" onchange="toggleGrayNonLir(this)"> Gray non-LIR <span style="font-size:0.78rem; color:#999;">(color non-interacting residues gray)</span>
                 </label>
 
                 <label>Color Scheme</label>
@@ -350,6 +353,15 @@
                     <div class="preset-chip" onclick="applyPreset('#c5cae9','#303f9f','#ffe0b2','#e65100',this)"><div class="preset-strip"><span style="background:#c5cae9"></span><span style="background:#303f9f"></span><span style="background:#e65100"></span><span style="background:#ffe0b2"></span></div>Indigo / Tangerine</div>
                     <div class="preset-chip" onclick="applyPreset('#a8d5ba','#2e7d32','#ef9a9a','#c62828',this)"><div class="preset-strip"><span style="background:#a8d5ba"></span><span style="background:#2e7d32"></span><span style="background:#c62828"></span><span style="background:#ef9a9a"></span></div>Green / Red</div>
                 </div>
+                <label style="margin-top:0.5rem">Presets &mdash; high contrast (all 4 colors distinct)</label>
+                <div class="presets-row">
+                    <div class="preset-chip" onclick="applyPreset('#4DD0E1','#1A237E','#FFAB91','#B71C1C',this)"><div class="preset-strip"><span style="background:#4DD0E1"></span><span style="background:#1A237E"></span><span style="background:#B71C1C"></span><span style="background:#FFAB91"></span></div>Cyan / Navy / Peach / Crimson</div>
+                    <div class="preset-chip" onclick="applyPreset('#81D4FA','#283593','#EF9A9A','#C62828',this)"><div class="preset-strip"><span style="background:#81D4FA"></span><span style="background:#283593"></span><span style="background:#C62828"></span><span style="background:#EF9A9A"></span></div>Sky / Indigo / Salmon / Red</div>
+                    <div class="preset-chip" onclick="applyPreset('#AED581','#1B5E20','#FFD54F','#B71C1C',this)"><div class="preset-strip"><span style="background:#AED581"></span><span style="background:#1B5E20"></span><span style="background:#B71C1C"></span><span style="background:#FFD54F"></span></div>Lime / Forest / Gold / Maroon</div>
+                    <div class="preset-chip" onclick="applyPreset('#80CBC4','#004D40','#FFCC80','#BF360C',this)"><div class="preset-strip"><span style="background:#80CBC4"></span><span style="background:#004D40"></span><span style="background:#BF360C"></span><span style="background:#FFCC80"></span></div>Mint / DarkTeal / Apricot / Burnt</div>
+                    <div class="preset-chip" onclick="applyPreset('#CE93D8','#4A148C','#FFF176','#E65100',this)"><div class="preset-strip"><span style="background:#CE93D8"></span><span style="background:#4A148C"></span><span style="background:#E65100"></span><span style="background:#FFF176"></span></div>Orchid / Purple / Yellow / Fire</div>
+                    <div class="preset-chip" onclick="applyPreset('#BBDEFB','#0D47A1','#A5D6A7','#F4511E',this)"><div class="preset-strip"><span style="background:#BBDEFB"></span><span style="background:#0D47A1"></span><span style="background:#F4511E"></span><span style="background:#A5D6A7"></span></div>Blue / Navy / Sage / Ember</div>
+                </div>
                 <label style="margin-top:0.5rem">Presets &mdash; solid</label>
                 <div class="presets-row">
                     <div class="preset-chip" onclick="applyPreset('#00897B','#00897B','#E64A19','#E64A19',this)"><div class="preset-strip"><span style="background:#00897B"></span><span style="background:#00897B"></span><span style="background:#E64A19"></span><span style="background:#E64A19"></span></div>Teal / Coral</div>
@@ -373,6 +385,9 @@
             <div style="display:flex; align-items:center; gap:0.8rem; margin-bottom:0.6rem; flex-wrap:wrap;">
                 <label style="display:flex; align-items:center; gap:0.3rem; font-size:0.82rem; color:#555; cursor:pointer; user-select:none;">
                     <input type="checkbox" class="show-complete-cb" onchange="toggleShowComplete(this)"> Show complete structure
+                </label>
+                <label style="display:flex; align-items:center; gap:0.3rem; font-size:0.82rem; color:#555; cursor:pointer; user-select:none;">
+                    <input type="checkbox" class="gray-nonlir-cb" onchange="toggleGrayNonLir(this)"> Gray non-LIR
                 </label>
             </div>
             <div class="script-preview" id="script-preview"></div>
@@ -1021,6 +1036,11 @@ function generateCxc(row, pdbFilename, colors) {
         lines.push('color bychain');
     } else if (cxcColorMode === 'bypolymer') {
         lines.push('color bypolymer');
+    } else if (grayNonLir && showComplete) {
+        // Gray non-LIR: color everything gray, then overlay LIR colors
+        lines.push(`color #1 #B0B0B0`);
+        if (lirASpec) lines.push(`color #1${lirASpec} ${colors.lir_a}`);
+        if (lirBSpec) lines.push(`color #1${lirBSpec} ${colors.lir_b}`);
     } else {
         lines.push(`color #1/A ${colors.lir_a}`);
         lines.push(`color #1/B ${colors.lir_b}`);
@@ -1095,7 +1115,7 @@ function generateCxc(row, pdbFilename, colors) {
     lines.push(`# cLIR cartoons (${colors.clir_a}) = ${sym1} cLIR (chain A)`);
     lines.push(`# LIR cartoons  (${colors.lir_b}) = ${sym2} LIR (chain B)`);
     lines.push(`# cLIR cartoons (${colors.clir_b}) = ${sym2} cLIR (chain B)`);
-    lines.push(`# Non-LIR regions are HIDDEN`);
+    lines.push(grayNonLir && showComplete ? `# Non-LIR regions are GRAY (#B0B0B0)` : showComplete ? `# Non-LIR regions are SHOWN (same as LIR color)` : `# Non-LIR regions are HIDDEN`);
     lines.push(`#`);
     if (LIR_A.size > 0) { const s = [...LIR_A].sort((a,b)=>a-b); lines.push(`# LIR_A: ${sym1} ${s[0]}-${s[s.length-1]} (${LIR_A.size} residues)`); }
     if (LIR_B.size > 0) { const s = [...LIR_B].sort((a,b)=>a-b); lines.push(`# LIR_B: ${sym2} ${s[0]}-${s[s.length-1]} (${LIR_B.size} residues)`); }
@@ -1160,6 +1180,10 @@ function generatePml(row, pdbFilename, colors) {
     } else if (cxcColorMode === 'bychain' || cxcColorMode === 'bypolymer') {
         lines.push('util.cbc');
     } else {
+        if (grayNonLir && showComplete) {
+            lines.push(`set_color nonlir_gray, [0.69, 0.69, 0.69]`);
+            lines.push(`color nonlir_gray, all`);
+        }
         if (lirASpec) lines.push(`color lir_a, ${lirASpec}`);
         if (lirBSpec) lines.push(`color lir_b, ${lirBSpec}`);
         if (clirASpec) lines.push(`color clir_a, ${clirASpec}`);
@@ -2490,7 +2514,7 @@ function buildFlySeqViewer(row, sym1, sym2, colors, chainSeqs) {
                 const isLir = cc.lir.has(resnum);
                 const el = document.createElement('span');
                 el.className = 'seq-res' + (isClir ? ' clir' : '');
-                el.style.background = isClir ? cc.clirColor : isLir ? lightenColor(cc.clirColor.replace('#',''), 0.4) : 'transparent';
+                el.style.background = isClir ? cc.clirColor : isLir ? lightenColor(cc.clirColor.replace('#',''), 0.4) : grayNonLir ? '#D5D5D5' : 'transparent';
                 if (aa) el.textContent = aa;
                 el.addEventListener('mouseenter', (e) => {
                     tooltip.textContent = (aa ? `${aa}${resnum}` : `Res ${resnum}`) + (isClir ? ' (cLIR)' : isLir ? ' (LIR)' : '');
@@ -2658,8 +2682,17 @@ function buildFlyColorComponents(row, colors, pdbText) {
         components.push({ chain: 'B', ranges: toRanges(lirBFilled), color: colors.clir_b });
     } else {
         // Gradient: LIR-only in light, cLIR in dark (separate components)
-        const lirOnlyA = new Set([...lirAFilled].filter(r => !cLIR_A.has(r)));
-        const lirOnlyB = new Set([...lirBFilled].filter(r => !cLIR_B.has(r)));
+        const LIR_A_orig = fillGaps(filterSmallSegments(row._LIR_A));
+        const LIR_B_orig = fillGaps(filterSmallSegments(row._LIR_B));
+        const lirOnlyA = new Set([...LIR_A_orig].filter(r => !cLIR_A.has(r)));
+        const lirOnlyB = new Set([...LIR_B_orig].filter(r => !cLIR_B.has(r)));
+        // Non-LIR residues: gray when option is on
+        if (grayNonLir && showComplete) {
+            const nonLirA = new Set([...lirAFilled].filter(r => !LIR_A_orig.has(r)));
+            const nonLirB = new Set([...lirBFilled].filter(r => !LIR_B_orig.has(r)));
+            components.push({ chain: 'A', ranges: toRanges(nonLirA), color: '#B0B0B0' });
+            components.push({ chain: 'B', ranges: toRanges(nonLirB), color: '#B0B0B0' });
+        }
         components.push({ chain: 'A', ranges: toRanges(lirOnlyA), color: colors.lir_a });
         components.push({ chain: 'B', ranges: toRanges(lirOnlyB), color: colors.lir_b });
         components.push({ chain: 'A', ranges: toRanges(cLIR_A), color: colors.clir_a });
