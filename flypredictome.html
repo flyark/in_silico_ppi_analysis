@@ -2682,19 +2682,25 @@ function buildFlyColorComponents(row, colors, pdbText) {
         components.push({ chain: 'B', ranges: toRanges(lirBFilled), color: colors.clir_b });
     } else {
         // Gradient: LIR-only in light, cLIR in dark (separate components)
-        const LIR_A_orig = fillGaps(filterSmallSegments(row._LIR_A));
-        const LIR_B_orig = fillGaps(filterSmallSegments(row._LIR_B));
-        const lirOnlyA = new Set([...LIR_A_orig].filter(r => !cLIR_A.has(r)));
-        const lirOnlyB = new Set([...LIR_B_orig].filter(r => !cLIR_B.has(r)));
-        // Non-LIR residues: gray when option is on
         if (grayNonLir && showComplete) {
+            // Gray non-LIR: separate LIR from non-LIR
+            const LIR_A_orig = fillGaps(filterSmallSegments(row._LIR_A));
+            const LIR_B_orig = fillGaps(filterSmallSegments(row._LIR_B));
             const nonLirA = new Set([...lirAFilled].filter(r => !LIR_A_orig.has(r)));
             const nonLirB = new Set([...lirBFilled].filter(r => !LIR_B_orig.has(r)));
             components.push({ chain: 'A', ranges: toRanges(nonLirA), color: '#B0B0B0' });
             components.push({ chain: 'B', ranges: toRanges(nonLirB), color: '#B0B0B0' });
+            const lirOnlyA = new Set([...LIR_A_orig].filter(r => !cLIR_A.has(r)));
+            const lirOnlyB = new Set([...LIR_B_orig].filter(r => !cLIR_B.has(r)));
+            components.push({ chain: 'A', ranges: toRanges(lirOnlyA), color: colors.lir_a });
+            components.push({ chain: 'B', ranges: toRanges(lirOnlyB), color: colors.lir_b });
+        } else {
+            // Default: all shown residues (lirAFilled) minus cLIR get LIR color
+            const lirOnlyA = new Set([...lirAFilled].filter(r => !cLIR_A.has(r)));
+            const lirOnlyB = new Set([...lirBFilled].filter(r => !cLIR_B.has(r)));
+            components.push({ chain: 'A', ranges: toRanges(lirOnlyA), color: colors.lir_a });
+            components.push({ chain: 'B', ranges: toRanges(lirOnlyB), color: colors.lir_b });
         }
-        components.push({ chain: 'A', ranges: toRanges(lirOnlyA), color: colors.lir_a });
-        components.push({ chain: 'B', ranges: toRanges(lirOnlyB), color: colors.lir_b });
         components.push({ chain: 'A', ranges: toRanges(cLIR_A), color: colors.clir_a });
         components.push({ chain: 'B', ranges: toRanges(cLIR_B), color: colors.clir_b });
     }
