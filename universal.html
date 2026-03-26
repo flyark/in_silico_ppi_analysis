@@ -133,10 +133,10 @@
         <div class="step-header">Upload Prediction Files &nbsp;<span style="font-weight:400; font-size:0.8rem; color:#888;">(upload your prediction files &mdash; all analysis runs locally in your browser)</span></div>
         <div class="drop-zone" id="drop-zone">
             <div class="drop-zone-icon">&#128230;</div>
-            <div class="drop-zone-text">Drop prediction files or folders here (.zip, .gz, .cif, .pdb, .json, .npz, .npy) or click to browse</div>
+            <div class="drop-zone-text">Drop prediction files or folders here (.zip, .gz, .xz, .cif, .pdb, .json, .npz, .npy) or click to browse</div>
             <div class="drop-zone-filename" id="file-name"></div>
         </div>
-        <input type="file" id="file-input" accept=".zip,.gz,.cif,.pdb,.json,.npz,.npy,.pkl" multiple style="display:none">
+        <input type="file" id="file-input" accept=".zip,.gz,.xz,.cif,.pdb,.json,.npz,.npy,.pkl" multiple style="display:none">
         <input type="file" id="folder-input" webkitdirectory style="display:none">
         <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
             <button class="btn btn-primary" style="flex:1; margin:0;" onclick="document.getElementById('file-input').click()">Select Files</button>
@@ -929,6 +929,31 @@ async function loadFilesIntoState(files, isFolder, folderName) {
                     }
                 } catch (e) {
                     console.warn('Could not decompress .gz file:', file.name, e);
+                }
+            } else if (file.name.endsWith('.xz')) {
+                try {
+                    // Load xz-decompress library (WASM-based, handles XZ/LZMA2 format)
+                    if (!window['xz-decompress']) {
+                        await new Promise((resolve, reject) => {
+                            const s = document.createElement('script');
+                            s.src = 'https://cdn.jsdelivr.net/npm/xz-decompress@0.2.3/dist/package/xz-decompress.min.js';
+                            s.onload = resolve; s.onerror = reject;
+                            document.head.appendChild(s);
+                        });
+                    }
+                    const { XzReadableStream } = window['xz-decompress'];
+                    const blob = new Blob([await file.arrayBuffer()]);
+                    const xzStream = new XzReadableStream(blob.stream());
+                    const response = new Response(xzStream);
+                    const innerName = file.name.replace(/\.xz$/, '');
+                    const pathKey = (file.webkitRelativePath || file.name).replace(/\.xz$/, '');
+                    if (innerName.endsWith('.cif') || innerName.endsWith('.pdb') || innerName.endsWith('.json')) {
+                        uniState.loadedFiles[pathKey] = await response.text();
+                    } else if (innerName.endsWith('.npz') || innerName.endsWith('.npy')) {
+                        uniState.loadedFiles[pathKey] = await response.arrayBuffer();
+                    }
+                } catch (e) {
+                    console.warn('Could not decompress .xz file:', file.name, e);
                 }
             } else if (file.name.endsWith('.zip')) {
                 const zip = await JSZip.loadAsync(await file.arrayBuffer());
@@ -2178,6 +2203,9 @@ async function processFiles() {
             uniState.modelData.push({
                 pae, lisMap, clisMap, ilisGrid, iliaGrid, iptmGrid, lirGrid, clirGrid, nTotal, idx,
                 label: model.label || `model_${idx}`,
+                scores: scores,
+                structText: structText,
+                structFormat: model.format,
             });
         }
 
@@ -3206,38 +3234,43 @@ function drawColorbar(canvasId, colorFn, vmin, vmax) {
 function downloadCSV() {
     if (!uniState.modelPairs || !uniState.avgResults || !uniState.chainNames) return;
     const jobName = document.getElementById('result-title')?.textContent || 'prediction';
-    const cs = uniState.confidenceScores || {};
-    // Compute per-chain pLDDT from B-factors of first model structure
-    const chainPlddt = {};
-    const firstStructKey = Object.keys(uniState.structureContents || {})[0];
-    if (firstStructKey && uniState.structureContents[firstStructKey]) {
-        const bfs = parseBfactorsPerResidue(uniState.structureContents[firstStructKey], uniState.structureFormat);
+
+    // Compute per-model per-chain pLDDT from B-factors
+    function computeChainPlddt(structText, format) {
+        const cp = {};
+        if (!structText) return cp;
+        const bfs = parseBfactorsPerResidue(structText, format);
         for (const [key, val] of bfs) {
             const chain = key.split(':')[0];
-            if (!chainPlddt[chain]) chainPlddt[chain] = [];
-            chainPlddt[chain].push(val);
+            if (!cp[chain]) cp[chain] = [];
+            cp[chain].push(val);
         }
-        for (const c of Object.keys(chainPlddt)) {
-            const arr = chainPlddt[c];
-            chainPlddt[c] = arr.reduce((a, b) => a + b, 0) / arr.length;
+        for (const c of Object.keys(cp)) {
+            const arr = cp[c];
+            cp[c] = arr.reduce((a, b) => a + b, 0) / arr.length;
         }
+        return cp;
     }
+
     const header = 'name,model,chain_i,chain_j,iLIS,iLIA,iLISA,ipSAE,LIS,cLIS,LIA,cLIA,ipTM,pLDDT_i,pLDDT_j,pTM,LIR_i,LIR_j,cLIR_i,cLIR_j,len_i,len_j,LIR_indices_i,LIR_indices_j,cLIR_indices_i,cLIR_indices_j';
     const rows = [header];
     const platform = platformLabel(uniState.platform);
 
     for (let mi = 0; mi < uniState.modelPairs.length; mi++) {
+        const md = uniState.modelData[mi] || {};
+        const ms = md.scores || {};
+        const chainPlddt = computeChainPlddt(md.structText, md.structFormat);
         const sym = symmetrizePairs(uniState.modelPairs[mi]);
         for (const [key, v] of Object.entries(sym)) {
-            const plddtI = chainPlddt[v.ci] != null ? chainPlddt[v.ci].toFixed(1) : '';
-            const plddtJ = chainPlddt[v.cj] != null ? chainPlddt[v.cj].toFixed(1) : '';
+            const plddtI = chainPlddt[v.ci] != null ? chainPlddt[v.ci].toFixed(1) : (ms.pLDDT != null ? ms.pLDDT.toFixed(1) : '');
+            const plddtJ = chainPlddt[v.cj] != null ? chainPlddt[v.cj].toFixed(1) : (ms.pLDDT != null ? ms.pLDDT.toFixed(1) : '');
             rows.push([
                 jobName, `model_${mi}`, v.ci, v.cj,
                 v.iLIS.toFixed(6), (v.iLIA||0).toFixed(1), (v.iLISA||0).toFixed(1), (v.ipSAE||0).toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
                 (v.LIA||0).toFixed(1), (v.cLIA||0).toFixed(1),
                 v.ipTM.toFixed(6),
                 plddtI, plddtJ,
-                cs.pTM != null ? cs.pTM.toFixed(3) : '',
+                ms.pTM != null ? ms.pTM.toFixed(3) : '',
                 v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
                 v.lenI, v.lenJ,
                 `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
@@ -3248,16 +3281,36 @@ function downloadCSV() {
         }
     }
     if (uniState.modelPairs.length > 1) {
+        // Average row: average the per-model pTM, pLDDT, ipTM
+        const allMs = uniState.modelData.map(md => md.scores || {});
+        const avgPtm = allMs.filter(s => s.pTM != null);
+        const avgPtmVal = avgPtm.length > 0 ? avgPtm.reduce((s, m) => s + m.pTM, 0) / avgPtm.length : null;
+
+        // Average per-chain pLDDT across models
+        const avgChainPlddt = {};
+        for (let mi = 0; mi < uniState.modelData.length; mi++) {
+            const md = uniState.modelData[mi] || {};
+            const cp = computeChainPlddt(md.structText, md.structFormat);
+            for (const [chain, val] of Object.entries(cp)) {
+                if (!avgChainPlddt[chain]) avgChainPlddt[chain] = [];
+                avgChainPlddt[chain].push(val);
+            }
+        }
+        for (const c of Object.keys(avgChainPlddt)) {
+            const arr = avgChainPlddt[c];
+            avgChainPlddt[c] = arr.reduce((a, b) => a + b, 0) / arr.length;
+        }
+
         for (const [key, v] of Object.entries(uniState.avgResults)) {
-            const plddtI = chainPlddt[v.ci] != null ? chainPlddt[v.ci].toFixed(1) : '';
-            const plddtJ = chainPlddt[v.cj] != null ? chainPlddt[v.cj].toFixed(1) : '';
+            const plddtI = avgChainPlddt[v.ci] != null ? avgChainPlddt[v.ci].toFixed(1) : '';
+            const plddtJ = avgChainPlddt[v.cj] != null ? avgChainPlddt[v.cj].toFixed(1) : '';
             rows.push([
                 jobName, 'average', v.ci, v.cj,
                 v.iLIS.toFixed(6), (v.iLIA||0).toFixed(1), (v.iLISA||0).toFixed(1), (v.ipSAE||0).toFixed(6), v.LIS.toFixed(6), v.cLIS.toFixed(6),
                 (v.LIA||0).toFixed(1), (v.cLIA||0).toFixed(1),
                 v.ipTM.toFixed(6),
                 plddtI, plddtJ,
-                cs.pTM != null ? cs.pTM.toFixed(3) : '',
+                avgPtmVal != null ? avgPtmVal.toFixed(3) : '',
                 v.lirI.size, v.lirJ.size, v.clirI.size, v.clirJ.size,
                 v.lenI, v.lenJ,
                 `"[${[...v.lirI].sort((a,b)=>a-b).join(', ')}]"`,
