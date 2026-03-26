@@ -101,10 +101,12 @@
         .preset:hover { background: #f0f0f0; }
 
         @media (max-width: 768px) {
-            .map-row { flex-wrap: wrap; justify-content: center; }
+            .map-row { flex-wrap: wrap; justify-content: center; flex-direction: column; align-items: center; }
+            .map-item { width: 100%; }
+            .map-item canvas { width: 100%; height: auto; }
             canvas { max-width: 100%; height: auto; }
             .dimer-table th, .dimer-table td { white-space: nowrap; padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-            #maps-flex { flex-wrap: wrap !important; overflow: visible !important; }
+            #maps-flex { flex-wrap: wrap !important; overflow: visible !important; flex-direction: column; }
             .colorbar-labels { width: 100%; max-width: 300px; }
         }
     </style>
@@ -2037,15 +2039,26 @@ function buildFullClisMap(pae, contact, nUse, nTotal, paeCutoff) {
 
 function drawAllMaps() {
     const v = dimerPairResult;
-    // Dynamic: fit 3 panels in actual card width
+    // Dynamic: fit 3 panels horizontally, or stack vertically if too narrow
     const mapsCard = document.getElementById('maps-flex')?.closest('.card');
     const containerEl = document.querySelector('.container');
     const cardW = (mapsCard && mapsCard.clientWidth > 100 ? mapsCard.clientWidth : containerEl ? containerEl.clientWidth : 1052) - 48;
     const nPanels = 3, panelOverhead = 65, panelGap = 6;
-    const displaySize = Math.min(280, Math.floor((cardW - panelGap * (nPanels - 1)) / nPanels - panelOverhead));
+    const horizSize = Math.floor((cardW - panelGap * (nPanels - 1)) / nPanels - panelOverhead);
+    const stackVertical = window.innerWidth <= 768 || horizSize < 150;
+    const displaySize = stackVertical
+        ? Math.min(400, Math.floor(cardW - panelOverhead))
+        : Math.min(280, horizSize);
 
     const container = document.getElementById('maps-flex');
     container.innerHTML = '';
+    if (stackVertical) {
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
+    } else {
+        container.style.flexDirection = '';
+        container.style.alignItems = '';
+    }
 
     // PAE
     const paeCanvas = document.createElement('canvas');

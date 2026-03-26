@@ -93,7 +93,9 @@
         .preset:hover { background: #f0f0f0; }
 
         @media (max-width: 768px) {
-            .map-row { flex-wrap: wrap; justify-content: center; }
+            .map-row { flex-wrap: wrap; justify-content: center; flex-direction: column; align-items: center; }
+            .map-item { width: 100%; }
+            .map-item canvas { width: 100%; height: auto; }
             canvas { max-width: 100%; height: auto; }
             .colorbar-labels { width: 100%; max-width: 300px; }
         }
@@ -2642,12 +2644,23 @@ function drawPaeMap() {
     const container = document.getElementById('monomer-maps-flex');
     container.innerHTML = '';
 
-    // Dynamic: fit 3 panels in actual card width
+    // Dynamic: fit 3 panels horizontally, or stack vertically if too narrow
     const mapsCard = document.getElementById('monomer-maps-flex')?.closest('.card');
     const containerEl = document.querySelector('.container');
     const cardW = (mapsCard && mapsCard.clientWidth > 100 ? mapsCard.clientWidth : containerEl ? containerEl.clientWidth : 1052) - 48;
     const nPanels = 3, panelOverhead = 101, panelGap = 6;
-    const displaySize = Math.min(280, Math.floor((cardW - panelGap * (nPanels - 1)) / nPanels - panelOverhead));
+    const horizSize = Math.floor((cardW - panelGap * (nPanels - 1)) / nPanels - panelOverhead);
+    const stackVertical = window.innerWidth <= 768 || horizSize < 150;
+    const displaySize = stackVertical
+        ? Math.min(400, Math.floor(cardW - panelOverhead))
+        : Math.min(280, horizSize);
+    if (stackVertical) {
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
+    } else {
+        container.style.flexDirection = '';
+        container.style.alignItems = '';
+    }
 
     // PAE
     createMonomerMapPanel(container, 'PAE', monPae, bwrColor, 0, 30, ['30', '15', '0'], displaySize);
