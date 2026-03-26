@@ -742,8 +742,11 @@ function parseOrthoSummary(html, querySymbol) {
             const lenA = parseInt(cells[34]?.textContent?.trim()) || 0;
             const lenB = parseInt(cells[35]?.textContent?.trim()) || 0;
 
-            // Determine which is the partner
-            const isQuery1 = sym1.toLowerCase() === querySymbol.toLowerCase();
+            // Determine which is the partner — match by symbol or protein ID
+            const ql = querySymbol.toLowerCase();
+            const isQuery1 = sym1.toLowerCase() === ql || prot1.toLowerCase() === ql
+                || sym1.toLowerCase().startsWith(ql) || prot1.toLowerCase().startsWith(ql)
+                || ql.startsWith(sym1.toLowerCase());
             const partnerSymbol = isQuery1 ? sym2 : sym1;
             const partnerProt = isQuery1 ? prot2 : prot1;
             const partnerNcbi = isQuery1 ? ncbi2 : ncbi1;
