@@ -440,7 +440,9 @@ let dimerPairResult = null;  // computed pair metrics
 let dimerCifFilename = '';   // filename for download
 let viewer3dBlobUrl = null;  // blob URL for current Mol* iframe page
 let domainCache = new Map(); // UniProt ID -> domain array cache
+let tedCache = new Map();    // UniProt ID -> TED domain array cache
 let chainDomains = { A: [], B: [] }; // domain annotations per chain
+let chainTedDomains = { A: [], B: [] }; // TED domain annotations per chain
 
 // ============================================================================
 // CORS PROXY (AlphaFold DB complex API lacks CORS headers)
@@ -791,10 +793,15 @@ async function selectDimer(idx, trEl) {
         const uniprotIds = entry.uniprotAccession || [];
         
         chainDomains = { A: [], B: [] };
+        chainTedDomains = { A: [], B: [] };
         const domainPromises = [];
         if (uniprotIds[0]) domainPromises.push(fetchDomains(uniprotIds[0]).then(d => { chainDomains.A = d;}));
         if (uniprotIds[1]) domainPromises.push(fetchDomains(uniprotIds[1]).then(d => { chainDomains.B = d;}));
         else if (uniprotIds[0]) domainPromises.push(fetchDomains(uniprotIds[0]).then(d => { chainDomains.B = d; })); // homodimer
+        // Fetch TED domains in parallel
+        if (uniprotIds[0]) domainPromises.push(fetchTedDomains(uniprotIds[0]).then(d => { chainTedDomains.A = d; }));
+        if (uniprotIds[1]) domainPromises.push(fetchTedDomains(uniprotIds[1]).then(d => { chainTedDomains.B = d; }));
+        else if (uniprotIds[0]) domainPromises.push(fetchTedDomains(uniprotIds[0]).then(d => { chainTedDomains.B = d; })); // homodimer
 
         // Fetch gene symbols from UniProt if not provided by AlphaFold DB
         if (!entry.gene || entry.gene.length === 0) {
@@ -911,6 +918,43 @@ async function fetchDomains(uniprotId) {
     return domains;
 }
 
+// ============================================================================
+// TED DOMAIN ANNOTATIONS (from AlphaFold DB)
+// ============================================================================
+async function fetchTedDomains(uniprotId) {
+    if (!uniprotId) return [];
+    if (tedCache.has(uniprotId)) return tedCache.get(uniprotId);
+    let domains = [];
+    try {
+        const resp = await fetch(`https://alphafold.ebi.ac.uk/api/domains/${uniprotId}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            for (const ann of (data.annotations || [])) {
+                const segments = (ann.segments || []).map(s => ({ start: s.af_start, end: s.af_end }));
+                if (segments.length === 0) continue;
+                const start = Math.min(...segments.map(s => s.start));
+                const end = Math.max(...segments.map(s => s.end));
+                const cath = ann.cath_label || '';
+                const cathLevel = ann.cath_assignment_level || '';
+                const name = cath ? `TED ${ann.ted_domain_no} (${cath})` : `TED ${ann.ted_domain_no}`;
+                domains.push({
+                    name, start, end, segments,
+                    cath, cathLevel,
+                    plddt: ann.plddt || 0,
+                    qscore: ann.qscore || 0,
+                    nres: ann.nres_domain || 0,
+                    tedNo: ann.ted_domain_no
+                });
+            }
+            domains.sort((a, b) => a.start - b.start);
+        }
+    } catch (e) {
+        console.warn(`Failed to fetch TED domains for ${uniprotId}:`, e);
+    }
+    tedCache.set(uniprotId, domains);
+    return domains;
+}
+
 function buildDimerContactMap() {
     const v = dimerPairResult;
     const card = document.getElementById('contact-map-card');
@@ -958,10 +1002,12 @@ function buildDimerContactMap() {
 
     const S = 2;
     const hasDomains = (chainDomains.A.length > 0 || chainDomains.B.length > 0);
+    const hasTed = (chainTedDomains.A.length > 0 || chainTedDomains.B.length > 0);
     const domainRowH = hasDomains ? 20 : 0;
-    const width = Math.min(900, (card.clientWidth || 900) - 32), height = 280 + domainRowH * 2;
+    const tedRowH = hasTed ? 20 : 0;
+    const width = Math.min(900, (card.clientWidth || 900) - 32), height = 280 + (domainRowH + tedRowH) * 2;
     const barH = 14;
-    const barY_A = 45 + domainRowH, barY_B = height - 55 - domainRowH;
+    const barY_A = 45 + domainRowH + tedRowH, barY_B = height - 55 - domainRowH - tedRowH;
     const barLeft = 60, barRight = width - 20;
     const barW = barRight - barLeft;
 
@@ -1023,7 +1069,8 @@ function buildDimerContactMap() {
     }
 
     ctx.fillStyle = '#888'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(`${contacts.length} cLIR contact pairs (C\u03B2 < ${contactDist} \u00C5)`, width/2, barY_B + barH + (hasDomains ? 22 : 18));
+    const labelOffset = (hasDomains ? 20 : 0) + (hasTed ? 20 : 0) + 18;
+    ctx.fillText(`${contacts.length} cLIR contact pairs (C\u03B2 < ${contactDist} \u00C5)`, width/2, barY_B + barH + labelOffset);
 
     // Domain palettes (used for both canvas drawing and legend)
     const domPalette = [
@@ -1104,6 +1151,72 @@ function buildDimerContactMap() {
         }
     }
 
+    // Draw TED domain annotations
+    if (hasTed) {
+        const TED_PALETTE = ['#7E57C2', '#5C6BC0', '#26A69A', '#8D6E63', '#EC407A', '#42A5F5', '#AB47BC', '#66BB6A'];
+        const TED_PALETTE_LIGHT = TED_PALETTE.map(c => c + '40'); // ~25% opacity hex
+        const tedBlockH = 14, tedGap = 2;
+        const tedOffsetA = domainRowH; // TED row sits above UniProt row (further from chain bar)
+        const tedOffsetB = domainRowH; // TED row sits below UniProt row
+
+        // Chain A TED domains — above UniProt domains (further above chain A bar)
+        for (let di = 0; di < chainTedDomains.A.length; di++) {
+            const d = chainTedDomains.A[di];
+            for (const seg of d.segments) {
+                const x1 = xA(Math.max(1, seg.start));
+                const x2 = xA(Math.min(v.lenI, seg.end));
+                const dw = x2 - x1;
+                const dy = barY_A - tedGap - tedBlockH - (hasDomains ? tedBlockH + tedGap : 0);
+                ctx.fillStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(x1, dy, dw, tedBlockH);
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.lineWidth = 0.8;
+                ctx.strokeRect(x1, dy, dw, tedBlockH);
+            }
+            // Label on the widest segment
+            const mainSeg = d.segments.reduce((a, b) => (b.end - b.start > a.end - a.start ? b : a), d.segments[0]);
+            const x1 = xA(Math.max(1, mainSeg.start));
+            const x2 = xA(Math.min(v.lenI, mainSeg.end));
+            const dw = x2 - x1;
+            const dy = barY_A - tedGap - tedBlockH - (hasDomains ? tedBlockH + tedGap : 0);
+            ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const label = d.cath ? d.cath : `D${d.tedNo}`;
+            const labelW = ctx.measureText(label).width;
+            if (labelW < dw - 2) ctx.fillText(label, x1 + dw / 2, dy + tedBlockH / 2);
+            else { const abbr = label.length > 6 ? label.substring(0, 5) + '..' : label; if (ctx.measureText(abbr).width < dw - 2) ctx.fillText(abbr, x1 + dw / 2, dy + tedBlockH / 2); }
+        }
+
+        // Chain B TED domains — below UniProt domains (further below chain B bar)
+        for (let di = 0; di < chainTedDomains.B.length; di++) {
+            const d = chainTedDomains.B[di];
+            for (const seg of d.segments) {
+                const x1 = xB(Math.max(1, seg.start));
+                const x2 = xB(Math.min(v.lenJ, seg.end));
+                const dw = x2 - x1;
+                const dy = barY_B + barH + tedGap + (hasDomains ? tedBlockH + tedGap : 0);
+                ctx.fillStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(x1, dy, dw, tedBlockH);
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.lineWidth = 0.8;
+                ctx.strokeRect(x1, dy, dw, tedBlockH);
+            }
+            const mainSeg = d.segments.reduce((a, b) => (b.end - b.start > a.end - a.start ? b : a), d.segments[0]);
+            const x1 = xB(Math.max(1, mainSeg.start));
+            const x2 = xB(Math.min(v.lenJ, mainSeg.end));
+            const dw = x2 - x1;
+            const dy = barY_B + barH + tedGap + (hasDomains ? tedBlockH + tedGap : 0);
+            ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const label = d.cath ? d.cath : `D${d.tedNo}`;
+            const labelW = ctx.measureText(label).width;
+            if (labelW < dw - 2) ctx.fillText(label, x1 + dw / 2, dy + tedBlockH / 2);
+            else { const abbr = label.length > 6 ? label.substring(0, 5) + '..' : label; if (ctx.measureText(abbr).width < dw - 2) ctx.fillText(abbr, x1 + dw / 2, dy + tedBlockH / 2); }
+        }
+    }
+
     ctx.restore();
 
     // Domain legend below the contact map canvas
@@ -1119,12 +1232,13 @@ function buildDimerContactMap() {
         const geneB = genes[1] || genes[0] || v.cj; // homodimer: same gene
         const accA = accessions[0] || '';
         const accB = accessions[1] || accessions[0] || '';
+        const TED_PALETTE_LEG = ['#7E57C2', '#5C6BC0', '#26A69A', '#8D6E63', '#EC407A', '#42A5F5', '#AB47BC', '#66BB6A'];
         const chainLabels = [
-            { label: `${geneA} (${v.ci})`, domains: chainDomains.A, acc: accA },
-            { label: `${geneB} (${v.cj})`, domains: chainDomains.B, acc: accB },
+            { label: `${geneA} (${v.ci})`, domains: chainDomains.A, tedDomains: chainTedDomains.A, acc: accA },
+            { label: `${geneB} (${v.cj})`, domains: chainDomains.B, tedDomains: chainTedDomains.B, acc: accB },
         ];
         for (const cl of chainLabels) {
-            if (cl.domains.length === 0) continue;
+            if (cl.domains.length === 0 && cl.tedDomains.length === 0) continue;
             const row = document.createElement('div');
             row.style.cssText = 'display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;';
             const chainLabel = document.createElement('span');
@@ -1135,6 +1249,14 @@ function buildDimerContactMap() {
                 const d = cl.domains[di];
                 const item = document.createElement('span');
                 item.innerHTML = `<span style="display:inline-block; width:10px; height:10px; background:${domPalette[di % domPalette.length]}; border:1px solid ${domBorderPalette[di % domBorderPalette.length]}; vertical-align:middle; margin-right:3px; border-radius:2px;"></span>${d.name} (${d.start}\u2013${d.end})`;
+                row.appendChild(item);
+            }
+            // TED domain legend items
+            for (let di = 0; di < cl.tedDomains.length; di++) {
+                const d = cl.tedDomains[di];
+                const item = document.createElement('span');
+                const color = TED_PALETTE_LEG[di % TED_PALETTE_LEG.length];
+                item.innerHTML = `<span style="display:inline-block; width:10px; height:10px; background:${color}99; border:1px solid ${color}; vertical-align:middle; margin-right:3px; border-radius:2px;"></span>${d.name} (${d.start}\u2013${d.end})`;
                 row.appendChild(item);
             }
             if (cl.acc) {

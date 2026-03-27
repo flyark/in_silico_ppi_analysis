@@ -914,8 +914,10 @@ let flyBaseUrl = '';
 let flyCurrentRank = 1;
 let flyAverageRow = null;
 let flyDomains = { A: [], B: [] };
+let flyTedDomains = { A: [], B: [] };
 let flyDomainInfo = { A: null, B: null };
 let domainCache = new Map();
+let tedCache = new Map();
 let viewer3dBlobUrl = null;
 
 async function fetchViaProxy(url) {
@@ -1296,7 +1298,7 @@ async function generate() {
                 const sym1 = target['Symbol 1'] || 'Protein1';
                 const sym2 = target['Symbol 2'] || 'Protein2';
                 const colors = { lir_a: document.getElementById('color-lir-a')?.value || '#80CBC4', clir_a: document.getElementById('color-clir-a')?.value || '#00897B', lir_b: document.getElementById('color-lir-b')?.value || '#FFAB91', clir_b: document.getElementById('color-clir-b')?.value || '#E64A19' };
-                if (flyDomains.A.length > 0 || flyDomains.B.length > 0) {
+                if (flyDomains.A.length > 0 || flyDomains.B.length > 0 || flyTedDomains.A.length > 0 || flyTedDomains.B.length > 0) {
                     buildConnectionDiagram(target, sym1, sym2, colors, flyPdbText);
                 }
                 buildSeqViewer(target, sym1, sym2, colors, flyChainSeqs);
@@ -1697,6 +1699,7 @@ function parsePdbSequence(pdbText) {
 // ── Domain lookup (human/ortho) ──
 async function fetchDomains(chainSeqs, urlInput) {
     flyDomains = { A: [], B: [] };
+    flyTedDomains = { A: [], B: [] };
     flyDomainInfo = { A: null, B: null };
     if (!chainSeqs || !flyParsed) return;
 
@@ -1804,6 +1807,30 @@ async function fetchDomains(chainSeqs, urlInput) {
             }
 
             flyDomains[chainKeys[ci]] = domains;
+
+            // Fetch TED domains using the UniProt accession
+            try {
+                let tedDomains = await fetchTedDomains(accession);
+                // Adjust TED domain positions for partial predictions
+                if (offset > 0 || tedDomains.length > 0) {
+                    tedDomains = tedDomains
+                        .map(d => ({
+                            ...d,
+                            start: d.start - offset, end: d.end - offset,
+                            segments: d.segments.map(s => ({ start: s.start - offset, end: s.end - offset }))
+                        }))
+                        .filter(d => d.end > 0 && d.start <= predLen)
+                        .map(d => ({
+                            ...d,
+                            start: Math.max(1, d.start), end: Math.min(predLen, d.end),
+                            segments: d.segments
+                                .filter(s => s.end > 0 && s.start <= predLen)
+                                .map(s => ({ start: Math.max(1, s.start), end: Math.min(predLen, s.end) }))
+                        }))
+                        .filter(d => d.segments.length > 0);
+                }
+                flyTedDomains[chainKeys[ci]] = tedDomains;
+            } catch (e) { /* ignore TED fetch errors */ }
         } catch (e) {
             console.warn(`Domain lookup failed for chain ${chainKeys[ci]}:`, e);
         }
@@ -1836,6 +1863,43 @@ async function fetchDomainsFromPfam(uniprotId) {
         domainCache.set(uniprotId, []);
         return [];
     }
+}
+
+// ============================================================================
+// TED DOMAIN ANNOTATIONS (from AlphaFold DB)
+// ============================================================================
+async function fetchTedDomains(uniprotId) {
+    if (!uniprotId) return [];
+    if (tedCache.has(uniprotId)) return tedCache.get(uniprotId);
+    let domains = [];
+    try {
+        const resp = await fetch(`https://alphafold.ebi.ac.uk/api/domains/${uniprotId}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            for (const ann of (data.annotations || [])) {
+                const segments = (ann.segments || []).map(s => ({ start: s.af_start, end: s.af_end }));
+                if (segments.length === 0) continue;
+                const start = Math.min(...segments.map(s => s.start));
+                const end = Math.max(...segments.map(s => s.end));
+                const cath = ann.cath_label || '';
+                const cathLevel = ann.cath_assignment_level || '';
+                const name = cath ? `TED ${ann.ted_domain_no} (${cath})` : `TED ${ann.ted_domain_no}`;
+                domains.push({
+                    name, start, end, segments,
+                    cath, cathLevel,
+                    plddt: ann.plddt || 0,
+                    qscore: ann.qscore || 0,
+                    nres: ann.nres_domain || 0,
+                    tedNo: ann.ted_domain_no
+                });
+            }
+            domains.sort((a, b) => a.start - b.start);
+        }
+    } catch (e) {
+        console.warn(`Failed to fetch TED domains for ${uniprotId}:`, e);
+    }
+    tedCache.set(uniprotId, domains);
+    return domains;
 }
 
 function parsePdbCbCoords(pdbText) {
@@ -1897,10 +1961,12 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
 
     const S = 2;
     const hasDomains = (flyDomains.A.length > 0 || flyDomains.B.length > 0);
+    const hasTed = (flyTedDomains.A.length > 0 || flyTedDomains.B.length > 0);
     const domRowH = hasDomains ? 20 : 0;
-    const width = Math.min(900, (card.clientWidth || 900) - 32), height = 300 + domRowH * 2;
+    const tedRowH = hasTed ? 20 : 0;
+    const width = Math.min(900, (card.clientWidth || 900) - 32), height = 300 + (domRowH + tedRowH) * 2;
     const barH = 14;
-    const barY_A = 50 + domRowH, barY_B = height - 50 - domRowH;
+    const barY_A = 50 + domRowH + tedRowH, barY_B = height - 50 - domRowH - tedRowH;
     const barLeft = 60, barRight = width - 20;
     const barW = barRight - barLeft;
 
@@ -1957,7 +2023,8 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
     }
 
     ctx.fillStyle = '#888'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(`${contacts.length} cLIR contact pairs (C\u03B2 < ${contactDist} \u00C5)`, width / 2, barY_B + barH + (hasDomains ? 22 : 18));
+    const labelOffset = (hasDomains ? 20 : 0) + (hasTed ? 20 : 0) + 18;
+    ctx.fillText(`${contacts.length} cLIR contact pairs (C\u03B2 < ${contactDist} \u00C5)`, width / 2, barY_B + barH + labelOffset);
 
     // Domain annotations
     const domPalette = ['rgba(102,194,165,0.35)','rgba(252,141,98,0.35)','rgba(141,160,203,0.35)','rgba(231,138,195,0.35)','rgba(166,216,84,0.35)','rgba(255,217,47,0.35)','rgba(229,196,148,0.35)','rgba(179,179,179,0.35)'];
@@ -1987,6 +2054,65 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
             else { const abbr = label.length > 6 ? label.substring(0,5)+'..' : label; if (ctx.measureText(abbr).width < dw-2) ctx.fillText(abbr, x1+dw/2, dy+domBlockH/2); }
         }
     }
+
+    // Draw TED domain annotations
+    if (hasTed) {
+        const TED_PALETTE = ['#7E57C2', '#5C6BC0', '#26A69A', '#8D6E63', '#EC407A', '#42A5F5', '#AB47BC', '#66BB6A'];
+        const tedBlockH = 14, tedGap = 2;
+
+        // Chain A TED domains — above UniProt domains
+        for (let di = 0; di < flyTedDomains.A.length; di++) {
+            const d = flyTedDomains.A[di];
+            for (const seg of d.segments) {
+                const x1 = xA(Math.max(1, seg.start)), x2 = xA(Math.min(lenA, seg.end));
+                const dw = x2 - x1;
+                const dy = barY_A - tedGap - tedBlockH - (hasDomains ? tedBlockH + tedGap : 0);
+                ctx.fillStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(x1, dy, dw, tedBlockH);
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.lineWidth = 0.8;
+                ctx.strokeRect(x1, dy, dw, tedBlockH);
+            }
+            const mainSeg = d.segments.reduce((a, b) => (b.end - b.start > a.end - a.start ? b : a), d.segments[0]);
+            const x1 = xA(Math.max(1, mainSeg.start)), x2 = xA(Math.min(lenA, mainSeg.end));
+            const dw = x2 - x1;
+            const dy = barY_A - tedGap - tedBlockH - (hasDomains ? tedBlockH + tedGap : 0);
+            ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const label = d.cath ? d.cath : `D${d.tedNo}`;
+            const labelW = ctx.measureText(label).width;
+            if (labelW < dw - 2) ctx.fillText(label, x1 + dw / 2, dy + tedBlockH / 2);
+            else { const abbr = label.length > 6 ? label.substring(0, 5) + '..' : label; if (ctx.measureText(abbr).width < dw - 2) ctx.fillText(abbr, x1 + dw / 2, dy + tedBlockH / 2); }
+        }
+
+        // Chain B TED domains — below UniProt domains
+        for (let di = 0; di < flyTedDomains.B.length; di++) {
+            const d = flyTedDomains.B[di];
+            for (const seg of d.segments) {
+                const x1 = xB(Math.max(1, seg.start)), x2 = xB(Math.min(lenB, seg.end));
+                const dw = x2 - x1;
+                const dy = barY_B + barH + tedGap + (hasDomains ? tedBlockH + tedGap : 0);
+                ctx.fillStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(x1, dy, dw, tedBlockH);
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.lineWidth = 0.8;
+                ctx.strokeRect(x1, dy, dw, tedBlockH);
+            }
+            const mainSeg = d.segments.reduce((a, b) => (b.end - b.start > a.end - a.start ? b : a), d.segments[0]);
+            const x1 = xB(Math.max(1, mainSeg.start)), x2 = xB(Math.min(lenB, mainSeg.end));
+            const dw = x2 - x1;
+            const dy = barY_B + barH + tedGap + (hasDomains ? tedBlockH + tedGap : 0);
+            ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const label = d.cath ? d.cath : `D${d.tedNo}`;
+            const labelW = ctx.measureText(label).width;
+            if (labelW < dw - 2) ctx.fillText(label, x1 + dw / 2, dy + tedBlockH / 2);
+            else { const abbr = label.length > 6 ? label.substring(0, 5) + '..' : label; if (ctx.measureText(abbr).width < dw - 2) ctx.fillText(abbr, x1 + dw / 2, dy + tedBlockH / 2); }
+        }
+    }
+
     ctx.restore();
 
     // Domain legend
@@ -1995,12 +2121,13 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
         legendEl.innerHTML = '';
         legendEl.style.flexDirection = 'column';
         legendEl.style.gap = '0.3rem';
+        const TED_PALETTE_LEG = ['#7E57C2', '#5C6BC0', '#26A69A', '#8D6E63', '#EC407A', '#42A5F5', '#AB47BC', '#66BB6A'];
         const chainLabels = [
-            { key: 'A', label: `${sym1} (A)`, domains: flyDomains.A, info: flyDomainInfo.A },
-            { key: 'B', label: `${sym2} (B)`, domains: flyDomains.B, info: flyDomainInfo.B },
+            { key: 'A', label: `${sym1} (A)`, domains: flyDomains.A, tedDomains: flyTedDomains.A, info: flyDomainInfo.A },
+            { key: 'B', label: `${sym2} (B)`, domains: flyDomains.B, tedDomains: flyTedDomains.B, info: flyDomainInfo.B },
         ];
         for (const cl of chainLabels) {
-            if (cl.domains.length === 0 && !cl.info) continue;
+            if (cl.domains.length === 0 && cl.tedDomains.length === 0 && !cl.info) continue;
             const row = document.createElement('div');
             row.style.cssText = 'display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;';
             const chainLabel = document.createElement('span');
@@ -2021,6 +2148,18 @@ function buildConnectionDiagram(row, sym1, sym2, colors, pdbText) {
                     posText += ` [${d.start + cl.info.offset}\u2013${d.end + cl.info.offset} in full]`;
                 }
                 item.innerHTML = `<span style="display:inline-block; width:10px; height:10px; background:${domPalette[di % domPalette.length]}; border:1px solid ${domBorderPalette[di % domBorderPalette.length]}; vertical-align:middle; margin-right:3px; border-radius:2px;"></span>${d.name} (${posText})`;
+                row.appendChild(item);
+            }
+            // TED domain legend items
+            for (let di = 0; di < cl.tedDomains.length; di++) {
+                const d = cl.tedDomains[di];
+                const item = document.createElement('span');
+                const color = TED_PALETTE_LEG[di % TED_PALETTE_LEG.length];
+                let posText = `${d.start}\u2013${d.end}`;
+                if (cl.info && cl.info.offset > 0) {
+                    posText += ` [${d.start + cl.info.offset}\u2013${d.end + cl.info.offset} in full]`;
+                }
+                item.innerHTML = `<span style="display:inline-block; width:10px; height:10px; background:${color}99; border:1px solid ${color}; vertical-align:middle; margin-right:3px; border-radius:2px;"></span>${d.name} (${posText})`;
                 row.appendChild(item);
             }
             if (cl.info && cl.info.accession) {

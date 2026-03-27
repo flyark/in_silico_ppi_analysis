@@ -238,7 +238,7 @@
         <div class="card result-card" id="domain-comparison-card" style="display:none;">
             <h2>Region &amp; Domain Map</h2>
             <div style="font-size:0.82rem; color:#888; margin-bottom:0.5rem;">
-                Auto-detected regions (top) vs UniProt domains (bottom). Aligned to residue position.
+                Auto-detected regions vs UniProt domains and <a href="https://ted.cathdb.info" target="_blank" style="color:#2471A3;">TED</a> domains (AlphaFold DB). Aligned to residue position.
             </div>
             <canvas id="domain-map-canvas" style="width:100%; max-width:900px; display:block; margin:0 auto;"></canvas>
             <div id="domain-comparison-content" style="margin-top:1rem;"></div>
@@ -467,7 +467,9 @@ function switchScriptTab(mode) {
 let monRegionCounter = 0;   // for naming regions
 let viewer3dBlobUrl = null; // blob URL for current Mol* iframe page
 let monDomains = [];        // UniProt domain annotations [{name, start, end}]
+let monTedDomains = [];     // TED domain annotations [{name, start, end, segments, cath, plddt, qscore}]
 let domainCache = new Map(); // UniProt ID -> domain array cache
+let tedCache = new Map();    // UniProt ID -> TED domain array cache
 
 const DOMAIN_PALETTE = [
     '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'
@@ -701,6 +703,7 @@ async function fetchData() {
     monRegions = [];
     monRegionCounter = 0;
     monDomains = [];
+    monTedDomains = [];
     monSequence = null;
     monPlddt = null;
     showComplete = true;
@@ -789,11 +792,15 @@ async function fetchData() {
         // Show protein info from UniProt
         showProteinInfo(uniprotId);
 
-        // Fetch UniProt domain annotations
+        // Fetch UniProt domain annotations and TED domains in parallel
         try {
-            monDomains = await fetchDomains(uniprotId);
+            [monDomains, monTedDomains] = await Promise.all([
+                fetchDomains(uniprotId).catch(() => []),
+                fetchTedDomains(uniprotId).catch(() => [])
+            ]);
         } catch (e) {
             monDomains = [];
+            monTedDomains = [];
         }
 
         // Show regions card
@@ -912,6 +919,43 @@ async function fetchDomains(uniprotId) {
         console.warn(`Failed to fetch domains for ${uniprotId}:`, e);
     }
     domainCache.set(uniprotId, domains);
+    return domains;
+}
+
+// ============================================================================
+// TED DOMAIN ANNOTATIONS (from AlphaFold DB)
+// ============================================================================
+async function fetchTedDomains(uniprotId) {
+    if (!uniprotId) return [];
+    if (tedCache.has(uniprotId)) return tedCache.get(uniprotId);
+    let domains = [];
+    try {
+        const resp = await fetch(`https://alphafold.ebi.ac.uk/api/domains/${uniprotId}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            for (const ann of (data.annotations || [])) {
+                const segments = (ann.segments || []).map(s => ({ start: s.af_start, end: s.af_end }));
+                if (segments.length === 0) continue;
+                const start = Math.min(...segments.map(s => s.start));
+                const end = Math.max(...segments.map(s => s.end));
+                const cath = ann.cath_label || '';
+                const cathLevel = ann.cath_assignment_level || '';
+                const name = cath ? `TED ${ann.ted_domain_no} (${cath})` : `TED ${ann.ted_domain_no}`;
+                domains.push({
+                    name, start, end, segments,
+                    cath, cathLevel,
+                    plddt: ann.plddt || 0,
+                    qscore: ann.qscore || 0,
+                    nres: ann.nres_domain || 0,
+                    tedNo: ann.ted_domain_no
+                });
+            }
+            domains.sort((a, b) => a.start - b.start);
+        }
+    } catch (e) {
+        console.warn(`Failed to fetch TED domains for ${uniprotId}:`, e);
+    }
+    tedCache.set(uniprotId, domains);
     return domains;
 }
 
@@ -1630,7 +1674,8 @@ function drawDomainMap(validRegions) {
     const canvas = document.getElementById('domain-map-canvas');
     if (!canvas || !monSequence.length) return;
     const hasDomains = monDomains && monDomains.length > 0;
-    if (!hasDomains && (!validRegions || validRegions.length === 0)) return;
+    const hasTed = monTedDomains && monTedDomains.length > 0;
+    if (!hasDomains && !hasTed && (!validRegions || validRegions.length === 0)) return;
 
     const S = 2;
     const totalRes = monSequence[monSequence.length - 1].resnum;
@@ -1642,8 +1687,8 @@ function drawDomainMap(validRegions) {
     const barW = width - labelW - padR;
     const topPad = 10;
 
-    // Height: region bar + gap + domain bar + tick labels
-    const rows = hasDomains ? 2 : 1;
+    // Height: region bar + optional UniProt bar + optional TED bar + tick labels
+    const rows = 1 + (hasDomains ? 1 : 0) + (hasTed ? 1 : 0);
     const height = topPad + rows * barH + (rows - 1) * gap + 30;
 
     canvas.width = width * S;
@@ -1730,6 +1775,53 @@ function drawDomainMap(validRegions) {
         }
     }
 
+    // --- Row 3 (or 2): TED domains ---
+    if (hasTed) {
+        const yTed = topPad + (1 + (hasDomains ? 1 : 0)) * (barH + gap);
+        ctx.fillStyle = '#f5f0ff';
+        ctx.fillRect(labelW, yTed, barW, barH);
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(labelW, yTed, barW, barH);
+
+        ctx.fillStyle = '#555';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('TED Domains', labelW - 6, yTed + barH / 2);
+
+        const TED_PALETTE = ['#7E57C2', '#5C6BC0', '#26A69A', '#8D6E63', '#EC407A', '#42A5F5', '#AB47BC', '#66BB6A'];
+        for (let di = 0; di < monTedDomains.length; di++) {
+            const d = monTedDomains[di];
+            // Draw each segment (TED domains can be discontinuous)
+            for (const seg of d.segments) {
+                const x0 = resX(seg.start);
+                const x1 = resX(seg.end);
+                ctx.fillStyle = TED_PALETTE[di % TED_PALETTE.length];
+                ctx.globalAlpha = 0.75;
+                ctx.fillRect(x0, yTed, x1 - x0, barH);
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x0, yTed, x1 - x0, barH);
+            }
+            // Label on the first (or widest) segment
+            const mainSeg = d.segments.reduce((a, b) => (b.end - b.start > a.end - a.start ? b : a), d.segments[0]);
+            const x0 = resX(mainSeg.start);
+            const x1 = resX(mainSeg.end);
+            const rw = x1 - x0;
+            if (rw > 20) {
+                ctx.fillStyle = '#333';
+                ctx.font = '8px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const label = d.cath ? d.cath : `D${d.tedNo}`;
+                const truncLabel = label.length > rw / 5 ? label.substring(0, Math.floor(rw / 5)) + '..' : label;
+                ctx.fillText(truncLabel, x0 + rw / 2, yTed + barH / 2);
+            }
+        }
+    }
+
     // --- Tick marks ---
     const tickY = topPad + rows * barH + (rows - 1) * gap + 2;
     ctx.strokeStyle = '#aaa';
@@ -1763,7 +1855,8 @@ function buildDomainComparison(validRegions) {
     const content = document.getElementById('domain-comparison-content');
     if (!card || !content) return;
 
-    if (!monDomains || monDomains.length === 0 || !validRegions || validRegions.length < 1) {
+    const hasAnyDomains = (monDomains && monDomains.length > 0) || (monTedDomains && monTedDomains.length > 0);
+    if (!hasAnyDomains || !validRegions || validRegions.length < 1) {
         card.style.display = 'none';
         return;
     }
