@@ -37,7 +37,7 @@ Browser-based tools for analyzing protein-protein interactions from structure pr
 | **[AFDB Dimer](https://flyark.github.io/LIVIA/dimer.html)** | Dimer analysis from [AlphaFold DB](https://alphafold.ebi.ac.uk) |
 | **[Monomer Subdomain](https://flyark.github.io/LIVIA/monomer.html)** | Intramolecular domain interaction analysis from [AlphaFold DB](https://alphafold.ebi.ac.uk) |
 | **[Tutorials](https://flyark.github.io/LIVIA/tutorials.html)** | Step-by-step visual walkthroughs with auto-advancing screenshots |
-| **[About](https://flyark.github.io/LIVIA/guide.html)** | Metric definitions, color schemes, and references |
+| **[About](https://flyark.github.io/LIVIA/about.html)** | Metric definitions, color schemes, and references |
 
 ## Supported Platforms
 
